@@ -34,6 +34,11 @@
     # (pkgs.writeShellScriptBin "my-hello" ''
     #   echo "Hello, ${config.home.username}!"
     # '')
+    fnm
+    go
+    k9s
+    kubectl
+    lazygit
     lua
     luajitPackages.luarocks
     neovim
