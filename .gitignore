@@ -16,5 +16,6 @@
 !/.config/nvim/**
 
 !/.gitignore
+!/.profile.common
 !/.zshrc
 
