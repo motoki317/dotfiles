@@ -36,6 +36,7 @@
     # '')
     fnm
     go
+    hackgen-nf-font
     k9s
     kubectl
     lazygit
