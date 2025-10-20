@@ -1,0 +1,10 @@
+.idea
+.vscode
+.codex
+.venv
+*.iml
+.devcontainer
+
+**/.claude/settings.local.json
+.serena
+
