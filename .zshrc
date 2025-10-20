@@ -1,0 +1,88 @@
+# pure (zsh theme)
+fpath+=($HOME/.zsh/pure)
+autoload -U promptinit; promptinit
+prompt pure
+
+# ---- Personal aliases
+alias lg=lazygit
+alias n=nvim
+alias claude-yolo='claude --dangerously-skip-permissions'
+alias docker-wrap='docker run --rm -it --workdir $(pwd) -v $(pwd):$(pwd) --network host --entrypoint bash'
+
+# k9s workaround
+# https://github.com/derailed/k9s/issues/2725
+# https://github.com/derailed/k9s/issues/2602#issuecomment-1984103935
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+
+# Go bin
+export PATH=$PATH:/usr/local/go/bin
+export PATH=$PATH:~/go/bin
+# kubectl plugins
+export PATH=$PATH:$HOME/kubectl-plugins
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+# Claude Code native
+export PATH="$HOME/.local/bin:$PATH"
+
+# Rust cargo
+test -e "$HOME/.cargo/env" && . "$HOME/.cargo/env"
+
+# iTerm2
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# fnm
+FNM_PATH="/opt/homebrew/bin/fnm"
+if [ -f "$FNM_PATH" ]; then
+  eval "`fnm env`"
+fi
+
+# vegeta
+function vegeplot() {
+    RATE=10
+    if [ "$#" -ge 1 ]; then
+      RATE=$1    
+    fi
+
+    vegeta attack -rate "$RATE" | vegeta encode | \
+    jaggr @count=rps \
+          hist\[100,200,300,400,500\]:code \
+          p25,p50,p95:latency \
+          sum:bytes_in \
+          sum:bytes_out | \
+    jplot --rows 50 \
+          rps+code.hist.100+code.hist.200+code.hist.300+code.hist.400+code.hist.500 \
+          latency.p95+latency.p50+latency.p25 \
+          bytes_in.sum+bytes_out.sum
+}
+
+kubectl-shutdown-node() {
+  if [ "$#" -ne 1 ]; then
+    echo "usage: kubectl-shutdown-node <node-name>"
+    return
+  fi
+  kubectl taint nodes $1 node.kubernetes.io/out-of-service=nodeshutdown:NoExecute
+}
+
+kubectl-proxy-all() {
+    # https://github.com/kubernetes/kubernetes/issues/97676#issuecomment-754563168
+    PIDS=()
+    PORT=10000
+    for ctx in $(kubectl config get-contexts -o name); do
+      kubectl proxy --context=$ctx --port=$PORT --accept-hosts='.*' &
+      PIDS+=( $! )
+      PORT=$(( PORT + 1 ))
+    done
+    trap "kill $PIDS" INT TERM
+    wait $PIDS
+}
+
+kube-ops-view() {
+    CLUSTERS=$(kubectl config view -o template --template='{{range $index, $elem := .contexts}}http://host.docker.internal:1000{{$index}},{{end}}')
+    CLUSTERS=${CLUSTERS%%,}
+    docker run -it -p 8080:8080 -e CLUSTERS="$CLUSTERS" hjacobs/kube-ops-view:latest
+}
+
+if [ -f ~/.zshrc.local ]; then
+  . ~/.zshrc.local
+fi
+
