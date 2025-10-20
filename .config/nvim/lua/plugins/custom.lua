@@ -15,6 +15,11 @@ return {
           hide_dotfiles = false,
           hide_gitignored = true,
         },
+        window = {
+          mappings = {
+            ["O"] = "expand_all_subnodes",
+          },
+        },
       },
     },
     config = function(_, opts)
@@ -26,10 +31,6 @@ return {
         end,
       })
     end,
-  },
-  {
-    "folke/snacks.nvim",
-    opts = {},
   },
 
   -- Configure nvim-lint for shellcheck on zsh files
