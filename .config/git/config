@@ -1,0 +1,19 @@
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[user]
+	signingkey = ~/.ssh/id_ed25519
+	name = motoki317
+	email = motoki317@gmail.com
+[push]
+	autoSetupRemote = true
+[merge]
+	ff = false
+[pull]
+	ff = only
+[core]
+	autocrlf = input
+[init]
+	defaultBranch = main
+
