@@ -14,9 +14,6 @@ export LC_ALL="en_US.UTF-8"
 
 # Go bin
 export PATH="$PATH:~/go/bin"
-# kubectl plugins
-export PATH="$PATH:$HOME/kubectl-plugins"
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 # Claude Code native
 export PATH="$HOME/.local/bin:$PATH"
 

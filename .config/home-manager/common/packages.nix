@@ -1,15 +1,33 @@
 { pkgs }:
 with pkgs; [
+  age
+  curl
+  dive
+  docker-buildx
+  docker-compose
+  dyff
   fnm
   fortune
+  git
   go
   hackgen-nf-font
   htop
+  jq
   k9s
   kubectl
+  kubernetes-helm
+  kustomize
   lazygit
   lua
   luajitPackages.luarocks
   neovim
+  opentofu
+  ripgrep
+  rsync
+  sops
+  unzip
   vim
+  wget
+  yq
+  zip
 ]
