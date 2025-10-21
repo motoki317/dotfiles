@@ -14,6 +14,7 @@
 
   programs.bash = {
     enable = true;
+    # Load for both non-interactive and login shells
     bashrcExtra = ''
       # Load common
       if [ -f ~/.profile.common ]; then
@@ -28,5 +29,7 @@
       # Initialize fnm (Fast Node Manager)
       eval "$(fnm env --use-on-cd --shell bash)"
     '';
+    # Load default color profiles and so for login shells
+    initExtra = builtins.readFile ./.bashrc;
   };
 }
