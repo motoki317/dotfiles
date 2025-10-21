@@ -12,16 +12,3 @@ vim.keymap.set("n", "<leader>.", "<cmd>wincmd l<cr>", { desc = "Focus main buffe
 vim.keymap.set("n", "<C-w>", function()
   Snacks.bufdelete()
 end, { desc = "Delete Buffer" })
-
--- schema-companion
-vim.keymap.set("n", "<leader>ys", function()
-  require("schema-companion").select_schema()
-end, { desc = "Select YAML Schema" })
-
-vim.keymap.set("n", "<leader>ym", function()
-  require("schema-companion").select_from_matching_schema()
-end, { desc = "Select from Matching Schemas" })
-
-vim.keymap.set("n", "<leader>yr", function()
-  require("schema-companion").match()
-end, { desc = "Re-match Schema" })
