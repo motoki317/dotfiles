@@ -1,3 +1,5 @@
+#!/usr/bin/env sh
+
 # ---- Personal aliases
 alias lg=lazygit
 alias n=nvim
@@ -11,9 +13,9 @@ export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
 # Go bin
-export PATH=$PATH:~/go/bin
+export PATH="$PATH:~/go/bin"
 # kubectl plugins
-export PATH=$PATH:$HOME/kubectl-plugins
+export PATH="$PATH:$HOME/kubectl-plugins"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 # Claude Code native
 export PATH="$HOME/.local/bin:$PATH"
@@ -22,10 +24,10 @@ export PATH="$HOME/.local/bin:$PATH"
 test -e "$HOME/.cargo/env" && . "$HOME/.cargo/env"
 
 # iTerm2
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+test -e "${HOME}/.iterm2_shell_integration.zsh" && . "${HOME}/.iterm2_shell_integration.zsh"
 
 # vegeta
-function vegeplot() {
+vegeplot() {
   RATE=10
   if [ "$#" -ge 1 ]; then
     RATE=$1
@@ -44,7 +46,7 @@ function vegeplot() {
 }
 
 # kubectl utils
-kubectl-shutdown-node() {
+kubectl_shutdown_node() {
   if [ "$#" -ne 1 ]; then
     echo "usage: kubectl-shutdown-node <node-name>"
     return
@@ -52,12 +54,12 @@ kubectl-shutdown-node() {
   kubectl taint nodes $1 node.kubernetes.io/out-of-service=nodeshutdown:NoExecute
 }
 
-kubectl-proxy-all() {
+kubectl_proxy_all() {
   # https://github.com/kubernetes/kubernetes/issues/97676#issuecomment-754563168
   PIDS=()
   PORT=10000
   for ctx in $(kubectl config get-contexts -o name); do
-    kubectl proxy --context=$ctx --port=$PORT --accept-hosts='.*' &
+    kubectl proxy --context="$ctx" --port=$PORT --accept-hosts='.*' &
     PIDS+=($!)
     PORT=$((PORT + 1))
   done
@@ -65,7 +67,7 @@ kubectl-proxy-all() {
   wait $PIDS
 }
 
-kube-ops-view() {
+kube_ops_view() {
   CLUSTERS=$(kubectl config view -o template --template='{{range $index, $elem := .contexts}}http://host.docker.internal:1000{{$index}},{{end}}')
   CLUSTERS=${CLUSTERS%%,}
   docker run -it -p 8080:8080 -e CLUSTERS="$CLUSTERS" hjacobs/kube-ops-view:latest
