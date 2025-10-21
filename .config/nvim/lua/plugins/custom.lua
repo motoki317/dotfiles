@@ -90,7 +90,10 @@ return {
         settings = {
           yaml = {
             schemas = {
-              [require("kubernetes").yamlls_schema()] = "*.yaml",
+              -- use this if you want to match all '*.yaml' files
+              -- [require('kubernetes').yamlls_schema()] = "*.yaml",
+              -- or this to only match '*.<resource>.yaml' files. ex: 'app.deployment.yaml', 'app.argocd.yaml', ...
+              [require("kubernetes").yamlls_schema()] = require("kubernetes").yamlls_filetypes(),
               ["https://json.schemastore.org/github-workflow"] = ".github/workflows/*",
               ["https://json.schemastore.org/github-action"] = "*action.{yml,yaml}",
               ["https://json.schemastore.org/ansible-stable-2.9"] = "roles/tasks/*.{yml,yaml}",
