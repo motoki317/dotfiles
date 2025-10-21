@@ -62,22 +62,20 @@ return {
     },
   },
 
-  -- k8s yaml / helm setup
+  -- k8s yaml / helm
   {
     "cenk1cenk2/schema-companion.nvim",
     dependencies = {
       { "nvim-lua/plenary.nvim" },
-      -- { "nvim-telescope/telescope.nvim" },
     },
     config = function()
       require("schema-companion").setup({
         log_level = vim.log.levels.INFO,
       })
-      -- require("telescope").load_extension("schema_companion")
     end,
   },
 
-  -- filetype helm
+  -- helm-ls fix
   {
     "qvalentin/helm-ls.nvim",
     ft = "helm",
@@ -89,6 +87,7 @@ return {
     },
   },
 
+  -- Claude code integration
   {
     "coder/claudecode.nvim",
     dependencies = { "folke/snacks.nvim" },
@@ -115,5 +114,39 @@ return {
       { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
       { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" },
     },
+  },
+
+  -- Code action preview
+  {
+    "rachartier/tiny-code-action.nvim",
+    dependencies = {
+      { "nvim-lua/plenary.nvim" },
+      {
+        "folke/snacks.nvim",
+        opts = {
+          terminal = {},
+        },
+      },
+    },
+    event = "LspAttach",
+    opts = {
+      picker = "snacks",
+    },
+  },
+  {
+    "neovim/nvim-lspconfig",
+    opts = function(_, opts)
+      -- See https://www.lazyvim.org/extras/editor/inc-rename#nvim-lspconfig for how to override LazyVim builtin LSP keymaps
+      local keys = require("lazyvim.plugins.lsp.keymaps").get()
+      keys[#keys + 1] = {
+        "<leader>ca",
+        function()
+          require("tiny-code-action").code_action({})
+        end,
+        desc = "Code Action (tiny-code-action)",
+        mode = { "n", "x" },
+      }
+      return opts
+    end,
   },
 }
