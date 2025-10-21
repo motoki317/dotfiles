@@ -73,6 +73,29 @@ return {
         log_level = vim.log.levels.INFO,
       })
     end,
+    keys = {
+      {
+        "<leader>ys",
+        function()
+          require("schema-companyyion").select_schema()
+        end,
+        desc = "Select YAML Schema",
+      },
+      {
+        "<leader>ym",
+        function()
+          require("schema-companion").select_from_matching_schema()
+        end,
+        desc = "Select from Matching Schemas",
+      },
+      {
+        "<leader>yr",
+        function()
+          require("schema-companion").match()
+        end,
+        desc = "Re-match Schema",
+      },
+    },
   },
 
   -- helm-ls fix
