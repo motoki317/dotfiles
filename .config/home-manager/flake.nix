@@ -16,7 +16,7 @@
       # Windows Desktop (WSL2 Ubuntu)
       homeConfigurations."moto" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [ ./home.nix ];
+        modules = [ ./hosts/wsl.nix ];
         extraSpecialArgs = {
           username = "moto";
           homeDirectory = "/home/moto";
@@ -25,7 +25,7 @@
       # gmom M3 Pro
       homeConfigurations."usr0200788" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.aarch64-darwin;
-        modules = [ ./home.nix ];
+        modules = [ ./hosts/macos.nix ];
         extraSpecialArgs = {
           username = "usr0200788";
           homeDirectory = "/Users/usr0200788";
