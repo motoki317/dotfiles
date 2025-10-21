@@ -1,10 +1,10 @@
-{ config, pkgs, ... }:
+{ config, pkgs, username, homeDirectory, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "moto";
-  home.homeDirectory = "/home/moto";
+  home.username = username;
+  home.homeDirectory = homeDirectory;
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -35,8 +35,10 @@
     #   echo "Hello, ${config.home.username}!"
     # '')
     fnm
+    fortune
     go
     hackgen-nf-font
+    htop
     k9s
     kubectl
     lazygit

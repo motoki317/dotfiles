@@ -1,5 +1,5 @@
 {
-  description = "Home Manager configuration of moto";
+  description = "My home-manager configurations for multiple devices";
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
@@ -12,20 +12,24 @@
 
   outputs =
     { nixpkgs, home-manager, ... }:
-    let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-    in
     {
+      # Windows Desktop (WSL2 Ubuntu)
       homeConfigurations."moto" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-
-        # Specify your home configuration modules here, for example,
-        # the path to your home.nix.
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [ ./home.nix ];
-
-        # Optionally use extraSpecialArgs
-        # to pass through arguments to home.nix
+        extraSpecialArgs = {
+          username = "moto";
+          homeDirectory = "/home/moto";
+        };
+      };
+      # gmom M3 Pro
+      homeConfigurations."usr0200788" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+        modules = [ ./home.nix ];
+        extraSpecialArgs = {
+          username = "usr0200788";
+          homeDirectory = "/Users/usr0200788";
+        };
       };
     };
 }
