@@ -4,3 +4,6 @@
 
 -- Disable relative line numbers by default
 vim.opt.relativenumber = false
+
+-- Enable wrap by default
+vim.opt.wrap = true
