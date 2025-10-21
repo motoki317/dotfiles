@@ -33,8 +33,10 @@ return {
     end,
   },
 
+  -- Nice LSP progress message
   { "j-hui/fidget.nvim" },
 
+  -- Shellchecks, terraform support
   {
     "mfussenegger/nvim-lint",
     opts = {
@@ -47,7 +49,6 @@ return {
       },
     },
   },
-
   {
     "stevearc/conform.nvim",
     optional = true,
@@ -61,19 +62,7 @@ return {
     },
   },
 
-  -- Helm files (ft helm)
-  {
-    "qvalentin/helm-ls.nvim",
-    ft = "helm",
-    opts = {
-      conceal_templates = {
-        -- Not working quite well
-        enabled = false,
-      },
-    },
-  },
-
-  -- CRD files (ft yaml, does not work for helm files)
+  -- YAML CRD definitions (helm has different support)
   {
     "diogo464/kubernetes.nvim",
     opts = {
@@ -120,5 +109,17 @@ return {
       }
       return opts
     end,
+  },
+
+  -- filetype helm
+  {
+    "qvalentin/helm-ls.nvim",
+    ft = "helm",
+    opts = {
+      conceal_templates = {
+        -- Not working quite well
+        enabled = false,
+      },
+    },
   },
 }
