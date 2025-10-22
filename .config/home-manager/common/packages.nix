@@ -8,11 +8,13 @@ with pkgs; [
   dyff
   fnm
   fortune
+  gh
   git
   go
   hackgen-nf-font
   htop
   jq
+  k6
   k9s
   kubectl
   kubernetes-helm
@@ -25,6 +27,7 @@ with pkgs; [
   ripgrep
   rsync
   sops
+  tree
   unzip
   vim
   wget
