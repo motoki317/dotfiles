@@ -4,18 +4,23 @@ with pkgs; [
   curl
   dive
   docker-buildx
+  docker-client
   docker-compose
   dyff
   fnm
   fortune
+  fzf
   gh
   git
   go
+  go-task
   hackgen-nf-font
   htop
   jq
+  just
   k6
   k9s
+  kubeconform
   kubectl
   kubernetes-helm
   kustomize
@@ -29,6 +34,7 @@ with pkgs; [
   sops
   tree
   unzip
+  vegeta
   vim
   wget
   yq-go
