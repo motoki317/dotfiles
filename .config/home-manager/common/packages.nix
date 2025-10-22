@@ -31,6 +31,6 @@ with pkgs; [
   unzip
   vim
   wget
-  yq
+  yq-go
   zip
 ]
