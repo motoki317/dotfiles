@@ -33,6 +33,7 @@ with pkgs; [
   rsync
   sops
   tree
+  tree-sitter
   unzip
   vegeta
   vim
