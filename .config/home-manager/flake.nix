@@ -23,12 +23,12 @@
         };
       };
       # gmom M3 Pro
-      homeConfigurations."usr0200788" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations."toki" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.aarch64-darwin;
         modules = [ ./hosts/macos.nix ];
         extraSpecialArgs = {
-          username = "usr0200788";
-          homeDirectory = "/Users/usr0200788";
+          username = "toki";
+          homeDirectory = "/Users/toki";
         };
       };
     };
