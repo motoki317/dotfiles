@@ -32,6 +32,7 @@ with pkgs; [
   ripgrep
   rsync
   sops
+  textlint
   tree
   tree-sitter
   unzip
