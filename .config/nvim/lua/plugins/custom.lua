@@ -157,23 +157,24 @@ return {
     },
   },
   -- TODO: how to override default lspconfig keymap? (says 'modifiable' is off)
-  -- {
-  --   "neovim/nvim-lspconfig",
-  --   opts = {
-  --     servers = {
-  --       ["*"] = {
-  --         keys = {
-  --           {
-  --             "<leader>ca",
-  --             function()
-  --               require("tiny-code-action").code_action({})
-  --             end,
-  --             desc = "Code Action (tiny-code-action)",
-  --             mode = { "n", "x" },
-  --           },
-  --         },
-  --       },
-  --     },
-  --   },
-  -- },
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        ["*"] = {
+          keys = {
+            { "<leader>ca", false },
+            {
+              "<leader>ca",
+              function()
+                require("tiny-code-action").code_action({})
+              end,
+              desc = "Code Action (tiny-code-action)",
+              mode = { "n", "x" },
+            },
+          },
+        },
+      },
+    },
+  },
 }
