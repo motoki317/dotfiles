@@ -8,8 +8,9 @@
   home.packages = import ../common/packages.nix { inherit pkgs; };
 
   home.file = {
-    ".docker/cli-plugins/docker-buildx".source = "${pkgs.docker-buildx}/bin/docker-buildx";
-    ".docker/cli-plugins/docker-compose".source = "${pkgs.docker-compose}/bin/docker-compose";
+    # Not needed with Docker Desktop
+    # ".docker/cli-plugins/docker-buildx".source = "${pkgs.docker-buildx}/bin/docker-buildx";
+    # ".docker/cli-plugins/docker-compose".source = "${pkgs.docker-compose}/bin/docker-compose";
   };
   home.sessionVariables = {};
   # Let Home Manager install and manage itself.
