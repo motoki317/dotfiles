@@ -156,7 +156,6 @@ return {
       picker = "snacks",
     },
   },
-  -- TODO: how to override default lspconfig keymap? (says 'modifiable' is off)
   {
     "neovim/nvim-lspconfig",
     opts = {
