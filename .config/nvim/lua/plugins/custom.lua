@@ -156,20 +156,24 @@ return {
       picker = "snacks",
     },
   },
-  {
-    "neovim/nvim-lspconfig",
-    opts = function(_, opts)
-      -- See https://www.lazyvim.org/extras/editor/inc-rename#nvim-lspconfig for how to override LazyVim builtin LSP keymaps
-      local keys = require("lazyvim.plugins.lsp.keymaps").get()
-      keys[#keys + 1] = {
-        "<leader>ca",
-        function()
-          require("tiny-code-action").code_action({})
-        end,
-        desc = "Code Action (tiny-code-action)",
-        mode = { "n", "x" },
-      }
-      return opts
-    end,
-  },
+  -- TODO: how to override default lspconfig keymap? (says 'modifiable' is off)
+  -- {
+  --   "neovim/nvim-lspconfig",
+  --   opts = {
+  --     servers = {
+  --       ["*"] = {
+  --         keys = {
+  --           {
+  --             "<leader>ca",
+  --             function()
+  --               require("tiny-code-action").code_action({})
+  --             end,
+  --             desc = "Code Action (tiny-code-action)",
+  --             mode = { "n", "x" },
+  --           },
+  --         },
+  --       },
+  --     },
+  --   },
+  -- },
 }
