@@ -107,6 +107,10 @@ return {
         -- Not working quite well
         enabled = false,
       },
+      action_highlight = {
+        -- Disable due to invalid tree-sitter query
+        enabled = false,
+      },
     },
   },
 
