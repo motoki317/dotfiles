@@ -31,6 +31,7 @@ with pkgs; [
   opentofu
   ripgrep
   rsync
+  skaffold
   sops
   textlint
   tree
