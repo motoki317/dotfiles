@@ -16,5 +16,5 @@
 Instead, continue in the main context so users can see the main research progress.
 - Use subagents ONLY when executing self-contained research tasks.
 - When using subagents, prepare the instruction steps clearly in the main context, so they do not get lost. NEVER spawn subagents without clear step-by-step instructions on the task.
-- Use subagents in parlalel, if some simple tasks can be parallelized easily.
+- Use subagents in parallel, if some simple tasks can be parallelized easily.
 When doing so, prepare instructions in the main context BEFORE spawning subagents, so the subagents' behaviors are well-predictable.
