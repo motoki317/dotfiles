@@ -1,6 +1,7 @@
 { pkgs }:
 with pkgs; [
   age
+  buf
   curl
   dive
   docker-buildx
