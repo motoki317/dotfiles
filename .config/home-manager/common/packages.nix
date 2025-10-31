@@ -36,6 +36,7 @@ with pkgs; [
   textlint
   tree
   tree-sitter
+  treefmt
   unzip
   vegeta
   vim
