@@ -28,9 +28,6 @@
       if [ -f ~/.bashrc.local ]; then
         . ~/.bashrc.local
       fi
-
-      # Initialize fnm (Fast Node Manager)
-      eval "$(fnm env --use-on-cd --shell bash)"
     '';
     # Load default color profiles and so for login shells
     initExtra = builtins.readFile ./.bashrc;

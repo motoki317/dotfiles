@@ -8,7 +8,6 @@ with pkgs; [
   docker-client
   docker-compose
   dyff
-  fnm
   fortune
   fzf
   gh
@@ -29,6 +28,7 @@ with pkgs; [
   lua
   luajitPackages.luarocks
   neovim
+  nodejs_24
   opentofu
   ripgrep
   rsync
