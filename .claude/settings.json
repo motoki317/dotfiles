@@ -10,7 +10,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "ccusage statusline"
+    "command": "npx -y ccusage statusline"
   },
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
