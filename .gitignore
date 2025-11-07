@@ -12,6 +12,8 @@
 !/.config/git/**
 !/.config/home-manager
 !/.config/home-manager/**
+!/.config/lazygit
+!/.config/lazygit/**
 !/.config/nvim
 !/.config/nvim/**
 
