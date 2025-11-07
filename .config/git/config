@@ -16,4 +16,3 @@
 	autocrlf = input
 [init]
 	defaultBranch = main
-
