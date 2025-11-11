@@ -14,6 +14,7 @@ with pkgs; [
   git
   go
   go-task
+  google-cloud-sdk
   hackgen-nf-font
   htop
   jq
