@@ -1,6 +1,7 @@
 { pkgs }:
 with pkgs; [
   age
+  awscli2
   buf
   curl
   dive
