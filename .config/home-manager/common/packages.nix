@@ -26,6 +26,7 @@ with pkgs; [
   kubectl
   kubernetes-helm
   kustomize
+  kustomize-sops
   lazygit
   lua
   luajitPackages.luarocks
