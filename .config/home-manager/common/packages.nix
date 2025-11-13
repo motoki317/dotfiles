@@ -32,6 +32,7 @@ with pkgs; [
   luajitPackages.luarocks
   neovim
   nodejs_24
+  omekasy
   opentofu
   postgresql
   ripgrep
