@@ -12,3 +12,17 @@ vim.keymap.set("n", "<leader>.", "<cmd>wincmd l<cr>", { desc = "Focus main buffe
 vim.keymap.set("n", "<C-w>", function()
   Snacks.bufdelete()
 end, { desc = "Delete Buffer" })
+
+-- Close all file buffers with Ctrl+Shift+w
+vim.keymap.set("n", "<C-S-w>", function()
+  local bufs = vim.api.nvim_list_bufs()
+  for _, buf in ipairs(bufs) do
+    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_get_option(buf, "buflisted") then
+      local buftype = vim.api.nvim_buf_get_option(buf, "buftype")
+      -- Only delete normal file buffers (not terminals, help, quickfix, etc.)
+      if buftype == "" then
+        vim.api.nvim_buf_delete(buf, { force = false })
+      end
+    end
+  end
+end, { desc = "Close All File Buffers" })
