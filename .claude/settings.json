@@ -15,5 +15,6 @@
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  }
+  },
+  "model": "sonnet[1m]"
 }
