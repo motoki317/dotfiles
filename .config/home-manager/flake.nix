@@ -22,7 +22,7 @@
           homeDirectory = "/home/moto";
         };
       };
-      # gmom M3 Pro
+      # Work MacBook Pro
       homeConfigurations."toki" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.aarch64-darwin;
         modules = [ ./hosts/macos.nix ];
