@@ -28,12 +28,6 @@
       if [ -f ~/.zshenv.local ]; then
         . ~/.zshenv.local
       fi
-
-      # pure (zsh theme)
-      fpath+=("$HOME/.zsh/pure")
-      autoload -U promptinit
-      promptinit
-      prompt pure
     '';
   };
 }
