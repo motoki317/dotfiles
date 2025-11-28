@@ -4,6 +4,9 @@
     enable = true;
     settings = {
       gcloud.disabled = true;
+      directory = {
+        truncation_length = 0;
+      };
       git_status = {
         modified = "~";
       };
