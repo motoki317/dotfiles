@@ -16,7 +16,10 @@
       # Windows Desktop (WSL2 Ubuntu)
       homeConfigurations."moto" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [ ./hosts/wsl.nix ];
+        modules = [
+          ./hosts/wsl.nix
+          ./hosts/common.nix
+        ];
         extraSpecialArgs = {
           username = "moto";
           homeDirectory = "/home/moto";
@@ -25,7 +28,10 @@
       # Work MacBook Pro
       homeConfigurations."toki" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.aarch64-darwin;
-        modules = [ ./hosts/macos.nix ];
+        modules = [
+          ./hosts/macos.nix
+          ./hosts/common.nix
+        ];
         extraSpecialArgs = {
           username = "toki";
           homeDirectory = "/Users/toki";
