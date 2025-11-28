@@ -9,4 +9,8 @@
       };
     };
   };
+
+  programs.fzf = {
+    enable = true;
+  };
 }
