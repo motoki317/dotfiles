@@ -12,6 +12,8 @@
 	name = motoki317
 	email = motoki317@gmail.com
 
+[fetch]
+  prune = true
 [push]
 	autoSetupRemote = true
 [merge]
