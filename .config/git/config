@@ -1,3 +1,8 @@
+[core]
+	autocrlf = input
+[init]
+	defaultBranch = main
+
 [commit]
 	gpgsign = true
 [gpg]
@@ -6,16 +11,13 @@
 	signingkey = ~/.ssh/id_ed25519
 	name = motoki317
 	email = motoki317@gmail.com
+
 [push]
 	autoSetupRemote = true
 [merge]
 	ff = false
 [pull]
 	ff = only
-[core]
-	autocrlf = input
-[init]
-	defaultBranch = main
 
 [url "git@github.com:"]
     insteadOf = https://github.com/
