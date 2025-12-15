@@ -15,6 +15,7 @@ with pkgs; [
   git
   go
   go-task
+  gonzo
   google-cloud-sdk
   hackgen-nf-font
   htop
