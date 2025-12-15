@@ -37,17 +37,5 @@
           homeDirectory = "/Users/toki";
         };
       };
-      # bashauma pc
-      homeConfigurations."bashauma" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-darwin;
-        modules = [
-          ./hosts/macos.nix
-          ./hosts/common.nix
-        ];
-        extraSpecialArgs = {
-          username = "bashauma";
-          homeDirectory = "/Users/bashauma";
-        };
-      };
     };
 }
