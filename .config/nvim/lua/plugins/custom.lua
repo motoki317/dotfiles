@@ -33,6 +33,22 @@ return {
     end,
   },
 
+  -- Lualine config
+  {
+    "nvim-lualine/lualine.nvim",
+    opts = {
+      sections = {
+        lualine_c = {
+          {
+            "filename",
+            path = 1,
+            shorting_target = 10,
+          },
+        },
+      },
+    },
+  },
+
   -- Nice LSP progress message
   { "j-hui/fidget.nvim" },
 
