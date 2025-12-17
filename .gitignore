@@ -6,6 +6,8 @@
 !/.claude/settings.json
 !/.claude/commands
 !/.claude/commands/**
+!/.claude/skills
+!/.claude/skills/**
 
 !/.config
 !/.config/git
