@@ -4,6 +4,8 @@
 .venv
 *.iml
 .devcontainer
+.envrc
+.direnv/
 
 **/.claude/settings.local.json
 .serena
