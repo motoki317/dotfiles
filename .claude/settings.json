@@ -12,6 +12,10 @@
     "type": "command",
     "command": "npx -y ccusage statusline"
   },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
