@@ -1,5 +1,8 @@
 { config, pkgs, username, homeDirectory, ... }:
 {
+  imports = [
+    ../common/tmux.nix
+  ];
   programs.starship = {
     enable = true;
     settings = {
