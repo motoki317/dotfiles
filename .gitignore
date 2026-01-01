@@ -1,7 +1,6 @@
 /*
 /.**
 
-!/.claude
 !/.claude/CLAUDE.md
 !/.claude/LICENSE.md
 !/.claude/settings.json
@@ -10,7 +9,6 @@
 !/.claude/skills
 !/.claude/skills/**
 
-!/.config
 !/.config/git
 !/.config/git/**
 !/.config/home-manager
