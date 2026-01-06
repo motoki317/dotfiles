@@ -1,11 +1,17 @@
 /*
 /.**
 
+!/.claude/
+/.claude/*
 !/.claude/CLAUDE.md
 !/.claude/LICENSE.md
 !/.claude/settings.json
-!/.claude/commands
+!/.claude/agents
+!/.claude/agents/**
+!/.claude/commands/
 !/.claude/commands/**
+!/.claude/scripts
+!/.claude/scripts/**
 !/.claude/skills
 !/.claude/skills/**
 
