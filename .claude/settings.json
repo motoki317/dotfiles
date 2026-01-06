@@ -15,7 +15,9 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "probitas@jsr-probitas": true
+    "probitas@jsr-probitas": true,
+    "serena@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
