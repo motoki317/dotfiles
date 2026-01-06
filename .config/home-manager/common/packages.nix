@@ -45,6 +45,7 @@ with pkgs; [
   tree-sitter
   treefmt
   unzip
+  uv
   vegeta
   vim
   wget
