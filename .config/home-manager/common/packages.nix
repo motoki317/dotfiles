@@ -40,6 +40,7 @@ with pkgs; [
   rsync
   skaffold
   sops
+  ssm-session-manager-plugin
   textlint
   tree
   tree-sitter
