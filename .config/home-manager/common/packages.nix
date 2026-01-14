@@ -50,6 +50,7 @@ with pkgs; [
   vegeta
   vim
   wget
+  witr
   yq-go
   zip
 ]
