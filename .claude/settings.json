@@ -6,7 +6,8 @@
       "Bash(rm -rf ~)",
       "Bash(rm -rf ~/*)",
       "Bash(rm -rf /*)"
-    ]
+    ],
+    "defaultMode": "default"
   },
   "statusLine": {
     "type": "command",
@@ -15,9 +16,9 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "probitas@jsr-probitas": true,
     "serena@claude-plugins-official": true,
-    "context7@claude-plugins-official": true
+    "context7@claude-plugins-official": true,
+    "probitas@jsr-probitas": false
   },
   "alwaysThinkingEnabled": true,
   "feedbackSurveyState": {
