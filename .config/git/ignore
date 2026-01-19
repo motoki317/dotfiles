@@ -1,11 +1,12 @@
-.idea
-.vscode
-.codex
-.venv
 *.iml
+.codex
 .devcontainer
-.envrc
 .direnv/
+.envrc
+.idea
+.local
+.venv
+.vscode
 
 **/.claude/settings.local.json
 .serena
