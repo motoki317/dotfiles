@@ -3,7 +3,7 @@
 # ---- Personal aliases
 alias lg=lazygit
 alias n=nvim
-alias claude-yolo='claude --dangerously-skip-permissions'
+alias cc='claude --dangerously-skip-permissions'
 alias docker-wrap='docker run --rm -it --workdir $(pwd) -v $(pwd):$(pwd) --network host --entrypoint bash'
 
 # k9s workaround
