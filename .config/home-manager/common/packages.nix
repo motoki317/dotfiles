@@ -1,8 +1,10 @@
 { pkgs }:
 with pkgs; [
+  _1password-cli
   age
   awscli2
   buf
+  cachix
   curl
   dive
   docker-buildx
