@@ -1,8 +1,13 @@
-{ config, pkgs, username, homeDirectory, ... }:
+{ config, pkgs, lib, username, homeDirectory, ... }:
 {
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "1password-cli"
+  ];
+
   imports = [
     ../common/tmux.nix
   ];
+
   programs.starship = {
     enable = true;
     settings = {
