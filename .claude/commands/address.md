@@ -18,7 +18,7 @@ source: https://github.com/kawarimidoll/dotfiles/commit/070c374426ff44d1167d9a53
 ### 引数の解釈
 
 - **無引数**: 直前の会話に含まれるレビュー内容を対象とする
-- **数値のみ**: PR番号として解釈し、`gh pr view <番号> --comments` でコメントを取得
+- **数値のみ**: PR番号として解釈し、`gh api /repos/foo/bar/pulls/番号/comments` でコメントを取得
 - **github.com を含むURL**: GitHub PR URLとして解釈し、PR番号を抽出してコメントを取得
 - **上記以外**: ファイルパスとして解釈し、レビュー内容が記載されたファイルを読み込む
 
