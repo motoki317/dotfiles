@@ -5,6 +5,7 @@ alias lg=lazygit
 alias n=nvim
 alias cy='claude --dangerously-skip-permissions'
 alias cr='claude --dangerously-skip-permissions --resume'
+alias cf='claude --dangerously-skip-permissions --resume --fork-session'
 alias docker-wrap='docker run --rm -it --workdir $(pwd) -v $(pwd):$(pwd) --network host --entrypoint bash'
 
 # k9s workaround
