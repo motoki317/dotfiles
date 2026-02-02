@@ -3,15 +3,20 @@ name: git-commit
 description: Stage meaningful diffs and create commits with WHY-focused messages. Use when agent needs to commit code changes.
 ---
 
-# INSTRUCTIONS
+# Git Commit
 
-Use `/git:commit` slash command to stage meaningful diffs and create commits with WHY-focused messages.
+Use `/git:commit` to stage meaningful diffs and create commits with WHY-focused messages.
 
-# DISCIPLINE
+## Commit Discipline
 
-- Only commit when:
-  1. ALL tests are passing
-  2. ALL compiler/linter warnings have been resolved
-  3. The change represents a single logical unit of work
-  4. Commit messages clearly state whether the commit contains structural or behavioral changes
-- Use small, frequent commits rather than large, infrequent ones
+Only commit when:
+1. ALL tests are passing
+2. ALL compiler/linter warnings resolved
+3. Change represents a single logical unit
+4. Message states whether structural or behavioral change
+
+## Best Practices
+
+- Small, frequent commits over large, infrequent ones
+- WHY-focused messages explaining the reason for change
+- Separate structural changes (refactor) from behavioral changes (feat/fix)

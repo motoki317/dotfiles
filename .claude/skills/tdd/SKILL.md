@@ -3,31 +3,35 @@ name: tdd
 description: Guide Test-Driven Development using Kent Beck's Red-Green-Refactor cycle. Use when writing tests, implementing features via TDD, or following plan.md test instructions.
 ---
 
-# INSTRUCTIONS
+# TDD (Test-Driven Development)
 
-Follow Kent Beck's TDD and Tidy First principles using the three-phase workflow:
+Kent Beck's Red-Green-Refactor cycle with Tidy First principles.
 
-1. **RED** - `/tdd:red` - Write ONE small failing test
-2. **GREEN** - `/tdd:green` - Make it pass with minimal code, then commit
-3. **REFACTOR** - `/tdd:refactor` - Improve structure without changing behavior, commit each step
-
-## Workflow Pattern
+## Workflow
 
 ```
-/tdd:red → write failing test → /tdd:green → pass test → /git:commit
-                                                              ↓
-        ← next feature ← /tdd:red ← satisfied? ← /tdd:refactor (repeat as needed)
+/tdd:red -> write failing test -> /tdd:green -> pass test -> /git:commit
+                                                                  |
+      <- next feature <- /tdd:red <- satisfied? <- /tdd:refactor (repeat)
 ```
+
+## Phases
+
+| Phase | Command | Action |
+|-------|---------|--------|
+| RED | `/tdd:red` | Write ONE small failing test |
+| GREEN | `/tdd:green` | Make it pass with minimal code, commit |
+| REFACTOR | `/tdd:refactor` | Improve structure (no behavior change), commit each step |
 
 ## Core Principles
 
 - **One test at a time**: Each RED adds exactly ONE failing test
-- **Minimal code**: GREEN phase writes just enough to pass
-- **Never skip REFACTOR**: Every TDD cycle must complete all three phases
+- **Minimal code**: GREEN writes just enough to pass
+- **Never skip REFACTOR**: Complete all three phases
 - **Tidy First**: Separate structural changes (refactor) from behavioral changes (feat/fix)
-- **Small commits**: Commit after GREEN, commit after EACH refactor step
+- **Small commits**: Commit after GREEN, commit after EACH refactor
 
-## Strategy Selection (GREEN Phase)
+## GREEN Phase Strategies
 
 | Confidence | Strategy | Use When |
 |------------|----------|----------|
