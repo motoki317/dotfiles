@@ -9,124 +9,75 @@ model: sonnet
 ### Working Directory Status
 !`git status --short`
 
-### Unstaged Changes (Summary)
+### Unstaged Changes
 !`git diff --stat`
 
-### Staged Changes (Summary)
+### Staged Changes
 !`git diff --cached --stat`
 
-### Recent Commits (for context and style reference)
+### Recent Commits
 !`git log --oneline -10`
 
 ### Current Branch
 !`git branch --show-current`
 
-## Task: Create a Meaningful Commit
+## Conventional Commits Format
 
-You are a commit crafting assistant following these principles:
-
-### 1. Conventional Commits 1.0.0 Specification
-
-Format:
 ```
-<type>[optional scope]: <description>
+<type>[scope]: <description>
 
-[optional body]
+[body: explain WHY]
 
-[optional footer(s)]
+[footer]
 ```
 
-**Types** (choose the most appropriate):
-- `fix:` - Bug fix (PATCH in SemVer)
-- `feat:` - New feature (MINOR in SemVer)
-- `build:` - Build system or external dependencies
-- `chore:` - Maintenance tasks, no production code change
-- `ci:` - CI configuration changes
-- `docs:` - Documentation only
-- `style:` - Code style (formatting, whitespace, etc.)
-- `refactor:` - Code restructuring without behavior change
-- `perf:` - Performance improvement
-- `test:` - Adding or correcting tests
+**Types**:
+- `fix:` Bug fix (PATCH)
+- `feat:` New feature (MINOR)
+- `refactor:` Code restructuring, no behavior change
+- `perf:` Performance improvement
+- `test:` Adding/correcting tests
+- `docs:` Documentation only
+- `style:` Formatting, whitespace
+- `build:` Build system, dependencies
+- `ci:` CI configuration
+- `chore:` Maintenance
 
-**Breaking Changes**: Append exclamation mark (!) after type/scope or include BREAKING CHANGE: footer
+**Breaking Changes**: Append `!` or add `BREAKING CHANGE:` footer
 
-### 2. Commit Message Philosophy (t-wada's Principle)
+## Commit Message Philosophy
 
 - **Code** describes HOW
-- **Tests** describe WHAT happens
+- **Tests** describe WHAT
 - **Commit log** describes **WHY**
-- **Code comments** describe WHY NOT
+- **Comments** describe WHY NOT
 
-The commit message body should explain the **reasoning** and **motivation** behind the change, not just repeat what the diff shows.
+## Workflow
 
-### 3. Workflow
+1. **Analyze**: Review changes, show detailed diffs if needed
+2. **Plan**: Group related changes, separate unrelated ones
+3. **Stage**: Use `git add -p` for partial staging when needed
+4. **Type**: Determine commit type from staged changes
+5. **Message**: Write imperative description (< 50 chars) + WHY in body
+6. **Commit**: Execute
 
-**Step 1: Analyze Changes**
-- Review all unstaged and staged changes
-- If needed, show detailed diffs: `git diff [file]` or `git diff --cached [file]`
-- Identify logical groupings of related changes
+## Quality Checklist
 
-**Step 2: Plan Staging Strategy**
-- Group changes that belong together conceptually
-- Separate unrelated changes into different commits
-- Consider: Does this change serve a single purpose?
-
-**Step 3: Stage Meaningfully**
-- Use `git add -p <file>` for partial staging when a file contains multiple logical changes
-- Use `git add <file>` for complete file staging
-- Verify staged content with `git diff --cached`
-
-**Step 4: Determine Commit Type**
-Analyze the staged changes:
-- Is it fixing a bug? -> `fix:`
-- Is it adding new functionality? -> `feat:`
-- Is it restructuring without behavior change? -> `refactor:`
-- Is it improving performance? -> `perf:`
-- Is it adding/fixing tests? -> `test:`
-- Is it documentation? -> `docs:`
-- etc.
-
-**Step 5: Craft the Commit Message**
-
-```
-<type>[scope]: <imperative description under 50 chars>
-
-<body: explain WHY this change was necessary>
-- What problem does this solve?
-- What was the motivation?
-- Why was this approach chosen over alternatives?
-
-[optional footer]
-```
-
-**Step 6: Execute Commit**
-```bash
-git commit -m "<type>[scope]: <description>" -m "<body explaining WHY>"
-```
-
-Or for complex messages, use the editor:
-```bash
-git commit
-```
-
-### 4. Quality Checklist
-
-Before committing, verify:
 - [ ] Staged changes are logically cohesive (single purpose)
-- [ ] Commit type accurately reflects the change nature
-- [ ] Description is imperative mood, under 50 characters
+- [ ] Commit type accurately reflects change nature
+- [ ] Description is imperative, under 50 characters
 - [ ] Body explains WHY, not just WHAT
-- [ ] No unrelated changes are included
-- [ ] Breaking changes are properly indicated
+- [ ] No unrelated changes included
+- [ ] Breaking changes properly indicated
 
-### 5. Examples of Good WHY-focused Messages
+## Examples
 
 ```
 feat(auth): add OAuth2 support for GitHub login
 
-Users requested GitHub authentication to avoid creating yet another
-account. OAuth2 was chosen over OAuth1 for its simpler flow and
-better security model with short-lived tokens.
+Users requested GitHub authentication to avoid creating another
+account. OAuth2 chosen over OAuth1 for simpler flow and better
+security with short-lived tokens.
 
 Closes #142
 ```
@@ -134,29 +85,9 @@ Closes #142
 ```
 fix(parser): handle empty input without panic
 
-The parser assumed non-empty input, causing crashes in edge cases
-reported by users processing automated pipelines where empty files
-occasionally appear. Defensive handling was added rather than
-requiring callers to validate, following the robustness principle.
+Parser assumed non-empty input, causing crashes in automated
+pipelines where empty files occasionally appear. Added defensive
+handling following the robustness principle.
 
 Fixes #87
 ```
-
-```
-refactor(db): extract connection pooling to dedicated module
-
-The database module had grown to 800+ lines, making it difficult
-to test connection logic in isolation. Extraction enables unit
-testing of pool behavior and prepares for upcoming multi-database
-support.
-```
-
-## Begin
-
-1. First, show me the detailed diff of changes that need to be committed
-2. Help me identify logical groupings
-3. Stage the appropriate changes
-4. Craft a WHY-focused commit message
-5. Execute the commit
-
-If there are multiple logical change sets, we'll create multiple commits, one at a time.
