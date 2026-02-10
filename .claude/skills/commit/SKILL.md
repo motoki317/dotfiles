@@ -1,11 +1,11 @@
 ---
-name: git-commit
+name: commit
 description: Stage meaningful diffs and create commits with WHY-focused messages. Use when agent needs to commit code changes.
 ---
 
 # Git Commit
 
-Use `/git:commit` to stage meaningful diffs and create commits with WHY-focused messages.
+Use `/commit` to stage meaningful diffs and create commits with WHY-focused messages.
 
 ## Commit Discipline
 
