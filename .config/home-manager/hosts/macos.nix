@@ -5,7 +5,11 @@
   home.homeDirectory = homeDirectory;
   home.stateVersion = "25.05";
 
-  home.packages = import ../common/packages.nix { inherit pkgs; };
+  home.packages = import ../common/packages.nix { inherit pkgs; }
+   ++
+   (with pkgs; [
+    lima
+   ]);
 
   home.file = {
     # Not needed with Docker Desktop
