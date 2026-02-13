@@ -21,6 +21,7 @@
     "probitas@jsr-probitas": false
   },
   "alwaysThinkingEnabled": true,
+  "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
   }
