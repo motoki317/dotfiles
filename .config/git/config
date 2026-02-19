@@ -16,6 +16,7 @@
   prune = true
 [push]
 	autoSetupRemote = true
+  useForceIfIncludes = true
 [merge]
 	ff = false
 [pull]
