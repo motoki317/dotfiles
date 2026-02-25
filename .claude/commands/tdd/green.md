@@ -65,7 +65,7 @@ def test_add_two_and_three():
 - [ ] Used appropriate strategy
 
 ## Commit
-GREEN = SAFE. Run `/git:commit` to save this checkpoint.
+GREEN = SAFE. Run `/commit` to save this checkpoint.
 
 ## Next
 After committing, proceed to `/tdd:refactor`.

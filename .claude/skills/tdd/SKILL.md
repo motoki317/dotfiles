@@ -10,7 +10,7 @@ Kent Beck's Red-Green-Refactor cycle with Tidy First principles.
 ## Workflow
 
 ```
-/tdd:red -> write failing test -> /tdd:green -> pass test -> /git:commit
+/tdd:red -> write failing test -> /tdd:green -> pass test -> /commit
                                                                   |
       <- next feature <- /tdd:red <- satisfied? <- /tdd:refactor (repeat)
 ```

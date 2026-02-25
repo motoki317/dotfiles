@@ -37,7 +37,7 @@ Look for:
 1. Identify ONE small improvement
 2. Make the change (< 20 lines)
 3. Run ALL tests
-4. Pass? → /git:commit with "refactor:"
+4. Pass? → /commit with "refactor:"
 5. Fail? → Revert immediately, take smaller step
 6. More improvements? → Repeat
 7. Satisfied? → /tdd:red for next cycle
