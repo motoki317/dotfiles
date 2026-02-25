@@ -9,5 +9,6 @@
 .vscode
 
 **/.claude/settings.local.json
+**/.claude/plans
 .serena
 
