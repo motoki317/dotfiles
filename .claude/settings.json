@@ -17,8 +17,7 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "serena@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "probitas@jsr-probitas": false
+    "context7@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
