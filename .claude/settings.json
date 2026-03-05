@@ -23,5 +23,6 @@
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  }
+  },
+  "effortLevel": "high"
 }
