@@ -93,7 +93,7 @@ return {
       {
         "<leader>ys",
         function()
-          require("schema-companyyion").select_schema()
+          require("schema-companion").select_schema()
         end,
         desc = "Select YAML Schema",
       },
