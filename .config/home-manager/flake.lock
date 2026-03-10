@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "ha": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771642436,
+        "narHash": "sha256-SM+vkMNYToxh5nBmoU44ERIlSWzZPg5co6+8fuxrkl8=",
+        "owner": "kawarimidoll",
+        "repo": "ha",
+        "rev": "cac6373719b6dc17410ed7dd42a6a814787bfb21",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kawarimidoll",
+        "repo": "ha",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -38,6 +54,7 @@
     },
     "root": {
       "inputs": {
+        "ha": "ha",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs"
       }

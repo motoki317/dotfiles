@@ -8,10 +8,14 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    ha = {
+      url = "github:kawarimidoll/ha";
+      flake = false;
+    };
   };
 
   outputs =
-    { nixpkgs, home-manager, ... }:
+    { nixpkgs, home-manager, ... }@inputs:
     {
       # Windows Desktop (WSL2 Ubuntu)
       homeConfigurations."moto" = home-manager.lib.homeManagerConfiguration {
@@ -21,6 +25,7 @@
           ./hosts/common.nix
         ];
         extraSpecialArgs = {
+          inherit inputs;
           username = "moto";
           homeDirectory = "/home/moto";
         };
@@ -33,6 +38,7 @@
           ./hosts/common.nix
         ];
         extraSpecialArgs = {
+          inherit inputs;
           username = "toki";
           homeDirectory = "/Users/toki";
         };
