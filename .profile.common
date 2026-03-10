@@ -8,6 +8,10 @@ alias cr='claude --dangerously-skip-permissions --resume'
 alias cf='claude --dangerously-skip-permissions --resume --fork-session'
 alias docker-wrap='docker run --rm -it --workdir $(pwd) -v $(pwd):$(pwd) --network host --entrypoint bash'
 
+# When invoked as $EDITOR (git commit, kubectl edit, etc.), set a flag
+# so nvim config can skip UI like Neo-tree. See lua/plugins/custom.lua.
+export EDITOR='nvim --cmd "let g:launched_as_editor=1"'
+
 # k9s workaround
 # https://github.com/derailed/k9s/issues/2725
 # https://github.com/derailed/k9s/issues/2602#issuecomment-1984103935
