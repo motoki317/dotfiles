@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, homeDirectory, ... }:
+{ config, pkgs, lib, username, homeDirectory, inputs, ... }:
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     "1password-cli"
@@ -38,4 +38,13 @@
     nix-direnv.enable = true;
     silent = true;
   };
+
+  # ha - git worktree manager (sourced as shell functions)
+  programs.zsh.initContent = ''
+    source ${inputs.ha}/ha.sh
+    compdef _ha ha
+  '';
+  programs.bash.initExtra = ''
+    source ${inputs.ha}/ha.sh
+  '';
 }

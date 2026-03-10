@@ -12,3 +12,5 @@
 **/.claude/plans
 .serena
 .mcp.json
+
+.ha
