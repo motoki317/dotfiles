@@ -24,10 +24,13 @@ return {
     },
     config = function(_, opts)
       require("neo-tree").setup(opts)
-      -- Always show neotree on startup
+      -- Show Neo-tree on startup, but not when launched as $EDITOR
+      -- (g:launched_as_editor is set via --cmd flag in $EDITOR env var, see .profile.common)
       vim.api.nvim_create_autocmd("VimEnter", {
         callback = function()
-          vim.cmd("Neotree show")
+          if not vim.g.launched_as_editor then
+            vim.cmd("Neotree show")
+          end
         end,
       })
     end,
