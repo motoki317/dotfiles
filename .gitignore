@@ -5,7 +5,6 @@
 /.claude/*
 !/.claude/CLAUDE.md
 !/.claude/LICENSE.md
-!/.claude/RTK.md
 !/.claude/settings.json
 !/.claude/agents
 !/.claude/agents/**
@@ -13,8 +12,6 @@
 !/.claude/commands/**
 !/.claude/scripts
 !/.claude/scripts/**
-!/.claude/hooks
-!/.claude/hooks/**
 !/.claude/skills
 !/.claude/skills/**
 

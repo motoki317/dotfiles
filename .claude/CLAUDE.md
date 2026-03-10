@@ -25,5 +25,3 @@
 - Memory not found → document gap, investigate
 - Conflicting outputs → flag uncertainty to user
 - Security/destructive risk → BLOCK and require acknowledgment
-
-@RTK.md
