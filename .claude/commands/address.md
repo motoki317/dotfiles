@@ -25,7 +25,20 @@ Review PR comments, critically evaluate each suggestion, and implement only tech
    - Does it align with project conventions?
    - Is it a reasonable implementation tradeoff?
 3. Implement only justified fixes
-4. Output summary
+4. Reply to each review comment on GitHub (see Reply section)
+5. Output summary
+
+# Reply to Review Comments
+After evaluating and implementing fixes, reply to **each** review comment on GitHub via:
+```
+gh api repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies -f body="<reply>"
+```
+
+Reply guidelines:
+- **Addressed**: Briefly explain the fix applied (e.g., "対応しました。`COMMENT ON COLUMN` を追加しています。")
+- **Not addressed**: Explain why with clear technical reasoning (e.g., "こちらは意図的な設計です。理由: ...")
+- Keep replies concise and in Japanese
+- Include relevant code snippets or references when helpful
 
 # Output Format
 ```markdown
@@ -36,14 +49,14 @@ Review PR comments, critically evaluate each suggestion, and implement only tech
 - [ ] Comment 2 summary
 
 ### Addressed
-| Comment | Fix Applied |
-|---------|-------------|
-| Comment 1 | Description of change |
+| Comment | Fix Applied | Reply |
+|---------|-------------|-------|
+| Comment 1 | Description of change | Reply sent |
 
 ### Not Addressed
-| Comment | Reason |
-|---------|--------|
-| Comment X | Why it was declined |
+| Comment | Reason | Reply |
+|---------|--------|-------|
+| Comment X | Why it was declined | Reply sent |
 ```
 
 # Rules
@@ -51,3 +64,4 @@ Review PR comments, critically evaluate each suggestion, and implement only tech
 - Independently evaluate technical validity
 - When declining, provide clear reasoning the reviewer can accept
 - Verify fixes don't introduce new issues
+- Always reply to every review comment on GitHub after evaluation
