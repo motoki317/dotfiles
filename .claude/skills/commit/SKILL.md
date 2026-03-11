@@ -1,22 +1,48 @@
 ---
 name: commit
 description: Stage meaningful diffs and create commits with WHY-focused messages. Use when agent needs to commit code changes.
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git restore:*), Bash(git show:*)
+model: sonnet
 ---
 
 # Git Commit
 
-Use `/commit` to stage meaningful diffs and create commits with WHY-focused messages.
+## Context
 
-## Commit Discipline
+!`git status --short`
+!`git diff --stat`
+!`git diff --cached --stat`
+!`git log --oneline -10`
+!`git branch --show-current`
 
-Only commit when:
-1. ALL tests are passing
-2. ALL compiler/linter warnings resolved
-3. Change represents a single logical unit
-4. Message states whether structural or behavioral change
+## Conventional Commits
 
-## Best Practices
+```
+<type>[scope]: <imperative description, < 50 chars>
 
-- Small, frequent commits over large, infrequent ones
-- WHY-focused messages explaining the reason for change
-- Separate structural changes (refactor) from behavioral changes (feat/fix)
+[body: explain WHY, not WHAT]
+
+[footer]
+```
+
+**Types**: `feat:` (MINOR) | `fix:` (PATCH) | `refactor:` | `perf:` | `test:` | `docs:` | `style:` | `build:` | `ci:` | `chore:`
+**Breaking Changes**: Append `!` or add `BREAKING CHANGE:` footer
+
+## Workflow
+
+1. **Analyze** — Review diffs; ensure tests pass and warnings are resolved
+2. **Group** — One commit per logical unit; separate structural (refactor) from behavioral (feat/fix) changes; use `git add -p` for partial staging
+3. **Write** — Imperative description + WHY in body (code=HOW, tests=WHAT, commit=WHY, comments=WHY NOT)
+4. **Commit**
+
+## Example
+
+```
+feat(auth): add OAuth2 support for GitHub login
+
+Users requested GitHub authentication to avoid creating another
+account. OAuth2 chosen over OAuth1 for simpler flow and better
+security with short-lived tokens.
+
+Closes #142
+```
