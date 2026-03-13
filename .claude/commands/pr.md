@@ -47,8 +47,11 @@ Identify:
 
 **Body**: Use this template:
 ```markdown
+## Motivation
+Why this PR is needed — the problem, user pain, or business context driving the change.
+
 ## Summary
-- Bullet points explaining WHAT and WHY
+- Bullet points explaining WHAT changed
 
 ## Changes
 - Key changes grouped by logical unit
