@@ -20,9 +20,9 @@
     "context7@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "effortLevel": "high"
+  }
 }
