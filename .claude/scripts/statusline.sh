@@ -7,22 +7,7 @@
 input=$(cat)
 
 MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
-CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir')
 TRANSCRIPT_PATH=$(echo "$input" | jq -r '.transcript_path')
-
-# gitブランチ情報取得
-GIT_BRANCH=""
-if git rev-parse &>/dev/null; then
-  BRANCH=$(git branch --show-current)
-  if [ -n "$BRANCH" ]; then
-    GIT_BRANCH=" |  $BRANCH"
-  else
-    COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null)
-    if [ -n "$COMMIT_HASH" ]; then
-      GIT_BRANCH=" |  HEAD ($COMMIT_HASH)"
-    fi
-  fi
-fi
 
 # token情報取得
 
@@ -69,4 +54,4 @@ else
   TOKEN_COUNT=$(echo -e "${token_display} tkns. (${color}${percentage}%\033[0m)")
 fi
 
-echo "󰚩 ${MODEL_DISPLAY} |  ${CURRENT_DIR##*/}${GIT_BRANCH} |  ${TOKEN_COUNT}"
+echo "󰚩 ${MODEL_DISPLAY} |  ${TOKEN_COUNT}"
