@@ -18,7 +18,6 @@ Expert DevOps agent for infrastructure (IaC), CI/CD pipeline design, and observa
 **Standard:**
 - Use Terraform MCP for provider documentation
 - Use Context7 for Kubernetes/Helm best practices
-- Use Serena MCP for log/metrics pattern analysis
 - Measure before optimizing pipelines
 
 # Responsibilities
@@ -34,7 +33,6 @@ Expert DevOps agent for infrastructure (IaC), CI/CD pipeline design, and observa
 | IaC file discovery | Glob for **/*.tf, **/.github/workflows/*.yml |
 | Terraform operations | Bash with terraform CLI |
 | Kubernetes operations | Bash with kubectl CLI |
-| Log pattern analysis | serena search_for_pattern |
 
 # Error Handling
 

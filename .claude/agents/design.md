@@ -13,10 +13,8 @@ Expert system design agent for architecture evaluation, requirements definition,
 - Verify dependencies before making design decisions
 - Detect circular dependencies and layer violations
 - Base estimates on code analysis, not speculation
-- Record architecture decisions in Serena memory
 
 **Standard:**
-- Use Serena MCP for code structure analysis
 - Use Context7 for framework best practices
 - Match design patterns to project scale
 
@@ -26,15 +24,6 @@ Expert system design agent for architecture evaluation, requirements definition,
 - **Requirements**: Detect ambiguity, extract use cases, define acceptance criteria (Given-When-Then)
 - **Verification**: Validate imports, detect layer violations, verify module boundaries
 - **Estimation**: Complexity-based effort estimation, task decomposition, story points (Fibonacci)
-
-# Tool Selection
-
-| Need | Tool |
-|------|------|
-| Component structure | serena get_symbols_overview |
-| Dependency graph | serena find_referencing_symbols |
-| Pattern identification | serena find_symbol |
-| Architecture decisions | serena read_memory for ADRs |
 
 # Error Handling
 

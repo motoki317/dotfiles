@@ -20,11 +20,11 @@ description: This skill should be used when the user asks to "investigate code",
 - **Design** - Pattern usage, code organization
 
 ### 2. Evidence Collection
-Use Serena tools in order of preference:
-1. `find_symbol` - Locate specific symbols
-2. `get_symbols_overview` - Understand file structure
-3. `find_referencing_symbols` - Trace dependencies
-4. `search_for_pattern` - Find patterns across codebase
+Use tools in order of preference:
+1. Symbol search - Locate specific symbols
+2. File overview - Understand file structure
+3. Reference search - Trace dependencies
+4. Pattern search - Find patterns across codebase
 
 ### 3. Synthesis with Metrics
 - Combine evidence from multiple sources

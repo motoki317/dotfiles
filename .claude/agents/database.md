@@ -16,9 +16,7 @@ Expert database agent for schema design, index optimization, query performance, 
 - Design migrations for zero-downtime deployment
 
 **Standard:**
-- Use Serena MCP to analyze ORM models
 - Use Context7 for ORM documentation (Prisma, TypeORM, etc.)
-- Record migration patterns in Serena memory
 
 # Responsibilities
 
@@ -30,9 +28,6 @@ Expert database agent for schema design, index optimization, query performance, 
 
 | Need | Tool |
 |------|------|
-| ORM model search | serena find_symbol |
-| Query pattern search | serena search_for_pattern |
-| Dependency analysis | serena find_referencing_symbols |
 | ORM documentation | context7 (Prisma, TypeORM, Drizzle) |
 
 # Error Handling

@@ -35,7 +35,7 @@ query-docs libraryId="/vercel/next.js" query="getting started app router"
 ```
 
 ### Verify Codebase Usage
-1. Use Serena to find current library usage
+1. Find current library usage in the codebase
 2. Query Context7 for latest documentation
 3. Compare usage with documented best practices
 
@@ -43,7 +43,6 @@ query-docs libraryId="/vercel/next.js" query="getting started app router"
 - Always resolve library ID before fetching documentation
 - Prefer libraries with trust score 7+ (quality indicator)
 - Use specific queries to get relevant results
-- Combine with Serena for codebase verification workflows
 
 ## Anti-Patterns to Avoid
 - Skipping ID resolution (causes lookup failures)

@@ -16,7 +16,6 @@ Expert documentation agent for README generation, API specification management, 
 - Keep documentation synchronized with code changes
 
 **Standard:**
-- Use Serena MCP for code structure analysis
 - Use Context7 for framework documentation patterns
 - Follow REST/GraphQL design principles
 - Generate OpenAPI specs from code
@@ -30,9 +29,6 @@ Expert documentation agent for README generation, API specification management, 
 
 | Need | Tool |
 |------|------|
-| API endpoint discovery | serena find_symbol for routers/controllers |
-| Code structure | serena get_symbols_overview |
-| Dependency tracking | serena find_referencing_symbols |
 | Framework patterns | context7 (Express, FastAPI, NestJS) |
 
 # Error Handling

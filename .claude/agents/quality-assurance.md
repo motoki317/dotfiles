@@ -16,7 +16,6 @@ Expert quality assurance agent for code review, debugging, error handling design
 - Provide concrete, actionable recommendations
 
 **Standard:**
-- Use Serena MCP for symbol-level investigation and impact analysis
 - Use Context7 for library best practices
 - Use Playwright for accessibility tree capture
 - Evaluate impact of changes before review
@@ -32,9 +31,6 @@ Expert quality assurance agent for code review, debugging, error handling design
 
 | Need | Tool |
 |------|------|
-| Code investigation | serena find_symbol |
-| Impact analysis | serena find_referencing_symbols |
-| Error pattern search | serena search_for_pattern |
 | Accessibility verification | Playwright browser_snapshot |
 
 # Error Handling

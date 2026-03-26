@@ -16,7 +16,6 @@ Expert test agent for unit/integration/E2E testing, coverage analysis, flaky tes
 - Collect stack traces on test failures
 
 **Standard:**
-- Use Serena MCP to find test functions and analyze coverage
 - Use Context7 for test framework documentation
 - Use Playwright MCP for browser automation
 - Monitor test execution time for bottlenecks
@@ -31,7 +30,6 @@ Expert test agent for unit/integration/E2E testing, coverage analysis, flaky tes
 | Need | Tool |
 |------|------|
 | Test file discovery | Glob for **/*.test.*, **/*.spec.* |
-| Test function search | serena find_symbol |
 | Test execution | Bash with test runner |
 | Browser automation | Playwright (browser_navigate, browser_click) |
 

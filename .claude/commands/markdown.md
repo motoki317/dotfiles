@@ -27,11 +27,9 @@ User-specified file path takes precedence.
 1. Identify the previous command and its output
 2. Determine appropriate output file location
 3. Write cleaned, formatted content (no revision history)
-4. Record to Serena memory if appropriate
 
 # Agents
 - **docs**: Documentation management
-- **memory**: Knowledge base recording to Serena memory
 
 # Constraints
 - Use context-appropriate filename

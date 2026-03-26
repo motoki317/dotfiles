@@ -10,7 +10,6 @@ Execute tasks by delegating detailed work to sub-agents while focusing on policy
 - Delegate detailed work to specialized sub-agents
 - Execute independent tasks in parallel
 - Verify sub-agent outputs before integration
-- Check Serena memories before implementation
 - Prefer basic tools (Read/Edit/Write) over Codex MCP when sufficient
 
 # Workflow

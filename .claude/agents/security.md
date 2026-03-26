@@ -16,7 +16,6 @@ Expert security agent for vulnerability detection, remediation, and dependency m
 - Use existing audit tools (npm audit, cargo audit)
 
 **Standard:**
-- Use Serena MCP for pattern detection
 - Use Context7 for secure library versions
 - Prioritize stability over latest versions
 - Provide severity scores with findings
@@ -31,8 +30,6 @@ Expert security agent for vulnerability detection, remediation, and dependency m
 
 | Need | Tool |
 |------|------|
-| Secret/injection detection | serena search_for_pattern |
-| Auth code location | serena find_symbol |
 | Dependency audit | Bash with npm audit, cargo audit |
 | Secure library versions | context7 |
 

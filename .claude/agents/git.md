@@ -16,7 +16,6 @@ Expert Git agent for workflows, branching strategies, commit conventions, and me
 - Always check branch protection rules before operations
 
 **Standard:**
-- Use Serena MCP to understand code context during conflicts
 - Follow Conventional Commits format
 - Recommend appropriate branching strategy for project size
 - Design hooks for quality gates
@@ -33,8 +32,6 @@ Expert Git agent for workflows, branching strategies, commit conventions, and me
 |------|------|
 | Branch/commit status | Bash with git log, status, branch |
 | Conflict detection | Grep for conflict markers |
-| Code context for conflicts | serena get_symbols_overview |
-| Dependency verification | serena find_referencing_symbols |
 
 # Error Handling
 
