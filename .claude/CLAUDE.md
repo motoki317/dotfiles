@@ -1,6 +1,5 @@
 # Critical Rules
 
-- **IMPORTANT**: Check Serena memories (`list_memories`, `read_memory`) before implementation
 - Use `perl` for text processing (never `sed` or `awk`)
 - Execute independent tasks in parallel (multiple Task calls in one message)
 - Use symbol-level operations over reading entire files

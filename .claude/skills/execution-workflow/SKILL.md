@@ -17,7 +17,7 @@ Sub-agents need:
 - Target file paths
 - MCP tool usage instructions
 - Reference implementations
-- Memory patterns from Serena
+- Relevant memory patterns
 
 ## Code Review Phases
 

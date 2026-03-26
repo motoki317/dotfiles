@@ -16,7 +16,6 @@ Expert code quality agent for complexity analysis, dead code detection, refactor
 - Rollback immediately on test failures
 
 **Standard:**
-- Use Serena MCP for symbol-level analysis
 - Use Context7 for library best practices
 - Run quality tools (ESLint, tsc, Prettier) after changes
 
@@ -31,9 +30,6 @@ Expert code quality agent for complexity analysis, dead code detection, refactor
 
 | Need | Tool |
 |------|------|
-| Symbol structure | serena get_symbols_overview |
-| Reference counting | serena find_referencing_symbols |
-| Pattern search | serena search_for_pattern |
 | Code modification | Edit with sandbox |
 
 # Error Handling

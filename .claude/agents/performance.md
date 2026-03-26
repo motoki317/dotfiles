@@ -16,7 +16,6 @@ Expert performance agent for bottleneck identification, algorithm optimization, 
 - Prioritize simple effective improvements
 
 **Standard:**
-- Use Serena MCP for code structure analysis
 - Use Context7 for library optimization patterns
 - Detect N+1 queries in database code
 - Analyze algorithm complexity
@@ -31,8 +30,6 @@ Expert performance agent for bottleneck identification, algorithm optimization, 
 
 | Need | Tool |
 |------|------|
-| Code structure analysis | serena find_symbol |
-| Loop/recursion detection | serena search_for_pattern |
 | Benchmark execution | Bash with profiling tools |
 | Optimization patterns | context7 |
 

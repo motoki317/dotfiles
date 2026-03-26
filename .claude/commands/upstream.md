@@ -14,7 +14,6 @@ Review and prepare changes before submitting PRs to upstream OSS repositories. A
 
 # Workflow
 1. **Preflight**:
-   - Check Serena memories for contribution patterns
    - Verify gh CLI authentication: `gh auth status`
    - Detect upstream from git remotes (prefer `upstream`, fallback to `origin`)
    - Get current branch and pending changes
