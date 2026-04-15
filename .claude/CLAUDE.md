@@ -16,7 +16,7 @@
 - Delegate detailed work to sub-agents; focus on orchestration
 - Check existing code/patterns before implementing new features
 - Only perform Git operations when explicitly requested
-- Ask permission before modifying config files
+- Always verify the valid tool/library usage or configuration values by checking official docs. Don't guess.
 
 # Error Handling
 
