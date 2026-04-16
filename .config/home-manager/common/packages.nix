@@ -5,7 +5,7 @@ with pkgs; [
   awscli2
   buf
   cachix
-  claude-code
+  # claude-code
   curl
   dive
   docker-buildx

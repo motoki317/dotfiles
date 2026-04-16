@@ -18,6 +18,9 @@ export EDITOR='nvim --cmd "let g:launched_as_editor=1"'
 export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
+# Claude Code native
+export PATH="$PATH:$HOME/.local/bin"
+
 # Go bin
 export PATH="$PATH:$HOME/go/bin"
 
