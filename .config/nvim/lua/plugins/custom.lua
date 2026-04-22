@@ -24,11 +24,36 @@ return {
     },
     config = function(_, opts)
       require("neo-tree").setup(opts)
-      -- Show Neo-tree on startup, but not when launched as $EDITOR
-      -- (g:launched_as_editor is set via --cmd flag in $EDITOR env var, see .profile.common)
+      -- Show Neo-tree on startup, but not when launched as another tool's $EDITOR.
+      -- Detected from argv shape rather than an env flag, since some launchers
+      -- (e.g. Claude Code's Ctrl+G) tokenize $EDITOR naively and lose embedded args.
+      local function launched_as_editor()
+        if vim.fn.argc() ~= 1 then
+          return false
+        end
+        local arg = vim.fn.fnamemodify(vim.fn.argv(0), ":p")
+        if arg:match("COMMIT_EDITMSG$")
+          or arg:match("MERGE_MSG$")
+          or arg:match("TAG_EDITMSG$")
+          or arg:match("git%-rebase%-todo$")
+          or arg:match("addp%-hunk%-edit%.diff$") then
+          return true
+        end
+        -- Strip macOS /private symlink prefix so /private/var/folders/... → /var/folders/...
+        local normalized = arg:gsub("^/private/", "/")
+        local tmpdir = vim.env.TMPDIR
+        if tmpdir and tmpdir ~= "" then
+          local stripped = tmpdir:gsub("^/private/", "/")
+          if normalized:sub(1, #stripped) == stripped then
+            return true
+          end
+        end
+        return normalized:match("^/tmp/") ~= nil
+          or normalized:match("^/var/folders/") ~= nil
+      end
       vim.api.nvim_create_autocmd("VimEnter", {
         callback = function()
-          if not vim.g.launched_as_editor then
+          if not launched_as_editor() then
             vim.cmd("Neotree show")
           end
         end,
