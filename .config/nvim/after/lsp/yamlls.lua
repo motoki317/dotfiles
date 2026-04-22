@@ -13,7 +13,7 @@ return require("schema-companion").setup_client(
     settings = {
       yaml = {
         validate = true,
-        format = { enable = true },
+        format = { enable = false },
         hover = true,
         completion = true,
       },
