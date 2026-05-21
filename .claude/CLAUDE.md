@@ -16,6 +16,7 @@
 - **GitHub**: Use `gh` CLI for all operations (PRs, issues, repos)
 - **Docs**: Use Context7 MCP to verify latest library documentation
 - **Missing commands**: Retry with `nix run nixpkgs#<command>`
+- **Long output**: Save with `<cmd> | tee /tmp/<name>.log` first, then grep the file. Lets you refine filters or inspect surrounding context without re-running the source command.
 
 # Workflow
 
