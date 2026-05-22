@@ -9,16 +9,6 @@ input=$(cat)
 MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
 TRANSCRIPT_PATH=$(echo "$input" | jq -r '.transcript_path')
 
-# display_name is the only stdin field that exposes the 1M variant — the
-# transcript's .model field strips the [1m] suffix and can't be used here.
-if [[ "$MODEL_DISPLAY" == *"1M"* ]]; then
-  CONTEXT_MAX=1000000
-else
-  CONTEXT_MAX=200000
-fi
-# 85% matches Claude Code's current auto-compact default (~83.5%, rounded).
-COMPACTION_THRESHOLD=$((CONTEXT_MAX * 85 / 100))
-
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
   TOKEN_COUNT="_ tkns"
 else
@@ -43,26 +33,16 @@ else
     token_display="$total_tokens"
   fi
 
-  # 1M models degrade well before compaction (Chroma context-rot research:
-  # quality drops past ~300K, retrieval unreliable past ~600K), so color
-  # tracks quality risk on 1M and compaction proximity on legacy 200k.
-  if [ "$CONTEXT_MAX" -eq 1000000 ]; then
-    if [ "$total_tokens" -ge 600000 ]; then
-      color="\033[31m"
-    elif [ "$total_tokens" -ge 300000 ]; then
-      color="\033[33m"
-    else
-      color="\033[32m"
-    fi
+  # Color tracks output-quality risk, not compaction proximity: Chroma
+  # context-rot research shows quality drops past ~300K and retrieval
+  # becomes unreliable past ~600K on 1M-context Claude variants. All
+  # current Claude models surface a 1M-context window, so no branching.
+  if [ "$total_tokens" -ge 600000 ]; then
+    color="\033[31m"
+  elif [ "$total_tokens" -ge 300000 ]; then
+    color="\033[33m"
   else
-    percentage=$((total_tokens * 100 / COMPACTION_THRESHOLD))
-    if [ "$percentage" -ge 90 ]; then
-      color="\033[31m"
-    elif [ "$percentage" -ge 70 ]; then
-      color="\033[33m"
-    else
-      color="\033[32m"
-    fi
+    color="\033[32m"
   fi
 
   TOKEN_COUNT=$(echo -e "${color}${token_display}\033[0m tkns")
