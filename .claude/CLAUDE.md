@@ -9,7 +9,7 @@
 
 - Codes should explain itself, HOW things are done
 - Test codes should explain WHAT the code does
-- Code comments and commit messages should explain WHY a code exists and WHY NOT a feature / an alternative was not selected
+- Code comments and commit messages should explain WHY a code exists and WHY NOT a feature / an alternative was not selected — keep them minimal: capture only essential, non-obvious design decisions and avoid unnecessary length
 
 # Tool Usage
 
