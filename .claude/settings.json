@@ -20,6 +20,7 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "autoCompactWindow": 450000,
   "skipDangerousModePermissionPrompt": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
