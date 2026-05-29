@@ -22,8 +22,8 @@
   "effortLevel": "high",
   "autoCompactWindow": 450000,
   "skipDangerousModePermissionPrompt": true,
+  "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "remoteControlAtStartup": false
+  }
 }
