@@ -35,6 +35,7 @@ with pkgs; [
   lua
   luajitPackages.luarocks
   neovim
+  ngrok
   nodejs_24
   omekasy
   opentofu
