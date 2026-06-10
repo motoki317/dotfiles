@@ -9,6 +9,7 @@
     ],
     "defaultMode": "default"
   },
+  "model": "claude-fable-5[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/scripts/statusline.sh"
@@ -19,7 +20,7 @@
     "context7@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "autoCompactWindow": 450000,
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
