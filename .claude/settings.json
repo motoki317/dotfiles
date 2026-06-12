@@ -9,7 +9,6 @@
     ],
     "defaultMode": "default"
   },
-  "model": "claude-fable-5[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/scripts/statusline.sh"
@@ -26,5 +25,6 @@
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  }
+  },
+  "model": "claude-fable-5[1m]"
 }
