@@ -2,6 +2,7 @@
 with pkgs; [
   _1password-cli
   age
+  agent-browser
   awscli2
   buf
   cachix
