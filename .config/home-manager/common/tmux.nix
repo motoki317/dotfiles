@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, clipboardCommand, ... }:
 {
   programs.tmux = {
     enable = true;
@@ -48,9 +48,11 @@
 
       bind -n WheelUpPane if-shell -F -t = "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -M' 'copy-mode -e'"
 
+      # clipboard tool is provided per-host (hosts/wsl.nix, hosts/macos.nix)
+      set -s copy-command "${clipboardCommand}"
       bind-key -T copy-mode-vi v send-keys -X begin-selection
-      bind-key -T copy-mode-vi y send-keys -X copy-pipe "pbcopy"
-      bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "pbcopy"
+      bind-key -T copy-mode-vi y send-keys -X copy-pipe
+      bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel
     '';
   };
 }
