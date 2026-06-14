@@ -5,6 +5,9 @@
   home.homeDirectory = homeDirectory;
   home.stateVersion = "25.05";
 
+  # tmux clipboard tool consumed by common/tmux.nix
+  _module.args.clipboardCommand = "pbcopy";
+
   home.packages = import ../common/packages.nix { inherit pkgs; }
    ++
    (with pkgs; [
