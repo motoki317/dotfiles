@@ -7,6 +7,12 @@ with pkgs; [
   buf
   cachix
   # claude-code
+  # Short PATH alias for the self-building Codex review helper. It execs the source
+  # in ~/.claude (synced across machines) rather than a nix-built binary, so edits
+  # take effect on the next call without a home-manager rebuild.
+  (writeShellScriptBin "codex-consult" ''
+    exec sh "$HOME/.claude/skills/codex-advisor/scripts/codex-consult.go" "$@"
+  '')
   curl
   dive
   docker-buildx

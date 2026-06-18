@@ -30,6 +30,12 @@
 - Only perform Git operations when explicitly requested
 - Always verify the valid tool/library usage or configuration values by checking official docs. Don't guess.
 
+# Cross-Model Review (Codex)
+
+- Consult the `codex-advisor` skill on your own initiative for an independent, cross-model second opinion. Its value is the outside view: reach for it when a decision is genuinely uncertain or hard to reverse, when you and the built-in Claude advisor diverge, or before finishing non-trivial work — and skip it for routine or mechanical work, which only burns quota.
+- Keep consults read-only by default so an unattended one cannot change your tree; reserve the full-access `cdy` alias for when you are explicitly asked to have Codex apply changes.
+- Treat the verdict as a peer's, not an oracle's — weigh it against your own view and the advisor's, and surface genuine disagreement to the user.
+
 # Error Handling
 
 - Sub-agent fails → retry with alternative agent
