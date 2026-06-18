@@ -11,6 +11,11 @@
 - Test codes should explain WHAT the code does
 - Code comments and commit messages should explain WHY a code exists and WHY NOT a feature / an alternative was not selected — keep them minimal: capture only essential, non-obvious design decisions and avoid unnecessary length
 
+# Writing
+
+- Use the `japanese-tech-writing` skill when writing prose for human readers — code comments (any language), reports, and PR/issue descriptions. Its norms (one topic per paragraph, rigorous argument, no LLM filler, no redundancy) apply beyond Japanese.
+- Always invoke it for Japanese technical prose, and when revising existing prose.
+
 # Tool Usage
 
 - **GitHub**: Use `gh` CLI for all operations (PRs, issues, repos)
