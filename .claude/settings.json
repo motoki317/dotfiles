@@ -21,6 +21,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "autoCompactWindow": 450000,
+  "advisorModel": "opus",
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
