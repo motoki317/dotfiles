@@ -15,6 +15,7 @@
 
 - Use the `japanese-tech-writing` skill when writing prose for human readers — code comments (any language), reports, and PR/issue descriptions. Its norms (one topic per paragraph, rigorous argument, no LLM filler, no redundancy) apply beyond Japanese.
 - Always invoke it for Japanese technical prose, and when revising existing prose.
+- Write so meaning outlives the session. Context from the current conversation makes your prose feel clear as you write; however, the next reader — human or fresh agent — has none of it, so distrust that clarity. Anchor every comment, commit, PR, and report to repository-visible facts, not to a session-relative role: rewrite a pointer like "the new logic" as the thing it computes. Test each line by whether a reader with only it, and no memory of today, could recover its meaning.
 
 # Tool Usage
 
