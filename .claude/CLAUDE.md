@@ -13,14 +13,13 @@
 
 # Writing
 
-- Use the `japanese-tech-writing` skill when writing prose for human readers — code comments (any language), reports, and PR/issue descriptions. Its norms (one topic per paragraph, rigorous argument, no LLM filler, no redundancy) apply beyond Japanese.
+- Use the `japanese-tech-writing` skill for all human-facing prose — code comments (any language), reports, PR/issue text — not just Japanese; its norms apply across languages.
 - Always invoke it for Japanese technical prose, and when revising existing prose.
 - Write so meaning outlives the session. Context from the current conversation makes your prose feel clear as you write; however, the next reader — human or fresh agent — has none of it, so distrust that clarity. Anchor every comment, commit, PR, and report to repository-visible facts, not to a session-relative role: rewrite a pointer like "the new logic" as the thing it computes. Test each line by whether a reader with only it, and no memory of today, could recover its meaning.
 
 # Tool Usage
 
 - **GitHub**: Use `gh` CLI for all operations (PRs, issues, repos)
-- **Docs**: Use Context7 MCP to verify latest library documentation
 - **Missing commands**: Retry with `nix run nixpkgs#<command>`
 - **Long output**: Save with `<cmd> | tee /tmp/<name>.log` first, then grep the file. Lets you refine filters or inspect surrounding context without re-running the source command.
 
@@ -33,9 +32,7 @@
 
 # Cross-Model Review (Codex)
 
-- Consult the `codex-advisor` skill on your own initiative for an independent, cross-model second opinion. Its value is the outside view: reach for it when a decision is genuinely uncertain or hard to reverse, when you and the built-in Claude advisor diverge, or before finishing non-trivial work — and skip it for routine or mechanical work, which only burns quota.
-- Keep consults read-only by default so an unattended one cannot change your tree; reserve the full-access `cdy` alias for when you are explicitly asked to have Codex apply changes.
-- Treat the verdict as a peer's, not an oracle's — weigh it against your own view and the advisor's, and surface genuine disagreement to the user.
+- Reach for the `codex-advisor` skill proactively on genuinely uncertain or hard-to-reverse calls (the skill covers when, read-only vs. apply, and how to weigh the result).
 
 # Error Handling
 
