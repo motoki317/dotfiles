@@ -23,6 +23,14 @@
   programs.zsh = {
     enable = true;
     initContent = ''
+      # Re-add Homebrew to PATH. home-manager owns the zsh dotfiles, dropping the
+      # `brew shellenv` line the Homebrew installer wrote to ~/.zprofile on Apple
+      # Silicon. It lives in initContent (~/.zshrc), NOT profileExtra (~/.zprofile),
+      # because tmux here runs non-login shells (common/tmux.nix: default-command
+      # $SHELL) that never source ~/.zprofile; ~/.zshrc is sourced by every
+      # interactive shell. Prefix is fixed at /opt/homebrew on Apple Silicon.
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+
       # Load common
       if [ -f ~/.profile.common ]; then
         . ~/.profile.common
