@@ -2,12 +2,18 @@
 
 // codex-consult — ask OpenAI Codex one question and print only its final answer.
 //
-// stdout carries ONLY the final answer, so it stays pipeable. The full transcript
-// is written to a temp log whose path (and Codex's token usage) is reported on
-// stderr on normal and error exits; an interrupt skips that banner, but the log is
-// already on disk. The sandbox defaults to read-only because a consult should
-// observe, not modify; raise it only to let Codex run tests (workspace-write) or
-// apply changes (danger-full-access).
+// stdout carries ONLY the final answer, so it stays pipeable. Everything Codex emits is
+// written verbatim to one log (a temp file, or -l <path>), whose path prints on stderr
+// at startup. The wrapper passes `--json`, so Codex flushes one event per step instead
+// of buffering the whole run; because the log is its raw stdout, those events land as
+// they happen and a caller can tail the log to watch progress. The log is the raw record
+// — no reformatting here — so it can't drift from what Codex actually emits. A run that
+// exits non-zero with no `turn.completed` event failed (the reason is a `turn.failed`
+// event in the log); a long silent gap with the process still alive may be stuck, though
+// a pure-reasoning phase legitimately emits nothing between turn.started and the answer.
+//
+// The sandbox defaults to read-only because a consult should observe, not modify; raise
+// it only to let Codex run tests (workspace-write) or apply changes (danger-full-access).
 //
 // The leading `//usr/bin/env sh -c ...` line makes this file self-executing: chmod
 // +x and run it directly. It is a // comment to Go, but a shell command when execve
@@ -19,15 +25,17 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
+	"time"
 )
 
 // preamble frames every consult so callers pass only their task. Codex starts cold
@@ -39,6 +47,13 @@ const preamble = `You are an independent, cross-model reviewer and advisor, from
 
 Be direct and decisive. Separate real defects from speculative risks, prefer concrete and minimal recommendations over sweeping rewrites, and if you find nothing material, say so plainly instead of inventing nits. Close with a clear verdict or recommendation.`
 
+// stdinWait bounds how long we wait for the FIRST byte of piped input when the prompt
+// was already supplied as an argument. It exists so a backgrounded run, which inherits
+// an open pipe that never delivers data or EOF, cannot stall before Codex even starts.
+// Only the first byte is time-bounded; once data is present the full read has no
+// deadline, so a large or slow pipe is read in full rather than truncated.
+const stdinWait = 2 * time.Second
+
 func main() { os.Exit(run()) }
 
 func run() int {
@@ -48,9 +63,10 @@ func run() int {
 		workdir = wd
 	}
 	model := ""
+	logPath := ""
 	verbose := false
 
-	// Flags precede the prompt. -C/-s/-m take a value; everything after the first
+	// Flags precede the prompt. -C/-s/-m/-l take a value; everything after the first
 	// bare word (or `--`) is the prompt, so a question may contain spaces.
 	argv := os.Args[1:]
 	var promptArgs []string
@@ -82,6 +98,12 @@ func run() int {
 				return 2
 			}
 			model, i = v, i+1
+		case a == "-l" || a == "--log":
+			v, ok := needVal(i, "-l/--log")
+			if !ok {
+				return 2
+			}
+			logPath, i = v, i+1
 		case a == "-v" || a == "--verbose":
 			verbose = true
 		case a == "-h" || a == "--help":
@@ -105,14 +127,9 @@ func run() int {
 	// `echo brief | ...`, and `git diff | ... "review"` all work. Read stdin only
 	// when it is not a terminal, so an interactive run never blocks on the keyboard.
 	argPrompt := strings.Join(promptArgs, " ")
-	stdinPrompt := ""
-	if !isTerminal(os.Stdin) {
-		b, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "codex-consult: error reading stdin: %v\n", err)
-			return 1
-		}
-		stdinPrompt = string(b)
+	stdinPrompt, ok := readStdin(argPrompt != "")
+	if !ok {
+		return 1
 	}
 	var prompt string
 	switch {
@@ -134,27 +151,43 @@ func run() int {
 		fmt.Fprintln(os.Stderr, "codex-consult: warning — working root is $HOME; Codex can read your whole home tree. Pass -C <repo> to scope it.")
 	}
 
-	logf, err := os.CreateTemp("", "codex-consult-*")
+	// Open the log. Default to a temp file; honor -l so the caller can pick a path it
+	// knows in advance and tail while Codex runs.
+	var logf *os.File
+	var err error
+	if logPath == "" {
+		logf, err = os.CreateTemp("", "codex-consult-*")
+		if err == nil {
+			logPath = logf.Name()
+		}
+	} else {
+		logf, err = os.Create(logPath)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "codex-consult: cannot create log file: %v\n", err)
 		return 1
 	}
-	logPath := logf.Name()
-	lastPath := logPath + ".answer"
+	answerPath := logPath + ".answer"
 
-	// Announce the log path on the way out — normal or error — so the caller can
-	// always read Codex's full transcript. A signal terminates the process before
-	// this defer runs, but the log file is already on disk, so only the banner is
-	// lost; forwarding signals to the child to print it is not worth the complexity.
+	// Print the log path up front, not just at exit, so a caller that backgrounds this
+	// run (and reads stderr incrementally) learns where to watch immediately.
+	fmt.Fprintf(os.Stderr, "codex-consult: streaming events → %s\n", logPath)
+
+	// Announce token usage and the log path on the way out — normal or error — so the
+	// caller can always find the log. A signal terminates the process before this runs,
+	// but the log is already on disk, so only the banner is lost.
 	defer announce(logPath, sandbox)
 
+	// --json makes Codex emit progress events as they happen; --output-last-message
+	// still writes the final answer to its own file, so stdout stays clean.
 	cmdArgs := []string{
 		"exec",
+		"--json",
 		"-C", workdir,
 		"--sandbox", sandbox,
 		"--color", "never",
 		"--skip-git-repo-check",
-		"--output-last-message", lastPath,
+		"--output-last-message", answerPath,
 	}
 	if model != "" {
 		cmdArgs = append(cmdArgs, "--model", model)
@@ -163,6 +196,7 @@ func run() int {
 
 	cmd := exec.Command("codex", cmdArgs...)
 	cmd.Stdin = strings.NewReader(preamble + "\n\n---\n\n" + prompt)
+	// Codex's raw output is the log. -v also tees it to stderr for a live foreground view.
 	var sink io.Writer = logf
 	if verbose {
 		sink = io.MultiWriter(logf, os.Stderr)
@@ -181,7 +215,7 @@ func run() int {
 	}
 	logf.Close()
 
-	if answer, err := os.ReadFile(lastPath); err == nil && len(bytes.TrimSpace(answer)) > 0 {
+	if answer, err := os.ReadFile(answerPath); err == nil && len(bytes.TrimSpace(answer)) > 0 {
 		os.Stdout.Write(answer)
 		if !bytes.HasSuffix(answer, []byte("\n")) {
 			fmt.Println()
@@ -193,16 +227,83 @@ func run() int {
 	return rc
 }
 
-// announce prints the log path and Codex's token usage to stderr.
+// readStdin returns the piped prompt, or "" when stdin is a terminal/character device
+// (an interactive run or `</dev/null`). A goroutine blocks on the first byte so a
+// backgrounded run with an idle inherited pipe (no data, no EOF) cannot stall here; only
+// that first-byte wait is time-bounded when the prompt is already in argv (haveArg). Once
+// a byte is seen the rest is read without a deadline, so a slow or large pipe such as
+// `git diff | …` is read in full, never truncated. With no argument, stdin is the only
+// prompt source, so it waits for the first byte however long that takes.
+func readStdin(haveArg bool) (string, bool) {
+	if isTerminal(os.Stdin) {
+		return "", true
+	}
+	br := bufio.NewReader(os.Stdin)
+	type result struct {
+		s   string
+		err error
+	}
+	hasData := make(chan bool, 1)
+	full := make(chan result, 1)
+	go func() {
+		if _, err := br.Peek(1); err != nil {
+			hasData <- false // empty pipe (EOF) or read error: nothing piped
+			return
+		}
+		hasData <- true
+		b, err := io.ReadAll(br) // includes the peeked byte; bufio retains it
+		full <- result{string(b), err}
+	}()
+	var timeout <-chan time.Time
+	if haveArg {
+		timeout = time.After(stdinWait)
+	}
+	select {
+	case ok := <-hasData:
+		if !ok {
+			return "", true
+		}
+		r := <-full
+		if r.err != nil {
+			fmt.Fprintf(os.Stderr, "codex-consult: error reading stdin: %v\n", r.err)
+			return "", false
+		}
+		return r.s, true
+	case <-timeout:
+		return "", true // argument prompt present; don't stall on an idle pipe
+	}
+}
+
+// announce prints the log path and Codex's token usage to stderr. Tokens come from the
+// last turn.completed event in the log; "n/a" when the run produced none (e.g. failed).
 func announce(logPath, sandbox string) {
-	tokens := "n/a"
-	if data, err := os.ReadFile(logPath); err == nil {
-		re := regexp.MustCompile(`(?i)tokens used\s*([0-9][0-9,]*)`)
-		if ms := re.FindAllStringSubmatch(string(data), -1); len(ms) > 0 {
-			tokens = ms[len(ms)-1][1]
+	fmt.Fprintf(os.Stderr, "── codex (%s) · tokens: %s · log: %s ──\n", sandbox, lastUsage(logPath), logPath)
+}
+
+// lastUsage scans the log backward for the most recent turn.completed event and reports
+// its token counts. Reading one known field of one event type is the wrapper's only look
+// inside Codex's JSON; the log itself stays a verbatim copy.
+func lastUsage(logPath string) string {
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		return "n/a"
+	}
+	lines := strings.Split(string(data), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		if !strings.Contains(lines[i], `"turn.completed"`) {
+			continue
+		}
+		var ev struct {
+			Usage *struct {
+				InputTokens  int `json:"input_tokens"`
+				OutputTokens int `json:"output_tokens"`
+			} `json:"usage"`
+		}
+		if json.Unmarshal([]byte(lines[i]), &ev) == nil && ev.Usage != nil {
+			return fmt.Sprintf("%d in / %d out", ev.Usage.InputTokens, ev.Usage.OutputTokens)
 		}
 	}
-	fmt.Fprintf(os.Stderr, "── codex (%s) · tokens: %s · full log: %s ──\n", sandbox, tokens, logPath)
+	return "n/a"
 }
 
 func printTail(path string, n int) {
@@ -244,9 +345,12 @@ func usage(w io.Writer) {
   -C, --repo <dir>      working root for Codex (default: current directory)
   -s, --sandbox <mode>  read-only (default) | workspace-write | danger-full-access
   -m, --model <model>   model override (default: your ~/.codex config)
-  -v, --verbose         also stream Codex's full output to stderr
+  -l, --log <path>      log file for Codex's raw JSONL events (default: a temp file).
+                        Pick a path to tail progress while Codex runs.
+  -v, --verbose         also tee Codex's output to stderr
   -h, --help            this help
 
-stdout = final answer only.   stderr = token usage + path to the full log.
+stdout = final answer only.   stderr = log path (at start) + token usage (at end).
+The log is Codex's raw --json event stream, written live — tail it to watch progress.
 `)
 }

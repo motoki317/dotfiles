@@ -5,49 +5,30 @@ description: Independent cross-model second opinion from OpenAI Codex — an out
 
 # Codex advisor / reviewer
 
-`codex-consult` (on `PATH`) consults OpenAI Codex as an **independent, cross-model** reviewer. Codex is a different model family from Claude, so it catches blind spots a Claude-only review — including the built-in `advisor` tool — shares. The two are complementary: `advisor` is transcript-aware, Codex starts cold and is repo-aware.
+`codex-consult` (on `PATH`) consults OpenAI Codex as an **independent, cross-model** reviewer. Codex is a different model family from Claude, so it catches blind spots a Claude-only review — including the built-in `advisor` tool — shares. The two are complementary: `advisor` is transcript-aware; Codex starts cold and reads the repo.
 
-## When to invoke
-
-On your own judgment, not only on request:
-
-- Approaches split, or your analysis diverges from the built-in advisor.
-- A high-stakes or hard-to-reverse design/architecture/risk decision, before committing.
-- You are stuck — an approach is not converging.
-- A non-trivial task is about to be declared done — review the finished diff.
-
-Skip mechanical or low-stakes work (renames, one-line fixes, formatting); each call spends quota and time.
+When to invoke is in the user's CLAUDE.md ("Cross-Model Review"): pair it with the built-in `advisor` at substantive checkpoints. This file covers how to run it.
 
 ## Running it
 
-`codex-consult` runs **read-only**, anchored to a working directory, and prints **only the final verdict** to stdout (log path and token usage go to stderr).
+Write the task to a file and pipe it in, anchored to the repo, with a known log path:
 
 ```bash
-codex-consult "<short prompt>"            # anchors to the current directory
-codex-consult -C <dir> "<short prompt>"   # or target another directory
-codex-consult -C <dir> < brief.md         # non-trivial prompt: pipe a file (see "Writing the prompt")
+codex-consult -C <repo> --log /tmp/codex.jsonl < /tmp/brief.md
 ```
 
-- Keep the anchored root the **project**, not a broad parent like `$HOME`: it bounds Codex's exploration and, in a write sandbox, what it may change. The tool warns if the root is `$HOME`.
-- Options (`--help`): `-s workspace-write` lets Codex run tests or apply edits inside the repo, `-m <model>` overrides the model, `-v` streams the full run to stderr.
+The notes below adjust this one form; you rarely need anything else.
 
-## Writing the prompt
-
-**Task only.** The wrapper's preamble already gives Codex its role and tells it to end with a verdict — supply context and the question, never instructions on how to behave. For a code review, pipe `git diff` or just ask it to review the uncommitted changes (it reads the repo). For a design question, write a self-contained brief: the question, what is decided or tried, and which files matter.
-
-**Avoid shell corruption.** A double-quoted argument is shell-parsed first, so backticks, `$(…)`, `$VAR`, and `!` expand and silently corrupt code-heavy prompts. For anything non-trivial, write the brief with the Write tool and pipe it via stdin — stdin is never shell-interpreted. Pass inline `"…"` only for a short one-liner with no backtick, `$`, or `!`.
-
-```bash
-codex-consult -C <repo> < /tmp/brief.md                          # brief from a file
-cat /tmp/brief.md <(git diff main) | codex-consult -C <repo>     # metachar-heavy instruction + a diff
-```
-
-## Applying changes (explicit request only)
-
-A consult is read-only by design. Only when the user asks Codex to *apply* changes, raise the sandbox: `codex-consult -s workspace-write -C <repo> "..."` keeps edits inside the repo; the user's `cdy` alias (`codex --dangerously-bypass-approvals-and-sandbox`: no sandbox, no approvals) grants full access for an interactive session.
+- **Prompt = task only.** The preamble already gives Codex its reviewer role and tells it to close with a verdict, so the brief carries only context and the question. Pipe it via stdin (a file written with the Write tool): stdin is never shell-interpreted, so backticks, `$(…)`, `$VAR`, and `!` in a code-heavy prompt cannot corrupt it. Reserve an inline `"question"` argument for a short one-liner free of those characters. To review a diff, append it: `cat /tmp/brief.md <(git diff main) | codex-consult -C <repo> --log /tmp/codex.jsonl`.
+- **Scope the root.** Keep `-C` on the project, not a broad parent like `$HOME`: it bounds what Codex reads, and in a write sandbox what it may change. The tool warns when the root is `$HOME`.
+- **Watch a long run.** A consult can take minutes. Run the command in the background (Bash `run_in_background`) and poll `--log`, which is Codex's raw `--json` event stream written live (one JSON object per line: a `command_execution` event per tool Codex runs, `agent_message` for its narration, a final `turn.completed`). New lines mean progress; parse them or just watch the file grow. A silent gap is only a concern when it is long *and* the process is still alive, because a pure-reasoning phase emits nothing between `turn.started` and the answer.
+- **Apply changes (only when asked).** A consult is read-only by design. Raise the sandbox only when the user asks Codex to *apply* edits: `-s workspace-write` keeps changes inside the repo; the `cdy` alias (`codex --dangerously-bypass-approvals-and-sandbox`) grants full access for an interactive session.
+- **Other flags** (`--help`): `-m <model>` overrides the model, `-v` also streams the transcript to stderr.
 
 ## Handling the result
 
-stdout is the verdict — relay it; the stderr log path holds Codex's full reasoning when you want it. Weigh findings as you weigh the built-in advisor's: evaluate, don't apply blindly. When Codex and the advisor disagree, surface the conflict to the user rather than silently picking a side.
+stdout is the verdict — relay it. Weigh it as you weigh the built-in advisor's: evaluate, don't apply blindly, and when the two disagree surface the conflict to the user rather than silently picking a side.
+
+A successful run emits a `turn.completed` event in the log and exits 0. A non-zero exit with no `turn.completed` means Codex failed — the reason is a `turn.failed` (or `error`) event in the log. stderr reports the log path (at start) and token usage (at end).
 
 The wrapper is a thin shim around the self-building Go source at `~/.claude/skills/codex-advisor/scripts/codex-consult.go`; edit that to change the helper itself.

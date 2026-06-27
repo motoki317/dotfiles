@@ -32,7 +32,9 @@
 
 # Cross-Model Review (Codex)
 
-- Reach for the `codex-advisor` skill proactively on genuinely uncertain or hard-to-reverse calls (the skill covers when, read-only vs. apply, and how to weigh the result).
+- `codex-advisor` is the cross-model peer of the built-in `advisor`: a different model family, repo-aware and cold, so it catches blind spots a Claude `advisor` review shares. Use it about as often as `advisor`, not as a rare fallback.
+- Pair them at substantive checkpoints — before committing to an approach, before declaring non-trivial work done, when stuck, or on an uncertain or hard-to-reverse call: consult codex-advisor wherever you consult `advisor`. When the two disagree, surface the conflict to the user rather than silently picking a side.
+- Skip both on mechanical or low-stakes work. Codex runs read-only unless you are asked to apply changes (the skill covers how to run it).
 
 # Error Handling
 
