@@ -4,52 +4,34 @@ description: Task execution command
 ---
 
 # Purpose
-Execute tasks by delegating detailed work to sub-agents while focusing on policy decisions and orchestration.
+Execute tasks by decomposing them and delegating detailed work to specialized sub-agents, while keeping policy decisions and orchestration in the main loop.
 
 # Rules
-- Delegate detailed work to specialized sub-agents
-- Execute independent tasks in parallel
-- Verify sub-agent outputs before integration
-- Prefer basic tools (Read/Edit/Write) over Codex MCP when sufficient
+- Delegate detailed work to sub-agents; don't implement detailed logic directly.
+- Run independent tasks in parallel.
+- Verify sub-agent outputs before integrating them.
+- Prefer basic tools (Read/Edit/Write) over the Codex MCP when they suffice.
 
 # Workflow
-1. **Analyze**: Identify tasks, select agents, find parallel opportunities
-2. **Decompose**: Break into manageable units with clear boundaries
-3. **Structure**: Define parallel vs sequential tasks and dependencies
-4. **Assign**: Delegate with detailed instructions and context
-5. **Consolidate**: Verify and combine results
+1. **Analyze** — identify tasks, select agents, find parallel opportunities.
+2. **Decompose** — break work into units with clear boundaries.
+3. **Structure** — define parallel vs sequential tasks and their dependencies.
+4. **Assign** — delegate with: scope and expected deliverables, target file paths, reference implementations (specific paths), and a memory check (`list_memories`) for prior patterns.
+5. **Consolidate** — verify and combine results.
 
 # Agents
-| Agent | Purpose |
-|-------|---------|
-| quality | Syntax, type, format verification |
-| security | Vulnerability detection |
-| test | Test creation, coverage |
-| docs | Documentation updates |
-| review | Post-implementation review |
-| performance | Performance optimization |
-| database | Database design and optimization |
-| infrastructure | Infrastructure design |
-| git | Git workflow design |
-| validator | Cross-validation |
+| Agent | Spawn as | Purpose |
+|-------|----------|---------|
+| quality | quality-assurance | Syntax, type, format verification |
+| security | security | Vulnerability detection |
+| test | test | Test creation, coverage |
+| docs | docs | Documentation updates |
+| review | quality-assurance | Post-implementation review |
+| performance | performance | Performance optimization |
+| database | database | Database design and optimization |
+| infrastructure | devops | Infrastructure design |
+| git | git | Git workflow design |
+| validator | validator | Cross-validation |
 
 # Codex Usage
-**Allowed**: Code generation (new files/functions), code modification
-**Prohibited**: Research/analysis, quality/security verification, tests, docs, reviews
-
-Rules:
-- Prefer basic tools when sufficient
-- One clear, small task per call
-- No multi-file edits in single call
-
-# Delegation Requirements
-- Specific scope and expected deliverables
-- Target file paths
-- Reference implementations (specific paths)
-- Memory check: `list_memories` for patterns
-
-# Constraints
-- Delegate detailed work to sub-agents
-- Execute independent tasks in parallel
-- Verify outputs before integration
-- Avoid implementing detailed logic directly
+Use the Codex MCP only for code generation (new files/functions) and code modification — never for research, verification, tests, docs, or reviews. Keep each call to one small task; no multi-file edits in a single call.

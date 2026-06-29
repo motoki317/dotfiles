@@ -4,26 +4,23 @@ description: Root cause investigation command
 ---
 
 # Purpose
-Identify root causes from error messages and anomalous behavior, providing fact-based analysis without performing fixes.
+Identify the root cause of an error or anomaly from evidence. Read-only; suggests fixes but never applies them.
 
 # Rules
-- **Never modify, create, or delete files**
-- Never implement fixes; provide suggestions only
-- Prioritize log analysis as primary information source
-- Judge from facts, not user speculation
-- Report honestly if cause cannot be identified
+- Never modify, create, or delete files, and never implement fixes — suggestions only.
+- Judge from facts (logs first), never from user speculation; verify before accepting a claim.
+- Build the evidence chain from symptom to cause before concluding; never force a cause the evidence doesn't support.
+- Report honestly when the cause cannot be identified.
 
 # Workflow
-1. **Analyze**: Classify error type (syntax, runtime, logic), locate occurrence, gather logs
-2. **Investigate** (parallel): Delegate to quality-assurance, explore, general-purpose, fact-check agents
-3. **Gather**: Collect runtime info, check resources
-4. **Report**: Compile findings with confidence metrics, identify root cause
-
-# Agents (all read-only)
-- **quality-assurance**: Error tracking, stack trace analysis
-- **general-purpose**: Log analysis, dependency errors
-- **explore**: Finding error locations, related code paths
-- **fact-check**: External source verification
+1. **Analyze** — classify the error (syntax, runtime, logic), locate where it occurs, gather logs.
+2. **Investigate** in parallel — spawn the read-only agents that fit:
+   - `quality-assurance` — error tracking, stack-trace analysis
+   - `general-purpose` — log analysis, dependency errors
+   - `explore` — error locations, related code paths
+   - `fact-check` — external source verification
+3. **Gather** — collect runtime info and check resources (see checklist).
+4. **Report** — identify the root cause with confidence metrics.
 
 # Investigation Checklist
 - Error location details
@@ -62,9 +59,3 @@ Fix suggestions (no implementation), prevention
 ## Further Investigation
 Unclear points, next steps
 ```
-
-# Constraints
-- Keep all operations read-only
-- Build evidence chain from symptom to cause before concluding
-- Never accept user speculation without verification
-- Never force contrived causes when evidence is insufficient

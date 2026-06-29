@@ -4,42 +4,32 @@ description: Upstream PR preparation and review command
 ---
 
 # Purpose
-Review and prepare changes before submitting PRs to upstream OSS repositories. Auto-fetch contribution guidelines, analyze changes, evaluate tests, and generate compliant PR metadata.
+Review and prepare changes before submitting a PR to an upstream OSS repo: fetch the contribution guide, analyze the diff, evaluate tests, and generate compliant PR metadata. Read-only; never opens the PR.
 
 # Rules
-- **Read-only operation**: Analyze and report only, no file modifications
-- Auto-fetch CONTRIBUTING.md (check root, .github/, docs/)
-- Verify gh CLI authentication before PR history operations
-- Never create PR automatically; only provide review and suggestions
+- Read-only: analyze and report only, no file modifications.
+- Auto-fetch CONTRIBUTING.md (check root, `.github/`, `docs/`).
+- Verify `gh` CLI auth before any PR-history operation.
+- Never create the PR automatically; only review and suggest.
 
 # Workflow
-1. **Preflight**:
-   - Verify gh CLI authentication: `gh auth status`
-   - Detect upstream from git remotes (prefer `upstream`, fallback to `origin`)
-   - Get current branch and pending changes
-   - Compare with upstream default branch
+1. **Preflight** — verify `gh auth status`; detect upstream from remotes (prefer `upstream`, else `origin`); get the current branch and pending changes; compare against the upstream default branch.
+2. **Gather** in parallel — spawn the read-only agents below: `guidelines`, `changes`, `tests`, `history`.
+3. **Synthesize** — `metadata` drafts the PR title/description per the guide; `verify` determines local verification commands, detects change types (table below), and generates the matching manual QA checklist.
+4. **Validate** — `validator` cross-checks guideline compliance against the review findings.
 
-2. **Gather** (parallel):
-   - Fetch CONTRIBUTING.md from upstream
-   - Analyze code changes (quality-assurance agent)
-   - Evaluate test coverage (tests agent)
-   - Fetch author's past PRs: `gh pr list --author @me --repo upstream --state all --limit 20`
+# Agents (read-only)
+`Agent` is the role label used in the workflow; `Spawn as` is the real agent type to pass to the Agent tool.
 
-3. **Synthesize**:
-   - Generate PR title and description following contribution guide
-   - Determine local verification commands
-   - Detect change types and generate manual QA checklist
-
-4. **Validate**: Cross-validate guideline compliance with code review findings
-
-# Agents (all read-only)
-- **guidelines**: Parse CONTRIBUTING.md and extract requirements
-- **changes**: Review code changes for quality
-- **tests**: Evaluate test coverage
-- **history**: Analyze author's past PR feedback
-- **metadata**: Generate compliant PR title/description
-- **verify**: Determine verification commands, detect change types
-- **validator**: Cross-validate findings
+| Agent | Spawn as | Role |
+|-------|----------|------|
+| guidelines | general-purpose | Parse CONTRIBUTING.md, extract requirements |
+| changes | quality-assurance | Review the diff for quality |
+| tests | test | Evaluate test coverage |
+| history | general-purpose | Analyze the author's past PR feedback (`gh pr list --author @me --repo upstream --state all --limit 20`) |
+| metadata | general-purpose | Generate compliant PR title/description |
+| verify | general-purpose | Determine verification commands, detect change types |
+| validator | validator | Cross-validate findings |
 
 # Change Type Detection
 | Type | File Patterns |
