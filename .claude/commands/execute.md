@@ -19,7 +19,7 @@ Execute tasks by decomposing them and delegating detailed work to specialized su
 3. **Structure** — define parallel vs sequential tasks and their dependencies.
 4. **Assign** — delegate with: scope and expected deliverables, target file paths, reference implementations (specific paths), and a memory check (`list_memories`) for prior patterns.
 5. **Consolidate** — integrate sub-agent outputs into a coherent whole.
-6. **Verify** — before declaring done: run the available tests/build/lint, invoke the `feedback` skill for static review, and the `qa-review` skill when there is runnable behavior. Fix critical and major findings (re-delegate as needed) and re-check. Report the evidence — commands run and results — and don't finish with unresolved critical or major findings.
+6. **Verify** — before declaring done: run the available tests/build/lint, invoke the `feedback` skill for static review, and the `qa-review` skill when there is runnable behavior — for analysis only; tell each not to run its close-the-loop phase, since this step owns the fix loop. Fix critical and major findings (re-delegate as needed) and re-check. Report the evidence — commands run and results — and don't finish with unresolved critical or major findings.
 
 # Agents
 | Agent | Spawn as | Purpose |

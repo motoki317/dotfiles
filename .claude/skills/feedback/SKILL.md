@@ -39,6 +39,15 @@ Launch all selected agents in one message (sequential spawning risks timeout). G
 # Step 4 — Synthesize
 Normalize the agents' differing output shapes into `{severity, file:line, problem, fix, characteristic}`. One root issue can surface under several lenses (an unhandled error path is Reliability + Security + Functional Correctness) — report it once, under the most apt characteristic, cross-noting the others. Group by characteristic, rank by severity.
 
+# Step 5 — Close the loop
+<!-- Keep this phase in sync with qa-review's Step 5: same fix → re-verify → commit → push-if-open-PR shape. qa-review adds an executed-only gate this one omits (static findings are always re-checkable). -->
+Close the loop by default once the report is done. Stop at the report instead — and let the caller remediate — only when the caller says "analysis only" (e.g. `/execute`'s Verify owns its own fix loop and says so), or in Planning mode (a `plan` has no code to fix). The signal is the caller's word, not a guess about who invoked you.
+
+1. **Fix the justified findings.** Re-judge each Critical, and each Warning worth fixing, for technical validity — don't blind-fix any more than `/address` blind-accepts a review comment. Fix the justified ones with scoped fix sub-agents (one narrow task each). Do not route the fix through `/execute`: its own Verify step re-invokes this skill, which would loop. Leave anything you decline in the report with a one-line reason.
+2. **Re-verify, bounded.** Re-run the affected viewpoint(s) to confirm the fix resolved the finding without regression. If a fix introduces a new Critical, do at most one more fix → re-verify pass, then stop and report whatever is still unresolved — never commit an unresolved Critical.
+3. **Commit** the fixes by following the `commit` skill. Never on `main` or a detached HEAD; if the worktree holds unrelated edits, stage only the fix files.
+4. **Push — only to an open PR, from a clean worktree.** Check `gh pr view --json number,state`. With an open PR and no unrelated uncommitted edits left, clean up history and push via `/rebase-clean` (it soft-resets to the merge base and rebuilds commits from the whole worktree — so stray edits would be swept in; it also gates on approval before the reset and force-pushes with `--force-with-lease`), then point the agent at `/address` to handle the review and CI that the push re-triggers. If unrelated edits remain, stop after the commit and report that the PR push needs a clean or stashed worktree. With no open PR, stop after the commit — first publishing a branch and opening a PR stay user-triggered (`~/.claude/rules/loop.md`).
+
 # Planning mode (target = `plan`)
 Reviewing a plan, not code: apply the same viewpoints as forward-looking questions ("does the plan ensure completeness? account for failure modes? security surface? scaling?"). Keep it to a few agents — a secondary, lighter path.
 
