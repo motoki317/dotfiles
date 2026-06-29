@@ -4,7 +4,7 @@ description: Markdown text update command
 ---
 
 # Purpose
-Output results from other commands (/define, /ask, /bug, etc.) as markdown files.
+Output results from other commands (/define, /ask, /investigate, etc.) as markdown files.
 
 # Rules
 - Retrieve previous command execution results
@@ -18,7 +18,7 @@ Output results from other commands (/define, /ask, /bug, etc.) as markdown files
 |----------------|----------------|
 | /define | EXECUTION.md |
 | /ask | RESEARCH.md |
-| /bug | RESEARCH.md |
+| /investigate | RESEARCH.md |
 | other | MEMO.md |
 
 User-specified file path takes precedence.

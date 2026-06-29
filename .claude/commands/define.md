@@ -9,8 +9,8 @@ Define requirements before implementation: clarify constraints, design policy, a
 # Rules
 - Never modify, create, or delete files, and never implement — requirements only.
 - Flag technically impossible requests; prioritize technical validity over preference.
-- Ask without limit until requirements are clear; present questions before assuming.
-- Drive every choice through AskUserQuestion, always offering a (Recommended) option.
+- Ask about requirement and value decisions you can't infer; settle derivable details (naming, structure, style) yourself and record them. Present open questions before assuming.
+- Pose the questions you do ask through AskUserQuestion, always offering a (Recommended) option.
 
 # Workflow
 1. **Analyze** — parse the request, identify constraints, draft candidate questions.
