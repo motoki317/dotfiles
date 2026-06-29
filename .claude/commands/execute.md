@@ -11,13 +11,15 @@ Execute tasks by decomposing them and delegating detailed work to specialized su
 - Run independent tasks in parallel.
 - Verify sub-agent outputs before integrating them.
 - Prefer basic tools (Read/Edit/Write) over the Codex MCP when they suffice.
+- Don't declare the task done until the Verify step passes; show evidence, not assertions.
 
 # Workflow
 1. **Analyze** — identify tasks, select agents, find parallel opportunities.
 2. **Decompose** — break work into units with clear boundaries.
 3. **Structure** — define parallel vs sequential tasks and their dependencies.
 4. **Assign** — delegate with: scope and expected deliverables, target file paths, reference implementations (specific paths), and a memory check (`list_memories`) for prior patterns.
-5. **Consolidate** — verify and combine results.
+5. **Consolidate** — integrate sub-agent outputs into a coherent whole.
+6. **Verify** — before declaring done: run the available tests/build/lint, invoke the `feedback` skill for static review, and the `qa-review` skill when there is runnable behavior. Fix critical and major findings (re-delegate as needed) and re-check. Report the evidence — commands run and results — and don't finish with unresolved critical or major findings.
 
 # Agents
 | Agent | Spawn as | Purpose |
