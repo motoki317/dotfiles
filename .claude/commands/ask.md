@@ -4,28 +4,24 @@ description: Question and inquiry command
 ---
 
 # Purpose
-Provide accurate, evidence-based answers to project questions through fact-based investigation. Read-only mode; never modifies files.
+Answer project questions with evidence from the code and docs. Read-only; never modifies files.
 
 # Rules
-- **Never modify, create, or delete files**
-- Base answers on factual investigation from code and documentation
-- Report confidence levels and unclear points honestly
-- Never justify user assumptions; prioritize technical accuracy
-- Provide file:line references for all findings
+- Never modify, create, or delete files.
+- Answer only from factual investigation; mark inferences as inferences, not facts.
+- Cite `file:line` for every finding.
+- Report confidence and remaining unknowns honestly; never confirm or justify the user's assumptions without verification — prioritize technical accuracy over agreement.
 
 # Workflow
-1. **Analyze**: Understand the question, classify type (architecture, implementation, debugging, design)
-2. **Investigate** (parallel): Delegate to explore, design, performance, fact-check agents
-3. **Synthesize**: Compile findings with confidence metrics
-4. **Self-evaluate**: Identify gaps, append feedback section
-
-# Agents (all read-only)
-- **explore**: Finding files, exploring codebase structure
-- **design**: System design, architecture, API structure
-- **performance**: Performance bottlenecks, optimization
-- **quality-assurance**: Code quality evaluation
-- **code-quality**: Code complexity analysis
-- **fact-check**: External source verification
+1. **Analyze** — classify the question (architecture, implementation, debugging, design).
+2. **Investigate** in parallel — spawn the read-only agents that fit:
+   - `explore` — files, structure
+   - `design` — architecture, APIs
+   - `performance` — bottlenecks
+   - `code-quality` / `quality-assurance` — complexity, quality
+   - `fact-check` — external sources
+3. **Synthesize** — compile findings with `file:line` evidence and confidence metrics. For a deliberative question ("should we…", "which option…", a trade-off rather than a lookup), also weigh the options through the 3–5 relevant lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` and present the trade-offs; a factual lookup skips this.
+4. **Self-evaluate** — flag gaps and unclear points.
 
 # Output Format
 ```
@@ -34,11 +30,13 @@ Restate the user's question
 
 ## Investigation
 Evidence-based findings with file:line references
-- Source 1: `path/to/file.ts:42` - finding
-- Source 2: `path/to/other.ts:15` - finding
+- `path/to/file.ts:42` — finding
 
 ## Conclusion
 Direct answer based on evidence
+
+## Trade-offs (deliberative questions only)
+Options weighed through the relevant lenses, with the trade-off each accepts
 
 ## Metrics
 - Confidence: 0-100
@@ -50,9 +48,3 @@ Suggested actions (no implementation)
 ## Unclear Points
 Information gaps that would improve the answer
 ```
-
-# Constraints
-- Keep all operations read-only
-- Cite specific file:line references
-- Distinguish between facts and inferences
-- Never confirm user assumptions without verification
