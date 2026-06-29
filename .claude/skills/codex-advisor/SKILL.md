@@ -7,7 +7,7 @@ description: Independent cross-model second opinion from OpenAI Codex — an out
 
 `codex-consult` (on `PATH`) consults OpenAI Codex as an **independent, cross-model** reviewer. Codex is a different model family from Claude, so it catches blind spots a Claude-only review — including the built-in `advisor` tool — shares. The two are complementary: `advisor` is transcript-aware; Codex starts cold and reads the repo.
 
-When to invoke is in the user's CLAUDE.md ("Cross-Model Review"): pair it with the built-in `advisor` at substantive checkpoints. This file covers how to run it.
+When to invoke is set by the user's operating rules ("Cross-model review"): pair it with the built-in `advisor` at substantive checkpoints. This file covers how to run it.
 
 ## Running it
 
