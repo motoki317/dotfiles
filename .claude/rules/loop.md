@@ -1,5 +1,5 @@
 # Operating Loop
 
-- Default flow: Explore → Plan → Implement → Verify → Commit → Ship. Auto-advance through Implement, Verify, and Commit on your own; Ship — pushing and opening PRs — stays explicitly user-triggered.
-- Verify before declaring done: run the available tests/build/lint, then `feedback` (static review) and `qa-review` (dynamic QA, when there is runnable behavior). Report the commands run and what they returned, not just "done".
-- Ask only when blocked by: a value or preference you can't infer, missing secrets/credentials, a scope boundary you can't infer, or a destructive or irreversible action (data loss, force-push, deploy, publishing to an external service).
+- Default flow: Explore → Plan → Implement → Verify → Commit → Ship. Auto-advance through Implement, Verify, and Commit on your own; Ship stays user-triggered — first publishing a branch and opening a PR. Once a PR is open, follow-up pushes to it are part of closing the loop, not a new Ship: the `feedback`/`qa-review`/`address` skills may update it via `/rebase-clean` (approval-gated, `--force-with-lease`).
+- Verify before declaring done: run the available tests/build/lint, then `feedback` (static review) and `qa-review` (dynamic QA, when there is runnable behavior) — for analysis only; their close-the-loop phase fires on an explicit `/feedback` or `/qa-review`, not on this routine check. Report the commands run and what they returned, not just "done".
+- Ask only when blocked by: a value or preference you can't infer, missing secrets/credentials, a scope boundary you can't infer, or a destructive or irreversible action — data loss, force-push (except the open-PR follow-up push above), deploy, or publishing to an external service.

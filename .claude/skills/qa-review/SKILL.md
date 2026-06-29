@@ -32,7 +32,7 @@ Orchestrator owns one session and runs the consolidated suite:
 - Operate the real surface: drive a UI with `agent-browser`, else CLI / API / queries. P4 reads the authoritative store, not the screen.
 - Serial across scenarios, but one scenario may fire concurrent sessions on purpose — that race / double-submit (P2/P3/P4) is the test.
 - Tag each finding `executed` (reproduced, with evidence) / `by-inspection` (read, not run) / `could-not-verify`. Write unknown as unknown.
-- Report defects; don't fix them, and don't declare "passed" — a human gates release.
+- Report defects here; don't fix them mid-run (a fix would invalidate the execution). Remediation, if any, is Step 5 and direct-invocation only. Never declare "passed" or release-approved — a human gates release.
 
 # Step 4 — Report
 Normalize to `{severity, persona, area, expected vs actual, repro, evidence, status, basis}`; one defect → report once under its aptest persona, cross-noting. Group by severity, then persona.
@@ -54,6 +54,17 @@ Coverage: personas <…>; execution <…>; skipped <… — why>.
 ### Could not verify
 - [P<n>] <what, and why — no test env, missing spec>
 ```
+
+# Step 5 — Close the loop
+<!-- Keep this phase in sync with feedback's Step 5: same fix → re-verify → commit → push-if-open-PR shape. qa-review adds the executed-only gate below; feedback omits it (static findings are always re-checkable). -->
+Close the loop by default once the report is done. Stop at the report instead — and let the caller remediate — only when the caller says "analysis only" (e.g. `/execute`'s Verify owns its own fix loop and says so). The signal is the caller's word, not a guess about who invoked you.
+
+Be more cautious than `/feedback`: a dynamic defect is fixed by changing behaviour, so close the loop **only for findings you `executed` and can re-execute**. If nothing runs — findings are `by-inspection` / `could-not-verify` — report and stop; never auto-fix and push a change you cannot re-exercise to confirm. Even a clean re-run never means "release-approved" — a human still gates that.
+
+1. **Fix the justified Blockers** (and any Major worth fixing) — re-judge each for validity first, then fix with scoped sub-agents. Never route the fix through `/execute`: its Verify re-invokes this skill, which would loop. Leave declined items in the report with a reason.
+2. **Re-exercise, bounded.** Re-run the affected scenarios against the live target — re-execution, not re-inspection — to confirm the fix resolved the defect without regression. If the fix introduces a new Blocker, do at most one more fix → re-exercise pass, then stop and report what remains.
+3. **Commit** the fixes by following the `commit` skill. Never on `main` or a detached HEAD; if the worktree holds unrelated edits, stage only the fix files.
+4. **Push — only to an open PR, from a clean worktree.** If `gh pr view --json number,state` shows an open PR and no unrelated uncommitted edits remain, clean up history and push via `/rebase-clean` (it rebuilds commits from the whole worktree after a soft reset, so stray edits would be swept in; approval-gated, `--force-with-lease`), then point the agent at `/address` for the review and CI the push re-triggers. If unrelated edits remain, stop after the commit and report that the PR push needs a clean or stashed worktree. With no open PR, stop after the commit — first publishing a branch and opening a PR stay user-triggered (`~/.claude/rules/loop.md`). Reporting a defect fixed is not declaring the feature released.
 
 # Migration mode
 Migrating or backfilling existing data, not a greenfield feature: the basis is the existing canonical spec (not new requirements), and "correct" = behaves as specified. P5 and P7 lead; still run the rest. Add a requirement-coverage view (testable / testable-pending / not-testable) and a config + design-pattern coverage list, disclosing which were exercised.

@@ -1,6 +1,6 @@
 ---
 name: address
-description: Use after submitting a PR (e.g. via /pr) to run the full review-fix cycle.
+description: Use after a PR is created (e.g. via /pr) or updated with follow-up pushes to run the full review-fix cycle — wait for review and CI, then address and reply to the comments. Trigger whenever a PR has just been opened or edited and its review needs handling, including right after the feedback/qa-review skills push fixes to an open PR.
 ---
 
 # Purpose
