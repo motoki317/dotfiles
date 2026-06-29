@@ -16,6 +16,8 @@
 !/.claude/scripts/**
 !/.claude/skills
 !/.claude/skills/**
+!/.claude/rules
+!/.claude/rules/**
 
 !/.config/
 /.config/*
