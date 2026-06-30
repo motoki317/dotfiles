@@ -8,7 +8,7 @@ Run the full PR review-fix cycle in one invocation: wait for automated review an
 
 This skill owns the **review-and-reply** logic and **delegates** committing and history cleanup to their canonical owners so the mechanics never drift:
 - Committing → the `commit` skill (Conventional Commits, WHY-focused messages).
-- History cleanup + push → the `/rebase-clean` command (`merge-base` soft-reset, logical-unit regrouping, rebase onto latest `main`, `git push --force-with-lease`).
+- History cleanup + push → the `/rebase-clean` skill (`merge-base` soft-reset, logical-unit regrouping, rebase onto latest `main`, `git push --force-with-lease`).
 
 # Usage
 ```
@@ -70,7 +70,7 @@ Commit the CI and review fixes by following the **`commit`** skill. Group relate
 
 ### Phase 5 — Clean up history & push
 
-Run **`/rebase-clean`**. It regroups the branch's commits into reviewer-readable logical units (absorbing fix commits), rebases onto the latest `main` when `main` has advanced, and pushes with `--force-with-lease`. It asks for approval before the soft reset and stops on conflicts — defer to it for all of that.
+Run **`/rebase-clean`**. It regroups the branch's commits into reviewer-readable logical units (absorbing fix commits), rebases onto the latest `main` when `main` has advanced, and pushes with `--force-with-lease`. As an authorized close-the-loop push it runs unattended — no plan-approval prompt (that is for direct user runs), and it resolves rebase conflicts itself. It self-verifies an open PR and a clean worktree before the force-push and stops if either fails; defer to it for all of that.
 
 ### Phase 6 — Summary
 
@@ -101,4 +101,4 @@ PR: <url>
 - Always reply to every review comment on GitHub after evaluation.
 - Confirm CI failures are fixed locally before committing.
 - If there is nothing to do — no review comments and CI already green — report and exit.
-- Approval before the soft reset and conflict handling are owned by `/rebase-clean` — do not re-implement them here.
+- History cleanup, conflict resolution, and the open-PR/clean-worktree safety checks are owned by `/rebase-clean`; on this authorized autonomous push it runs unattended (no plan prompt, resolves conflicts itself, stops only if a safety check fails) — do not re-implement that here.
