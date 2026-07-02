@@ -23,10 +23,10 @@
   "effortLevel": "xhigh",
   "autoCompactWindow": 400000,
   "advisorModel": "opus",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "tui": "fullscreen"
+  }
 }
