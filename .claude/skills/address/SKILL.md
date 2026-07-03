@@ -17,28 +17,31 @@ This skill owns the **review-and-reply** logic and **delegates** committing and 
 
 **Argument interpretation**:
 - No argument: detect the current branch's PR via `gh pr view --json number,url`; if none, use review content from the previous conversation.
-- Number only: PR number → fetch via `gh api repos/{owner}/{repo}/pulls/{number}/comments`.
-- `github.com` URL: extract the PR number and fetch comments.
+- Number only: PR number → fetch its review via both endpoints in Phase 3.
+- `github.com` URL: extract the PR number and fetch its review via both endpoints in Phase 3.
 - Otherwise: treat as a file path containing review content.
 
 # Workflow
 
-The cycle runs end to end. Exit early only if there is nothing to do — no review comments to address and CI already green.
+The cycle runs end to end. Exit early only if there is nothing to do — no review feedback to address (neither a summary body nor inline comments) and CI already green.
 
 ### Phase 1 — Wait for review & CI
 
-After the PR is submitted, Copilot review and CI run asynchronously. Wait for both before proceeding.
-
+Wait for CI (status checks):
 ```bash
-# Blocks until every check finishes; non-zero exit if any fail (exit 8 = still pending).
-gh pr checks {pr} --watch --interval 30
+gh pr checks {pr} --watch --interval 30   # blocks until all finish; non-zero if any fail
 ```
 
-If Copilot was requested as a reviewer, also wait for its review:
+Copilot's review is not a status check — wait for it separately, until a `copilot` review with a non-empty body exists:
 ```bash
-gh pr view {pr} --json reviewRequests
+for i in $(seq 1 20); do
+  n=$(gh api repos/{owner}/{repo}/pulls/{pr}/reviews \
+        --jq '[.[] | select(.user.login | test("copilot";"i")) | select(.body|length>0)] | length')
+  [ "$n" -gt 0 ] && break
+  sleep 15
+done
 ```
-Poll until no reviewer matching `Copilot` (case-insensitive) remains in `reviewRequests` — GitHub drops a reviewer from that list once they submit. If Copilot was never requested, skip this wait.
+If none arrives within the timeout, proceed.
 
 ### Phase 2 — Triage CI
 
@@ -48,21 +51,24 @@ Check the CI result from Phase 1.
 
 ### Phase 3 — Address & reply
 
-Fetch the review comments:
+Fetch feedback from **both** endpoints; skip items already addressed on a prior run:
 ```bash
-gh api repos/{owner}/{repo}/pulls/{pr_number}/comments
+# Summary bodies — empty-body reviews are inline-comment containers, skip them.
+gh api repos/{owner}/{repo}/pulls/{pr_number}/reviews --paginate \
+  --jq '.[] | select(.body|length>0) | {id, login: .user.login, body}'
+# Inline diff comments.
+gh api repos/{owner}/{repo}/pulls/{pr_number}/comments --paginate
 ```
 
-For **each** comment:
-1. **Evaluate** its validity — Is it technically correct? Does it align with project conventions? Is it a reasonable implementation tradeoff?
-2. **Implement** only the justified fixes. Do not blindly accept feedback; verify each fix introduces no new issue.
-3. **Reply** on GitHub:
-   ```bash
-   gh api repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies -f body="<reply>"
-   ```
-   - **Addressed**: briefly state the fix (e.g. `対応しました。COMMENT ON COLUMN を追加しています。`).
-   - **Not addressed**: give clear technical reasoning the reviewer can accept (e.g. `こちらは意図的な設計です。理由: ...`).
-   - Keep replies concise and in Japanese; include code snippets or references when they help.
+For **each** summary body and inline comment:
+1. **Evaluate** — technically correct? aligned with project conventions? a reasonable tradeoff?
+2. **Implement** only the justified fixes; verify each introduces no new issue.
+3. **Reply**:
+   - Inline comment → `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies -f body="<reply>"`
+   - Summary body (no reply thread) → `gh pr comment {pr} --body "<reply>"`
+   - **Addressed**: state the fix (e.g. `対応しました。COMMENT ON COLUMN を追加しています。`).
+   - **Not addressed**: give reasoning the reviewer can accept (e.g. `こちらは意図的な設計です。理由: ...`).
+   - Concise, in Japanese; add code snippets or references when they help.
 
 ### Phase 4 — Commit the fixes
 
@@ -70,7 +76,7 @@ Commit the CI and review fixes by following the **`commit`** skill. Group relate
 
 ### Phase 5 — Clean up history & push
 
-Run **`/rebase-clean`**. It regroups the branch's commits into reviewer-readable logical units (absorbing fix commits), rebases onto the latest `main` when `main` has advanced, and pushes with `--force-with-lease`. As an authorized close-the-loop push it runs unattended — no plan-approval prompt (that is for direct user runs), and it resolves rebase conflicts itself. It self-verifies an open PR and a clean worktree before the force-push and stops if either fails; defer to it for all of that.
+Run **`/rebase-clean`**. It regroups commits into logical units, rebases onto the latest `main`, and pushes with `--force-with-lease`. On this authorized close-the-loop push it runs unattended (no plan prompt, resolves conflicts itself) and self-checks an open PR and clean worktree before pushing — defer to it for all of that.
 
 ### Phase 6 — Summary
 
@@ -98,7 +104,7 @@ PR: <url>
 # Rules
 - Independently evaluate technical validity; do not blindly accept all reviewer feedback.
 - When declining, provide reasoning the reviewer can accept.
-- Always reply to every review comment on GitHub after evaluation.
+- Always reply to every review comment and to the summary body on GitHub after evaluation.
 - Confirm CI failures are fixed locally before committing.
-- If there is nothing to do — no review comments and CI already green — report and exit.
-- History cleanup, conflict resolution, and the open-PR/clean-worktree safety checks are owned by `/rebase-clean`; on this authorized autonomous push it runs unattended (no plan prompt, resolves conflicts itself, stops only if a safety check fails) — do not re-implement that here.
+- If there is nothing to do — no summary body, no review comments, and CI already green — report and exit.
+- History cleanup, conflict resolution, and the pre-push safety checks belong to `/rebase-clean` — do not re-implement them here.
