@@ -7,11 +7,14 @@ with pkgs; [
   buf
   cachix
   # claude-code
-  # Short PATH alias for the self-building Codex review helper. It execs the source
-  # in ~/.claude (synced across machines) rather than a nix-built binary, so edits
-  # take effect on the next call without a home-manager rebuild.
+  # Short PATH aliases for the self-building codex-advisor helpers. Each execs its source
+  # in ~/.claude (synced across machines) rather than a nix-built binary, so edits to the
+  # source take effect on the next call; only adding a new alias needs a rebuild.
   (writeShellScriptBin "codex-consult" ''
     exec sh "$HOME/.claude/skills/codex-advisor/scripts/codex-consult.go" "$@"
+  '')
+  (writeShellScriptBin "session-transcript" ''
+    exec sh "$HOME/.claude/skills/codex-advisor/scripts/session-transcript.go" "$@"
   '')
   curl
   dive
