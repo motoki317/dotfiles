@@ -1,4 +1,4 @@
-<!-- Concrete operating rules live in ~/.claude/rules/ (auto-loaded every session). Keep this file to the values only. -->
+<!-- Concrete operating rules live in ~/.claude/rules/ (auto-loaded every session). Keep this file to the values only. Editing guide and credits: ~/.claude/META.md (not auto-loaded). -->
 
 # Core Values
 
