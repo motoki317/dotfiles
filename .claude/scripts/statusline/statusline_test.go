@@ -178,7 +178,8 @@ func TestRenderFull(t *testing.T) {
 
 	got := render(p, codex, now)
 	// A color reset sits between "178.2K" and "/1M", so check the parts separately.
-	for _, want := range []string{glyphModel + " Opus 4.8", " |  ", "178.2K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
+	// The token glyph must prefix the context (regression: it was dropped once).
+	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178.2K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("render missing %q in:\n%s", want, got)
 		}
