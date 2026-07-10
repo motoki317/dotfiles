@@ -1,6 +1,6 @@
 // Command statusline renders the Claude Code status line: context-window usage,
 // then Anthropic and OpenAI Codex rate limits. It reads the harness JSON payload
-// on stdin and prints one line. The statusline.sh launcher builds and caches it.
+// on stdin and prints one line. home-manager builds and installs it on PATH.
 //
 // It replaces a bash script whose stringly-typed JSON handling had grown
 // error-prone: nested extraction, filesystem discovery, timestamps, ANSI

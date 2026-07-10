@@ -1,5 +1,3 @@
-//usr/bin/env sh -c 'd="${XDG_CACHE_HOME:-$HOME/.cache}/codex-consult"; b="$d/session-transcript-$(uname -m)"; [ -x "$b" ] && [ "$b" -nt "$0" ] || ( mkdir -p "$d" && cd "$(dirname "$0")" && go build -o "$b" "$(basename "$0")" ) || exit 1; exec "$b" "$@"' "$0" "$@"; exit "$?"
-
 // session-transcript — dump the current Claude Code session as a redacted, compacted
 // transcript for codex-consult's --context mode (which runs this; standalone: `… | less`).
 // It reads the session's on-disk JSONL — found via $CLAUDE_CODE_SESSION_ID — and prints the
@@ -11,8 +9,8 @@
 // sidechains, truncates long blocks, and caps size (keeping first + most recent turns) — a
 // lossy approximation, not the byte-exact context the server-side advisor sees.
 //
-// Self-building like codex-consult.go (distinct cache name). Malformed/partial JSON lines
-// (the last may be mid-write) are skipped; stdlib only.
+// Built and installed on PATH by home-manager, like codex-consult. Malformed/partial JSON
+// lines (the last may be mid-write) are skipped; stdlib only.
 package main
 
 import (
