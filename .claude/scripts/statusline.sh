@@ -22,6 +22,12 @@ MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
 # which the model glyph above confirms renders). Swap to taste; "" to disable.
 RL_ICON="󰔟"
 
+# Prefix for the Codex rate-limit group (a separate provider, read from
+# ~/.codex session rollouts below). Reuses the same glyph and adds a "Codex"
+# label so the two providers' limits stay distinguishable at a glance; when
+# RL_ICON is disabled the label stands alone.
+CODEX_RL_PREFIX="${RL_ICON:+$RL_ICON }Codex"
+
 # 1234 -> 1.2K, 1000000 -> 1M, 1250000 -> 1.25M. Round to the magnitude's scale
 # with bc, then let %g trim trailing zeros and any bare decimal point to save
 # width (bc first because %g alone would keep 6 significant digits).
@@ -59,23 +65,40 @@ fmt_dur() {
   fi
 }
 
+# Minutes -> compact window label: 300 -> "5h", 10080 -> "7d", 90 -> "90m".
+# Codex reports each window's length as `window_minutes`, so its labels are
+# derived rather than hardcoded (Anthropic's payload omits it, hence the fixed
+# 5h/7d passed to rl_segment for the Claude block).
+win_label() {
+  local m=${1:-0}
+  if   [ $(( m % 1440 )) -eq 0 ]; then printf "%dd" "$(( m / 1440 ))"
+  elif [ $(( m % 60 )) -eq 0 ]; then printf "%dh" "$(( m / 60 ))"
+  else                                printf "%dm" "$m"
+  fi
+}
+
 # Render one rate-limit window as "<pct>% <elapsed>/<label>", e.g. "28% 3h28m/5h".
 # Elapsed is colored by time-through-window and pct by usage, so the two colors
 # side by side reveal burn pace: usage redder than time == burning fast.
-# The payload gives only `resets_at` + pct, so elapsed is derived from an ASSUMED
-# fixed window ($2, in seconds) — correct for Anthropic's 5h/7d rolling windows.
-# Emits nothing when pct is absent (non-subscribers, or pre-first-response);
-# falls back to "<pct>% <label>" when resets_at is absent.
+# Window length ($2, seconds) drives elapsed = window - (resets - now).
+# Emits nothing when pct is absent; falls back to "<pct>% <label>" when resets_at
+# is absent. When resets_at has already passed (NOW >= it), the window has rolled
+# over and the carried pct describes an expired window — a stale SNAPSHOT source
+# (Codex, written only at each API call), so we dim it and mark "~<label>" rather
+# than report a wrong number. Live sources (Claude, injected fresh each render)
+# keep resets_at in the future, so this branch never fires for them.
 NOW=$(date +%s)
 rl_segment() {
   local label=$1 window=$2 pct=$3 resets=$4
   [ -z "$pct" ] && return
+  if [ -n "$resets" ] && [ "$resets" != "null" ] && [ "$NOW" -ge "$resets" ]; then
+    printf "%b" "\033[90m~${label}\033[0m"; return
+  fi
   local pct_int=${pct%%.*}; pct_int=${pct_int:-0}
   local pc; pc=$(tcolor "$pct_int" 50 80)
   if [ -n "$resets" ] && [ "$resets" != "null" ]; then
     local elapsed=$(( window - (resets - NOW) ))
     [ "$elapsed" -lt 0 ] && elapsed=0
-    [ "$elapsed" -gt "$window" ] && elapsed=$window
     local tc; tc=$(tcolor "$(( elapsed * 100 / window ))" 50 80)
     printf "%b" "${pc}${pct_int}%\033[0m ${tc}$(fmt_dur "$elapsed")\033[0m\033[90m/${label}\033[0m"
   else
@@ -147,6 +170,46 @@ RATE=""
 if [ -n "$RATE" ]; then
   pre=""; [ -n "$RL_ICON" ] && pre="${RL_ICON} "
   CONTEXT="${CONTEXT} | ${pre}${RATE}"
+fi
+
+# Codex subscription limits (OpenAI Codex CLI). Unlike Claude's rate_limits, which
+# the harness injects live on stdin, Codex records them only in its session
+# rollout files (~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl) as a snapshot at
+# each API call. Read the newest rollout that actually carries one — newest by
+# mtime, skipping a just-started session that hasn't hit the API yet — and take
+# its last rate_limits entry. Silently absent when Codex isn't installed or has
+# no session data. The snapshot's pct is exact until its window rolls over, after
+# which rl_segment marks it stale (see there); resets_at stays absolute so the
+# elapsed countdown keeps advancing correctly regardless of snapshot age.
+codex_line=""
+codex_files=$(find "$HOME/.codex/sessions" -type f -name 'rollout-*.jsonl' 2>/dev/null)
+if [ -n "$codex_files" ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    codex_line=$(grep 'rate_limits' "$f" 2>/dev/null | tail -1)
+    [ -n "$codex_line" ] && break
+  done < <(printf '%s\n' "$codex_files" | xargs ls -t 2>/dev/null)
+fi
+if [ -n "$codex_line" ]; then
+  # primary = 5h window, secondary = 7d. Extract each field on its own rather than
+  # packing them into one delimited line: a tab-joined `read` collapses empty
+  # columns (tab is IFS whitespace), silently shifting the fields whenever one is
+  # null. `// empty` yields "" for a missing field, which the guards below skip.
+  codex_win() {
+    local base=$1 pct wmin resets
+    pct=$(echo "$codex_line" | jq -r "${base}.used_percent // empty")
+    wmin=$(echo "$codex_line" | jq -r "${base}.window_minutes // empty")
+    resets=$(echo "$codex_line" | jq -r "${base}.resets_at // empty")
+    { [ -z "$pct" ] || [ -z "$wmin" ]; } && return
+    case "$wmin" in ''|*[!0-9]*) return ;; esac  # guard the shell arithmetic below
+    rl_segment "$(win_label "$wmin")" "$(( wmin * 60 ))" "$pct" "$resets"
+  }
+  c5=$(codex_win '.payload.rate_limits.primary')
+  c7=$(codex_win '.payload.rate_limits.secondary')
+  CODEX_RATE=""
+  [ -n "$c5" ] && CODEX_RATE="$c5"
+  [ -n "$c7" ] && CODEX_RATE="${CODEX_RATE:+$CODEX_RATE, }$c7"
+  [ -n "$CODEX_RATE" ] && CONTEXT="${CONTEXT} | ${CODEX_RL_PREFIX} ${CODEX_RATE}"
 fi
 
 echo "󰚩 ${MODEL_DISPLAY} |  ${CONTEXT}"
