@@ -22,7 +22,6 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "autoCompactWindow": 400000,
-  "advisorModel": "opus",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
