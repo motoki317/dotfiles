@@ -18,15 +18,68 @@ input=$(cat)
 
 MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
 
-# 1234 -> 1.2K, 1200000 -> 1.20M; matches the magnitude style /context uses.
+# Nerd-font glyph prefixing the rate-limit group (Material Design Icons range,
+# which the model glyph above confirms renders). Swap to taste; "" to disable.
+RL_ICON="󰔟"
+
+# 1234 -> 1.2K, 1000000 -> 1M, 1250000 -> 1.25M. Round to the magnitude's scale
+# with bc, then let %g trim trailing zeros and any bare decimal point to save
+# width (bc first because %g alone would keep 6 significant digits).
 humanize() {
   local n=${1:-0}
   if [ "$n" -ge 1000000 ]; then
-    printf "%.2fM" "$(echo "scale=2; $n/1000000" | bc)"
+    printf "%gM" "$(echo "scale=2; $n/1000000" | bc)"
   elif [ "$n" -ge 1000 ]; then
-    printf "%.1fK" "$(echo "scale=1; $n/1000" | bc)"
+    printf "%gK" "$(echo "scale=1; $n/1000" | bc)"
   else
     printf "%d" "$n"
+  fi
+}
+
+# ANSI color for a 0-100 progress value: green below $2, yellow below $3, red at
+# or above $3. Emits a real ESC byte so callers concatenate it directly.
+tcolor() {
+  local v=${1:-0} lo=$2 hi=$3
+  if   [ "$v" -ge "$hi" ]; then printf "\033[31m"
+  elif [ "$v" -ge "$lo" ]; then printf "\033[33m"
+  else                          printf "\033[32m"
+  fi
+}
+
+# Seconds -> "3d23h28m" / "3h28m" / "47m": full breakdown, leading zero units
+# dropped. Used for elapsed time within a rate-limit window, so minutes are kept
+# even at day scale (unlike a coarse "resets in ~3d" countdown).
+fmt_dur() {
+  local s=${1:-0}
+  [ "$s" -lt 0 ] && s=0
+  local d=$(( s / 86400 )) h=$(( (s % 86400) / 3600 )) m=$(( (s % 3600) / 60 ))
+  if   [ "$d" -gt 0 ]; then printf "%dd%dh%dm" "$d" "$h" "$m"
+  elif [ "$h" -gt 0 ]; then printf "%dh%dm" "$h" "$m"
+  else                      printf "%dm" "$m"
+  fi
+}
+
+# Render one rate-limit window as "<pct>% <elapsed>/<label>", e.g. "28% 3h28m/5h".
+# Elapsed is colored by time-through-window and pct by usage, so the two colors
+# side by side reveal burn pace: usage redder than time == burning fast.
+# The payload gives only `resets_at` + pct, so elapsed is derived from an ASSUMED
+# fixed window ($2, in seconds) — correct for Anthropic's 5h/7d rolling windows.
+# Emits nothing when pct is absent (non-subscribers, or pre-first-response);
+# falls back to "<pct>% <label>" when resets_at is absent.
+NOW=$(date +%s)
+rl_segment() {
+  local label=$1 window=$2 pct=$3 resets=$4
+  [ -z "$pct" ] && return
+  local pct_int=${pct%%.*}; pct_int=${pct_int:-0}
+  local pc; pc=$(tcolor "$pct_int" 50 80)
+  if [ -n "$resets" ] && [ "$resets" != "null" ]; then
+    local elapsed=$(( window - (resets - NOW) ))
+    [ "$elapsed" -lt 0 ] && elapsed=0
+    [ "$elapsed" -gt "$window" ] && elapsed=$window
+    local tc; tc=$(tcolor "$(( elapsed * 100 / window ))" 50 80)
+    printf "%b" "${pc}${pct_int}%\033[0m ${tc}$(fmt_dur "$elapsed")\033[0m\033[90m/${label}\033[0m"
+  else
+    printf "%b" "${pc}${pct_int}%\033[0m \033[90m${label}\033[0m"
   fi
 }
 
@@ -66,20 +119,34 @@ if [ "$limit" -gt 0 ]; then
   limit_h=$(humanize "$limit")
   pct_int=${pct%%.*}; pct_int=${pct_int:-0}
 
-  # Color tracks proximity to the limit (the /context concern). 30/60 preserve
-  # the prior absolute marks (300K/600K) on a 1M window while now scaling to
-  # whatever `context_window_size` reports.
-  if [ "$pct_int" -ge 60 ]; then
-    color="\033[31m"
-  elif [ "$pct_int" -ge 30 ]; then
-    color="\033[33m"
-  else
-    color="\033[32m"
-  fi
-
-  CONTEXT=$(echo -e "${color}${used_h}/${limit_h} (${pct_int}%)\033[0m")
+  # Color the used figure by proximity to the limit (the /context concern); 30/60
+  # preserve the prior absolute marks (300K/600K) on a 1M window while scaling to
+  # whatever `context_window_size` reports. The percentage is elided to save
+  # width — the absolute pair conveys it, and the color carries the warning.
+  color=$(tcolor "$pct_int" 30 60)
+  CONTEXT=$(echo -e "${color}${used_h}\033[0m/${limit_h}")
 else
   CONTEXT=$(echo -e "\033[32m${used_h}\033[0m tkns")
+fi
+
+# Subscription rate limits (Claude.ai Pro/Max). `.rate_limits` is absent for
+# non-subscribers and until the first API response of a session, and each window
+# can be independently absent, so every field uses `// empty` and the block is
+# appended only when at least one window rendered.
+five=$(rl_segment "5h" 18000 \
+  "$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')" \
+  "$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')")
+week=$(rl_segment "7d" 604800 \
+  "$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')" \
+  "$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')")
+RATE=""
+[ -n "$five" ] && RATE="$five"
+# Comma, not a pipe: the two windows are one group of limit figures, so they
+# read together rather than as separate sections.
+[ -n "$week" ] && RATE="${RATE:+$RATE, }$week"
+if [ -n "$RATE" ]; then
+  pre=""; [ -n "$RL_ICON" ] && pre="${RL_ICON} "
+  CONTEXT="${CONTEXT} | ${pre}${RATE}"
 fi
 
 echo "󰚩 ${MODEL_DISPLAY} |  ${CONTEXT}"
