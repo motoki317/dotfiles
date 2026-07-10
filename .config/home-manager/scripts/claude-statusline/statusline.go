@@ -153,7 +153,22 @@ func render(p Payload, codex *CodexRL, now int64) string {
 	if segs := codexSegments(codex, now); len(segs) > 0 {
 		context += " | " + glyphTimer + " Codex " + strings.Join(segs, ", ")
 	}
-	return glyphModel + " " + p.Model.DisplayName + " | " + glyphToken + " " + context
+	return glyphModel + " " + modelName(p.Model.DisplayName) + " | " + glyphToken + " " + context
+}
+
+// modelName strips a trailing context-window annotation from the harness display
+// name: on context-variant models the harness appends " (1M context)" (or
+// "(200K context)"), which duplicates the window size already shown in the
+// context segment. Only a trailing parenthetical mentioning "context" is
+// removed, so a meaningful suffix like "(New)" is preserved.
+func modelName(display string) string {
+	if i := strings.LastIndex(display, " ("); i >= 0 && strings.HasSuffix(display, ")") {
+		inner := display[i+2 : len(display)-1]
+		if strings.Contains(strings.ToLower(inner), "context") {
+			return display[:i]
+		}
+	}
+	return display
 }
 
 // renderContext shows current context-window usage: "<used>/<limit>" with used

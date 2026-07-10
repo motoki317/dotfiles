@@ -137,6 +137,24 @@ func TestRlSegment(t *testing.T) {
 	}
 }
 
+func TestModelName(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"Opus 4.8 (1M context)", "Opus 4.8"},
+		{"Sonnet 4.5 (200K context)", "Sonnet 4.5"},
+		{"Opus 4.8", "Opus 4.8"},                               // no annotation, untouched
+		{"Claude 3.5 Sonnet (New)", "Claude 3.5 Sonnet (New)"}, // non-context parenthetical preserved
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := modelName(c.in); got != c.want {
+			t.Errorf("modelName(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
 func TestRenderContextElidesPercent(t *testing.T) {
 	var p Payload
 	p.ContextWindow = &ContextWindow{
