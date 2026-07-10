@@ -16,7 +16,11 @@
 - Use the `japanese-tech-writing` skill for all human-facing prose — comments in any language, reports, PR/issue text — and when revising existing prose.
 
 ## Cross-model review
-- `codex-advisor` is the cross-model peer of the built-in `advisor` (a different model family, repo-cold); use it about as often as `advisor`, not as a rare fallback. Pair them at substantive checkpoints: before committing to an approach, before declaring non-trivial work done, when stuck, or on a hard-to-reverse call. Surface disagreements to the user. Skip both on mechanical or low-stakes work.
+- `codex-advisor` (the `codex-consult` command) is your outside-view advisor — a different model family, so it catches blind spots a Claude-only analysis would share. Consult it on the cadence below.
+- **When to fire.** Orientation first — finding files, reading, reproducing is not substantive work and needs no consult. Consult in the gap *after* orientation and *before* the first committing step: before locking in an approach or interpretation, before building on a load-bearing assumption, before declaring non-trivial work done, when stuck (errors recurring, results not converging), or when changing approach. Genuine uncertainty or a hard-to-reverse call turns it from optional into do-it-now.
+- **How often.** At those checkpoints only — each call costs minutes, tokens, and egress to OpenAI, so deliberately skip mechanical or low-stakes work where a quick self-check suffices. Consulting less often than a free inline tool is expected, not a lapse.
+- **How to consult.** `codex-consult --context` sends a redacted session snapshot — enough for a briefless trajectory review. Codex cannot see your thinking or injected context (CLAUDE.md, memory), so when your *reasoning* is what needs checking, put it in the brief and point Codex at the files. At a real gate, run it foreground and wait for the verdict; background only a non-gating opinion.
+- **Handling the verdict.** Weigh it seriously; don't apply it blindly. If empirical evidence or a primary source contradicts it, adapt. When it disagrees with evidence you already hold, surface the conflict to the user rather than silently switching sides.
 
 ## Error handling
 - Sub-agent fails → retry with an alternative.
