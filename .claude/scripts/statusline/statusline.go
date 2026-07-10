@@ -34,11 +34,15 @@ const (
 	cReset  = "\x1b[0m"
 )
 
-// Nerd-font glyphs (Material Design Icons range): the model marker, and the
-// timer-sand that prefixes each rate-limit group.
+// Nerd-font glyphs: the model marker, the token glyph prefixing the context
+// count, and the timer-sand that prefixes each rate-limit group. glyphToken lives
+// in the Private Use Area, where it renders blank in fonts without the nerd-font
+// patch — hence the \U escape, so it can never be mistaken for whitespace and
+// silently dropped (as it was when this was ported from bash).
 const (
-	glyphModel = "\U000F06A9" // 󰚩
-	glyphTimer = "\U000F051F" // 󰔟
+	glyphModel = "\U000F06A9" // 󰚩 md-robot
+	glyphToken = "\U0000EDE8" // token/context marker
+	glyphTimer = "\U000F051F" // 󰔟 md-timer-sand
 )
 
 // Anthropic's payload omits window lengths, so they are fixed here. Codex's
@@ -149,7 +153,7 @@ func render(p Payload, codex *CodexRL, now int64) string {
 	if segs := codexSegments(codex, now); len(segs) > 0 {
 		context += " | " + glyphTimer + " Codex " + strings.Join(segs, ", ")
 	}
-	return glyphModel + " " + p.Model.DisplayName + " |  " + context
+	return glyphModel + " " + p.Model.DisplayName + " | " + glyphToken + " " + context
 }
 
 // renderContext shows current context-window usage: "<used>/<limit>" with used
