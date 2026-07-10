@@ -11,7 +11,7 @@ Rewrite a branch's history so a reviewer reads a clean narrative, not your trial
 ## Preconditions
 - On a branch other than `main`, with commits ahead of `main`.
 - **Clean worktree**, apart from changes you mean to fold into the commits: this skill rebuilds every commit from the whole worktree after the soft reset, so stray edits get swept in. If unrelated edits remain, stop and report.
-- **An open PR for this branch** — required only on an autonomous (non-direct) run, before the force-push: `gh pr view --json number,state`. `~/.claude/rules/loop.md` authorizes autonomous force-pushes only as follow-ups to an already-open PR; with none, the first push stays user-triggered — commit and stop.
+- **An open PR for this branch** — required only on an autonomous (non-direct) run, before the force-push: `gh pr view --json number,state`. `~/.claude/rules/process.md` authorizes autonomous force-pushes only as follow-ups to an already-open PR; with none, the first push stays user-triggered — commit and stop.
 
 ## How to group commits
 The unit is one **logical functional change**, named for what it does for a reader — not for which layer it touches.
