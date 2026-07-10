@@ -11,7 +11,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/scripts/statusline.sh"
+    "command": "~/.nix-profile/bin/claude-statusline"
   },
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,

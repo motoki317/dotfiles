@@ -15,3 +15,4 @@ codex-consult -C <repo> --log /tmp/codex.jsonl < brief.md  # cold review of a re
 
 - `--context` sends the current session to OpenAI. Codex sees your actions, not your thinking or injected context — put load-bearing reasoning in the brief.
 - Read-only by default; add `-s workspace-write` to let Codex edit (only when asked). stdout is the verdict.
+- Implemented in Go under `~/.config/home-manager/scripts/{codex-consult,session-transcript}`; home-manager builds them and puts them on PATH.

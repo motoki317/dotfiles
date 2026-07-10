@@ -1,14 +1,11 @@
-//usr/bin/env sh -c 'd="${XDG_CACHE_HOME:-$HOME/.cache}/codex-consult"; b="$d/bin-$(uname -m)"; [ -x "$b" ] && [ "$b" -nt "$0" ] || ( mkdir -p "$d" && cd "$(dirname "$0")" && go build -o "$b" "$(basename "$0")" ) || exit 1; exec "$b" "$@"' "$0" "$@"; exit "$?"
-
 // codex-consult — ask OpenAI Codex one question; only its final answer goes to stdout (so
 // it pipes), while everything Codex emits streams verbatim to a log (temp file, or -l) you
 // can tail. A non-zero exit with no `turn.completed` in the log means the run failed. The
 // sandbox defaults to read-only; raise it to run tests (workspace-write) or edit
 // (danger-full-access).
 //
-// The `//usr/bin/env sh -c …` first line makes this self-executing — a Go comment, but a
-// shell command when execve finds no #!: it builds a cached per-arch binary (only when
-// stale) and execs it, preserving exact exit codes (unlike `go run`). Stdlib only.
+// Built by home-manager (buildGoModule) from ~/.config/home-manager/scripts and installed on
+// PATH as `codex-consult`; edits take effect on the next `home-manager switch`. Stdlib only.
 package main
 
 import (

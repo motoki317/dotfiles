@@ -1,4 +1,16 @@
 { pkgs }:
+let
+  # Personal Go helpers under ../scripts, built and installed on PATH. buildGoModule runs each
+  # package's tests in its check phase, so a broken helper fails `home-manager switch` instead
+  # of shipping. Stdlib-only, hence vendorHash = null. Editing one now takes effect on the next
+  # switch — they previously self-built from ~/.claude on every call.
+  goBin = name: pkgs.buildGoModule {
+    pname = name;
+    version = "0";
+    src = ../scripts/${name};
+    vendorHash = null;
+  };
+in
 with pkgs; [
   _1password-cli
   age
@@ -7,15 +19,9 @@ with pkgs; [
   buf
   cachix
   # claude-code
-  # Short PATH aliases for the self-building codex-advisor helpers. Each execs its source
-  # in ~/.claude (synced across machines) rather than a nix-built binary, so edits to the
-  # source take effect on the next call; only adding a new alias needs a rebuild.
-  (writeShellScriptBin "codex-consult" ''
-    exec sh "$HOME/.claude/skills/codex-advisor/scripts/codex-consult.go" "$@"
-  '')
-  (writeShellScriptBin "session-transcript" ''
-    exec sh "$HOME/.claude/skills/codex-advisor/scripts/session-transcript.go" "$@"
-  '')
+  (goBin "claude-statusline")
+  (goBin "codex-consult")
+  (goBin "session-transcript")
   curl
   dive
   docker-buildx
