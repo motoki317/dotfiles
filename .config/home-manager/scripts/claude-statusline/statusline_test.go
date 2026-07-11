@@ -11,6 +11,14 @@ func pf(f float64) *float64 { return &f }
 func pi(i int64) *int64     { return &i }
 func pn(i int) *int         { return &i }
 
+// TestMain pins the 3-step palette so the many exact color-escape assertions below
+// are independent of the developer's terminal (which may set TERM_PROGRAM). Tests
+// for the truecolor path toggle trueColor themselves or call gradient directly.
+func TestMain(m *testing.M) {
+	trueColor = false
+	os.Exit(m.Run())
+}
+
 func TestHumanize(t *testing.T) {
 	cases := []struct {
 		in   int64
@@ -72,6 +80,67 @@ func TestTcolor(t *testing.T) {
 		if got := tcolor(c.v, c.lo, c.hi); got != c.want {
 			t.Errorf("tcolor(%d,%d,%d) = %q, want %q", c.v, c.lo, c.hi, got, c.want)
 		}
+	}
+}
+
+func TestSupportsTrueColor(t *testing.T) {
+	cases := []struct {
+		colorterm, termProgram string
+		want                   bool
+	}{
+		{"truecolor", "", true},
+		{"24bit", "", true},
+		{"", "WarpTerminal", true}, // Warp on WSL sets no COLORTERM
+		{"", "iTerm.app", true},
+		{"", "", false},
+		{"256color", "Apple_Terminal", false}, // 256-color terminal, not 24-bit
+	}
+	for _, c := range cases {
+		env := func(k string) string {
+			switch k {
+			case "COLORTERM":
+				return c.colorterm
+			case "TERM_PROGRAM":
+				return c.termProgram
+			}
+			return ""
+		}
+		if got := supportsTrueColor(env); got != c.want {
+			t.Errorf("supportsTrueColor(CT=%q,TP=%q) = %v, want %v", c.colorterm, c.termProgram, got, c.want)
+		}
+	}
+}
+
+func TestGradient(t *testing.T) {
+	const lo, hi = int64(0), int64(100)
+	// Endpoints and midpoint land exactly on the palette stops.
+	if got := gradient(lo, lo, hi); got != gradLow.escape() {
+		t.Errorf("low end = %q, want green stop", got)
+	}
+	if got := gradient(50, lo, hi); got != gradMid.escape() {
+		t.Errorf("midpoint = %q, want yellow stop", got)
+	}
+	if got := gradient(hi, lo, hi); got != gradHigh.escape() {
+		t.Errorf("high end = %q, want red stop", got)
+	}
+	// Out-of-band values clamp to the endpoint colors.
+	if gradient(-10, lo, hi) != gradLow.escape() {
+		t.Error("below lo should clamp to the green stop")
+	}
+	if gradient(999, lo, hi) != gradHigh.escape() {
+		t.Error("above hi should clamp to the red stop")
+	}
+	// Every output is a 24-bit foreground escape.
+	if !strings.HasPrefix(gradient(25, lo, hi), "\x1b[38;2;") {
+		t.Errorf("expected a 24-bit escape, got %q", gradient(25, lo, hi))
+	}
+}
+
+func TestTcolorTrueColor(t *testing.T) {
+	trueColor = true
+	defer func() { trueColor = false }()
+	if got := tcolor(75, 50, 80); !strings.HasPrefix(got, "\x1b[38;2;") {
+		t.Errorf("truecolor tcolor = %q, want a 24-bit escape", got)
 	}
 }
 
