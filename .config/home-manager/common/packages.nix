@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, inputs }:
 let
   # Personal Go helpers under ../scripts, built and installed on PATH. buildGoModule runs each
   # package's tests in its check phase, so a broken helper fails `home-manager switch` instead
@@ -18,7 +18,7 @@ with pkgs; [
   awscli2
   buf
   cachix
-  ccusage # session cost for the statusline (claude-statusline shells out to it)
+  inputs.ccusage.packages.${pkgs.system}.default # statusline session cost (see flake.nix)
   # claude-code
   (goBin "claude-statusline")
   (goBin "codex-consult")

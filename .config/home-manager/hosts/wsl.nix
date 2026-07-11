@@ -1,4 +1,4 @@
-{ config, pkgs, username, homeDirectory, ... }:
+{ config, pkgs, inputs, username, homeDirectory, ... }:
 
 {
   home.username = username;
@@ -8,7 +8,7 @@
   # tmux clipboard tool consumed by common/tmux.nix
   _module.args.clipboardCommand = "clip.exe";
 
-  home.packages = import ../common/packages.nix { inherit pkgs; };
+  home.packages = import ../common/packages.nix { inherit pkgs inputs; };
 
   home.file = {
     ".docker/cli-plugins/docker-buildx".source = "${pkgs.docker-buildx}/bin/docker-buildx";
