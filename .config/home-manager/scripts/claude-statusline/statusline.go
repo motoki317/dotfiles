@@ -363,7 +363,7 @@ func renderCost(ci *costInfo) string {
 	if ci == nil {
 		return ""
 	}
-	cost := paint(tcolor(int64(ci.USD), 10, 40), "$"+sigFig(ci.USD))
+	cost := paint(tcolor(int64(ci.USD), 10, 40), "$"+sigFig(ci.USD, 3))
 	read := paint(tcolor(ci.CacheRead, 10_000_000, 50_000_000), humanize(ci.CacheRead))
 	create := paint(tcolor(ci.CacheCreation, 400_000, 2_000_000), humanize(ci.CacheCreation))
 	input := paint(tcolor(ci.Input, 20_000, 200_000), humanize(ci.Input))
@@ -530,7 +530,7 @@ func humanize(n int64) string {
 		f /= 1000
 		exp++
 	}
-	s := sigFig(f)
+	s := sigFig(f, 2)
 	if s == "1000" { // mantissa rounded up into the next unit (e.g. 999600 -> 1M)
 		s, exp = "1", exp+1
 	}
@@ -541,19 +541,21 @@ func humanize(n int64) string {
 	return s + units[exp-1:exp]
 }
 
-// sigFig renders v with two significant figures, keeping a third for values in
-// the hundreds (120, not 0.12k): >=10 rounds to an integer, [1,10) keeps one
-// decimal, and <1 falls back to cent precision. It formats humanize's mantissa
-// and standalone amounts like cost.
-func sigFig(v float64) string {
-	switch {
-	case v >= 10:
-		return strconv.FormatFloat(v, 'f', 0, 64)
-	case v >= 1:
-		return trimZeros(v, 1)
-	default:
-		return trimZeros(v, 2)
+// sigFig renders v with n significant figures, trailing zeros trimmed. Integer
+// digits count toward n; a value below 1 gets n fractional digits — leading zeros
+// aren't significant, and trimZeros drops the rest ($0.05, not $0.050). Tokens use
+// n=2 for compactness; cost uses n=3, where the extra digit's precision earns its
+// width. Values with more than n integer digits print whole (127, not 130).
+func sigFig(v float64, n int) string {
+	intDigits := 0
+	for x := v; x >= 1; x /= 10 {
+		intDigits++
 	}
+	dec := n - intDigits
+	if dec < 0 {
+		dec = 0
+	}
+	return trimZeros(v, dec)
 }
 
 // trimZeros formats v with at most scale decimals, dropping trailing zeros and a
