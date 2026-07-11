@@ -20,10 +20,15 @@ func TestHumanize(t *testing.T) {
 		{999, "999"},
 		{1000, "1K"},
 		{1234, "1.2K"},
-		{178289, "178.3K"}, // rounds (bash's bc truncated to 178.2K); rounding is intended
+		{12340, "12K"},   // 2 sig figs drops the trailing .3
+		{123400, "123K"}, // hundreds digit kept whole (the "3 as exception" case)
+		{178289, "178K"},
 		{1000000, "1M"},
-		{1250000, "1.25M"},
+		{1230000, "1.2M"},
+		{1260000, "1.3M"},
 		{1500000, "1.5M"},
+		{999600, "1M"},          // mantissa rounds up into the next unit
+		{1_200_000_000, "1.2B"}, // billions covered
 	}
 	for _, c := range cases {
 		if got := humanize(c.in); got != c.want {
@@ -52,8 +57,8 @@ func TestTrimZeros(t *testing.T) {
 
 func TestTcolor(t *testing.T) {
 	cases := []struct {
-		v      int
-		lo, hi int
+		v      int64
+		lo, hi int64
 		want   string
 	}{
 		{0, 50, 80, cGreen},
@@ -79,7 +84,9 @@ func TestFmtDur(t *testing.T) {
 		{0, "0m"},
 		{47 * 60, "47m"},
 		{3*3600 + 28*60, "3h28m"},
-		{3*86400 + 23*3600 + 28*60, "3d23h28m"},
+		{3*86400 + 23*3600 + 28*60, "3d23h"}, // minutes dropped at day scale
+		{1*86400 + 21*3600 + 24*60, "1d21h"}, // 1d21h24m -> 1d21h
+		{1*86400 + 0*3600 + 24*60, "1d0h"},   // hours kept even at zero
 	}
 	for _, c := range cases {
 		if got := fmtDur(c.s); got != c.want {
@@ -166,8 +173,8 @@ func TestRenderContextElidesPercent(t *testing.T) {
 	if strings.Contains(got, "%") {
 		t.Errorf("context should elide the percentage, got %q", got)
 	}
-	if !strings.Contains(got, "178.2K") || !strings.Contains(got, "/1M") {
-		t.Errorf("context = %q, want 178.2K/1M", got)
+	if !strings.Contains(got, "178K") || !strings.Contains(got, "/1M") {
+		t.Errorf("context = %q, want 178K/1M", got)
 	}
 }
 
@@ -194,10 +201,10 @@ func TestRenderFull(t *testing.T) {
 		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
 	}
 
-	got := render(p, codex, now)
+	got := render(p, codex, nil, now)
 	// A color reset sits between "178.2K" and "/1M", so check the parts separately.
 	// The token glyph must prefix the context (regression: it was dropped once).
-	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178.2K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
+	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("render missing %q in:\n%s", want, got)
 		}
@@ -207,9 +214,78 @@ func TestRenderFull(t *testing.T) {
 func TestRenderCodexAbsent(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, 1_000_000)
+	got := render(p, nil, nil, 1_000_000)
 	if strings.Contains(got, "Codex") {
 		t.Errorf("no Codex data should render no Codex group, got %q", got)
+	}
+}
+
+func TestSessionID(t *testing.T) {
+	// Explicit field wins.
+	if got := sessionID(Payload{SessionID: "abc"}); got != "abc" {
+		t.Errorf("explicit = %q, want abc", got)
+	}
+	// Falls back to the transcript filename stem.
+	p := Payload{TranscriptPath: "/home/u/.claude/projects/x/b21a0283-29b2.jsonl"}
+	if got := sessionID(p); got != "b21a0283-29b2" {
+		t.Errorf("fallback = %q, want b21a0283-29b2", got)
+	}
+}
+
+func TestParseCost(t *testing.T) {
+	// Two sessions; the second is the target. Fields mirror ccusage session --json,
+	// where sub-agents and compaction are already folded into the entry.
+	data := []byte(`{"session":[
+		{"period":"other","totalCost":9.9,"inputTokens":1,"outputTokens":2,"cacheCreationTokens":3,"cacheReadTokens":4},
+		{"period":"sess-1","totalCost":2.7258,"inputTokens":7817,"outputTokens":40734,"cacheCreationTokens":78295,"cacheReadTokens":1770917}
+	]}`)
+	ci := parseCost(data, "sess-1")
+	if ci == nil {
+		t.Fatal("expected a match")
+	}
+	if ci.USD != 2.7258 || ci.Input != 7817 || ci.Output != 40734 ||
+		ci.CacheCreation != 78295 || ci.CacheRead != 1770917 {
+		t.Errorf("parsed = %+v", ci)
+	}
+	// No matching period -> nil.
+	if parseCost(data, "missing") != nil {
+		t.Error("unmatched session should be nil")
+	}
+	// Malformed JSON -> nil, never a panic.
+	if parseCost([]byte("not json"), "sess-1") != nil {
+		t.Error("malformed input should be nil")
+	}
+}
+
+func TestRenderCost(t *testing.T) {
+	if renderCost(nil) != "" {
+		t.Error("nil cost should render empty")
+	}
+	got := renderCost(&costInfo{USD: 2.7, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
+	// Cost is 2-sig-fig ($2.7, not $2.70), tokens humanized; order is cache-read,
+	// cache-creation, input, then output. Color codes break up the ↑ group, so
+	// assert the pieces, not one contiguous substring.
+	for _, want := range []string{glyphCost, "$2.7", "1.7M", "78K", "7.8K", "41K"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("renderCost missing %q in %q", want, got)
+		}
+	}
+	// ↑ group is ordered largest-first: cache-read precedes input.
+	if strings.Index(got, "1.7M") > strings.Index(got, "7.8K") {
+		t.Errorf("cache-read should precede input, got %q", got)
+	}
+	// Numbers are colored, not a uniform gray block.
+	if !strings.Contains(got, cGreen) && !strings.Contains(got, cYellow) && !strings.Contains(got, cRed) {
+		t.Errorf("expected colored numbers, got %q", got)
+	}
+}
+
+func TestRenderWithCost(t *testing.T) {
+	var p Payload
+	p.Model.DisplayName = "Opus 4.8"
+	got := render(p, nil, &costInfo{USD: 1.17, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000)
+	if !strings.Contains(got, "$1.2") { // 1.17 -> 2 sig figs -> $1.2
+		t.Errorf("render should include the cost segment, got %q", got)
 	}
 }
 
