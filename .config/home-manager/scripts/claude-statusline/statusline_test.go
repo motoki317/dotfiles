@@ -371,6 +371,21 @@ func TestRenderCost(t *testing.T) {
 	}
 }
 
+func TestRenderCostUnpriced(t *testing.T) {
+	// ccusage can't price a new model offline: totalCost 0 with real token counts.
+	// Show "$?", never a misleading "$0"; the token counts still render.
+	got := renderCost(&costInfo{USD: 0, Input: 7, CacheCreation: 39800, CacheRead: 148136, Output: 22715})
+	if !strings.Contains(got, "$?") {
+		t.Errorf("unpriced session should render $?, got %q", got)
+	}
+	if strings.Contains(got, "$0") {
+		t.Errorf("should not render a misleading $0, got %q", got)
+	}
+	if !strings.Contains(got, "148K") {
+		t.Errorf("tokens should still render, got %q", got)
+	}
+}
+
 func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"

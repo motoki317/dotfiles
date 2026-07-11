@@ -284,6 +284,13 @@ type costInfo struct {
 	Output        int64
 }
 
+// tokens is the session's total token count. Zero cost with nonzero tokens is the
+// signal that a pricing source couldn't price the model (a priced session is never
+// exactly 0 with tokens), driving both the online escalation and the $? fallback.
+func (ci *costInfo) tokens() int64 {
+	return ci.Input + ci.CacheCreation + ci.CacheRead + ci.Output
+}
+
 // ccusageSession mirrors the fields this tool reads from `ccusage session --json`.
 // ccusage keys each entry by period == the Claude Code session_id and folds every
 // sub-agent (the flat <session>/subagents/*.jsonl files) and every compaction (all
@@ -313,8 +320,14 @@ func sessionID(p Payload) string {
 
 // sessionCost returns this session's cost via ccusage, or nil when ccusage is not
 // installed, times out, errors, or has no entry for the session — every one
-// degrades to no cost segment, never a fatal error. --offline uses ccusage's
-// bundled pricing (no network); --since bounds the scan (see costScanDays).
+// degrades to no cost segment, never a fatal error.
+//
+// It reads offline first (ccusage's embedded price table: no network, ~60ms). That
+// table is baked in at ccusage build time, so it lags newly released models — one it
+// can't price yields cost 0 with real token counts. Only then does it pay for one
+// authoritative online fetch (LiteLLM), which prices new models correctly. So every
+// already-priced session keeps the fast offline path; only a model too new for the
+// installed ccusage triggers the network, and only until ccusage embeds its price.
 func sessionCost(sid string, now int64) *costInfo {
 	if sid == "" {
 		return nil
@@ -324,9 +337,28 @@ func sessionCost(sid string, now int64) *costInfo {
 		return nil
 	}
 	since := time.Unix(now, 0).AddDate(0, 0, -costScanDays).Format("20060102")
+
+	ci := ccusageCost(bin, since, sid, true)
+	if ci != nil && ci.USD == 0 && ci.tokens() > 0 {
+		if online := ccusageCost(bin, since, sid, false); online != nil && online.USD > 0 {
+			return online
+		}
+	}
+	return ci
+}
+
+// ccusageCost runs one `ccusage session --json` query bounded by costTimeout and
+// returns the session's totals, or nil on any failure. offline selects ccusage's
+// embedded price table over a live LiteLLM fetch; --since bounds the scan (see
+// costScanDays).
+func ccusageCost(bin, since, sid string, offline bool) *costInfo {
+	args := []string{"session", "--json", "--since", since}
+	if offline {
+		args = append(args, "--offline")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), costTimeout)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, bin, "session", "--json", "--offline", "--since", since).Output()
+	out, err := exec.CommandContext(ctx, bin, args...).Output()
 	if err != nil {
 		return nil
 	}
@@ -363,7 +395,14 @@ func renderCost(ci *costInfo) string {
 	if ci == nil {
 		return ""
 	}
-	cost := paint(tcolor(int64(ci.USD), 10, 40), "$"+sigFig(ci.USD, 3))
+	costColor, costStr := tcolor(int64(ci.USD), 10, 40), "$"+sigFig(ci.USD, 3)
+	// Cost 0 with real tokens means no source could price the model — sessionCost
+	// already tried the live fetch, so this is a genuine unknown (e.g. offline, or a
+	// model no pricing source knows yet), not a false $0. Show it as such.
+	if ci.USD == 0 && ci.tokens() > 0 {
+		costColor, costStr = cGray, "$?"
+	}
+	cost := paint(costColor, costStr)
 	read := paint(tcolor(ci.CacheRead, 10_000_000, 50_000_000), humanize(ci.CacheRead))
 	create := paint(tcolor(ci.CacheCreation, 400_000, 2_000_000), humanize(ci.CacheCreation))
 	input := paint(tcolor(ci.Input, 20_000, 200_000), humanize(ci.Input))
