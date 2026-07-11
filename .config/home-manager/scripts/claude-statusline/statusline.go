@@ -15,9 +15,11 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -43,6 +45,7 @@ const (
 	glyphModel = "\U000F06A9" // 󰚩 md-robot
 	glyphToken = "\U0000EDE8" // token/context marker
 	glyphTimer = "\U000F051F" // 󰔟 md-timer-sand
+	glyphCost  = "\U000F0114" // 󰄔 md-cash
 )
 
 // Anthropic's payload omits window lengths, so they are fixed here. Codex's
@@ -58,6 +61,17 @@ const (
 // stays correct when several sessions are active without reading all ~hundreds.
 const codexScanLimit = 8
 
+// costScanDays bounds how many days of history ccusage scans (--since), so render
+// latency stays flat as the transcript archive grows rather than scaling with all
+// of it. The active session is always recent, so this never hides it — but a
+// single session running longer than costScanDays undercounts; widen it if that
+// matters. costTimeout caps the ccusage subprocess so a hang degrades to no cost
+// segment instead of stalling the whole line.
+const (
+	costScanDays = 3
+	costTimeout  = 2 * time.Second
+)
+
 // Payload is the harness JSON on stdin. Pointers mark optional objects so absent
 // and zero are distinguishable.
 type Payload struct {
@@ -67,6 +81,7 @@ type Payload struct {
 	ContextWindow  *ContextWindow `json:"context_window"`
 	RateLimits     *RateLimits    `json:"rate_limits"`
 	TranscriptPath string         `json:"transcript_path"`
+	SessionID      string         `json:"session_id"`
 }
 
 // ContextWindow carries the harness-computed, /context-faithful figures. Newer
@@ -129,7 +144,9 @@ func main() {
 	}
 	home, _ := os.UserHomeDir()
 	codex := codexRateLimits(home)
-	fmt.Println(render(p, codex, time.Now().Unix()))
+	now := time.Now().Unix()
+	cost := sessionCost(sessionID(p), now)
+	fmt.Println(render(p, codex, cost, now))
 }
 
 func readAll(f *os.File) ([]byte, error) {
@@ -144,9 +161,12 @@ func readAll(f *os.File) ([]byte, error) {
 
 // render builds the whole status line. Pure given its inputs (now is passed, not
 // read from the clock) so every branch is testable.
-func render(p Payload, codex *CodexRL, now int64) string {
+func render(p Payload, codex *CodexRL, cost *costInfo, now int64) string {
 	context := renderContext(p)
 
+	if s := renderCost(cost); s != "" {
+		context += " | " + s
+	}
 	if segs := claudeSegments(p, now); len(segs) > 0 {
 		context += " | " + glyphTimer + " " + strings.Join(segs, ", ")
 	}
@@ -181,11 +201,11 @@ func renderContext(p Payload) string {
 	if limit <= 0 {
 		return cGreen + usedH + cReset + " tkns"
 	}
-	pctInt := 0
+	var pctInt int64
 	if p.ContextWindow != nil && p.ContextWindow.UsedPercentage != nil {
-		pctInt = int(*p.ContextWindow.UsedPercentage)
+		pctInt = int64(*p.ContextWindow.UsedPercentage)
 	} else {
-		pctInt = int(used * 100 / limit)
+		pctInt = used * 100 / limit
 	}
 	// 30/60 keep the prior absolute marks (300K/600K on a 1M window) while scaling
 	// to whatever context_window_size reports, so 200k and 1M models both work.
@@ -253,6 +273,106 @@ func transcriptUsed(path string) int64 {
 	return last
 }
 
+// costInfo is one session's cumulative spend and token usage, as computed by
+// ccusage. Input is fresh (uncached) input; CacheCreation and CacheRead are the
+// cache-write and cache-read halves of cached input; Output is generated tokens.
+type costInfo struct {
+	USD           float64
+	Input         int64
+	CacheCreation int64
+	CacheRead     int64
+	Output        int64
+}
+
+// ccusageSession mirrors the fields this tool reads from `ccusage session --json`.
+// ccusage keys each entry by period == the Claude Code session_id and folds every
+// sub-agent (the flat <session>/subagents/*.jsonl files) and every compaction (all
+// in the one main transcript) into that entry, so one lookup is the whole-session
+// total — the reason cost is delegated here rather than summed in-process: ccusage
+// owns the per-model pricing, which is not the classic $15/$75 for current models.
+type ccusageSession struct {
+	Session []struct {
+		Period              string  `json:"period"`
+		TotalCost           float64 `json:"totalCost"`
+		InputTokens         int64   `json:"inputTokens"`
+		OutputTokens        int64   `json:"outputTokens"`
+		CacheCreationTokens int64   `json:"cacheCreationTokens"`
+		CacheReadTokens     int64   `json:"cacheReadTokens"`
+	} `json:"session"`
+}
+
+// sessionID resolves the session's UUID: the payload field when present, else the
+// transcript filename stem (<uuid>.jsonl), which equals it. The fallback keeps
+// cost working on any client whose payload omits session_id.
+func sessionID(p Payload) string {
+	if p.SessionID != "" {
+		return p.SessionID
+	}
+	return strings.TrimSuffix(filepath.Base(p.TranscriptPath), ".jsonl")
+}
+
+// sessionCost returns this session's cost via ccusage, or nil when ccusage is not
+// installed, times out, errors, or has no entry for the session — every one
+// degrades to no cost segment, never a fatal error. --offline uses ccusage's
+// bundled pricing (no network); --since bounds the scan (see costScanDays).
+func sessionCost(sid string, now int64) *costInfo {
+	if sid == "" {
+		return nil
+	}
+	bin, err := exec.LookPath("ccusage")
+	if err != nil {
+		return nil
+	}
+	since := time.Unix(now, 0).AddDate(0, 0, -costScanDays).Format("20060102")
+	ctx, cancel := context.WithTimeout(context.Background(), costTimeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, bin, "session", "--json", "--offline", "--since", since).Output()
+	if err != nil {
+		return nil
+	}
+	return parseCost(out, sid)
+}
+
+// parseCost extracts the session's totals from ccusage `session --json` output.
+// Returns nil when the payload can't be decoded or holds no matching session.
+func parseCost(data []byte, sid string) *costInfo {
+	var cu ccusageSession
+	if json.Unmarshal(data, &cu) != nil {
+		return nil
+	}
+	for _, s := range cu.Session {
+		if s.Period == sid {
+			return &costInfo{
+				USD:           s.TotalCost,
+				Input:         s.InputTokens,
+				CacheCreation: s.CacheCreationTokens,
+				CacheRead:     s.CacheReadTokens,
+				Output:        s.OutputTokens,
+			}
+		}
+	}
+	return nil
+}
+
+// renderCost renders "<glyph> $<cost> ↑<cache-read>/<cache-write>/<input> ↓<output>".
+// The ↑ group is tokens sent, ordered largest-first: the cached prefix re-read,
+// the delta written to cache, then fresh uncached input; ↓ is generated output.
+// Cost and every token are colored by magnitude (per-field bands ≈ recent-session
+// p50/p90), the arrows and slashes dimmed. Empty when cost is absent.
+func renderCost(ci *costInfo) string {
+	if ci == nil {
+		return ""
+	}
+	cost := paint(tcolor(int64(ci.USD), 10, 40), "$"+sigFig(ci.USD))
+	read := paint(tcolor(ci.CacheRead, 10_000_000, 50_000_000), humanize(ci.CacheRead))
+	create := paint(tcolor(ci.CacheCreation, 400_000, 2_000_000), humanize(ci.CacheCreation))
+	input := paint(tcolor(ci.Input, 20_000, 200_000), humanize(ci.Input))
+	output := paint(tcolor(ci.Output, 100_000, 350_000), humanize(ci.Output))
+	return glyphCost + " " + cost + " " +
+		paint(cGray, "↑") + read + paint(cGray, "/") + create + paint(cGray, "/") + input + " " +
+		paint(cGray, "↓") + output
+}
+
 // claudeSegments renders Anthropic's 5h and 7d windows, skipping any that is
 // absent (non-subscribers, or before the first API response of a session).
 func claudeSegments(p Payload, now int64) []string {
@@ -308,7 +428,7 @@ func rlSegment(label string, windowSecs int64, pct *float64, resetsAt *int64, no
 	if resetsAt != nil && now >= *resetsAt {
 		return cGray + "~" + label + cReset
 	}
-	pctInt := int(*pct)
+	pctInt := int64(*pct)
 	pc := tcolor(pctInt, 50, 80)
 	if resetsAt == nil {
 		return fmt.Sprintf("%s%d%%%s %s%s%s", pc, pctInt, cReset, cGray, label, cReset)
@@ -319,7 +439,7 @@ func rlSegment(label string, windowSecs int64, pct *float64, resetsAt *int64, no
 	}
 	tc := cGreen
 	if windowSecs > 0 {
-		tc = tcolor(int(elapsed*100/windowSecs), 50, 80)
+		tc = tcolor(elapsed*100/windowSecs, 50, 80)
 	}
 	return fmt.Sprintf("%s%d%%%s %s%s%s%s/%s%s",
 		pc, pctInt, cReset, tc, fmtDur(elapsed), cReset, cGray, label, cReset)
@@ -398,17 +518,41 @@ func lastRateLimitEvent(path string) (*CodexRL, time.Time, bool) {
 	return rl, ts, true
 }
 
-// humanize renders a token count compactly: 1234 -> "1.2K", 1000000 -> "1M",
-// 1250000 -> "1.25M". Trailing zeros and a bare decimal point are trimmed to save
-// width.
+// humanize renders a token count with two significant figures, keeping a third
+// for hundreds: 1234->"1.2K", 12340->"12K", 123400->"123K", 1.26e6->"1.3M".
+// Counts under 1000 print verbatim.
 func humanize(n int64) string {
-	switch {
-	case n >= 1_000_000:
-		return trimZeros(float64(n)/1_000_000, 2) + "M"
-	case n >= 1000:
-		return trimZeros(float64(n)/1000, 1) + "K"
-	default:
+	if n < 1000 {
 		return strconv.FormatInt(n, 10)
+	}
+	f, exp := float64(n), 0
+	for f >= 1000 {
+		f /= 1000
+		exp++
+	}
+	s := sigFig(f)
+	if s == "1000" { // mantissa rounded up into the next unit (e.g. 999600 -> 1M)
+		s, exp = "1", exp+1
+	}
+	const units = "KMBT"
+	if exp > len(units) { // >= 1e15; unreachable for token counts, but never index out of range
+		exp = len(units)
+	}
+	return s + units[exp-1:exp]
+}
+
+// sigFig renders v with two significant figures, keeping a third for values in
+// the hundreds (120, not 0.12k): >=10 rounds to an integer, [1,10) keeps one
+// decimal, and <1 falls back to cent precision. It formats humanize's mantissa
+// and standalone amounts like cost.
+func sigFig(v float64) string {
+	switch {
+	case v >= 10:
+		return strconv.FormatFloat(v, 'f', 0, 64)
+	case v >= 1:
+		return trimZeros(v, 1)
+	default:
+		return trimZeros(v, 2)
 	}
 }
 
@@ -423,9 +567,9 @@ func trimZeros(v float64, scale int) string {
 	return s
 }
 
-// tcolor maps a 0-100 progress value to green below lo, yellow below hi, red at
-// or above hi.
-func tcolor(v, lo, hi int) string {
+// tcolor maps a value to green below lo, yellow below hi, red at or above hi —
+// used both for 0-100 progress and for raw token/cost magnitudes.
+func tcolor(v, lo, hi int64) string {
 	switch {
 	case v >= hi:
 		return cRed
@@ -436,9 +580,12 @@ func tcolor(v, lo, hi int) string {
 	}
 }
 
-// fmtDur renders a duration as "3d23h28m" / "3h28m" / "47m", dropping leading
-// zero units. Minutes are kept even at day scale (this is elapsed within a
-// rate-limit window, not a coarse countdown).
+// paint wraps s in an ANSI color and a reset, so colored spans concatenate safely.
+func paint(color, s string) string { return color + s + cReset }
+
+// fmtDur renders a duration as "3d23h" / "3h28m" / "47m", dropping leading zero
+// units and, at day scale, the minutes — a multi-day window (the 7d rate limit)
+// doesn't need minute precision, and dropping them keeps the line compact.
 func fmtDur(s int64) string {
 	if s < 0 {
 		s = 0
@@ -446,7 +593,7 @@ func fmtDur(s int64) string {
 	d, h, m := s/86400, (s%86400)/3600, (s%3600)/60
 	switch {
 	case d > 0:
-		return fmt.Sprintf("%dd%dh%dm", d, h, m)
+		return fmt.Sprintf("%dd%dh", d, h)
 	case h > 0:
 		return fmt.Sprintf("%dh%dm", h, m)
 	default:

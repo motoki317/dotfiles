@@ -18,6 +18,7 @@ with pkgs; [
   awscli2
   buf
   cachix
+  ccusage # session cost for the statusline (claude-statusline shells out to it)
   # claude-code
   (goBin "claude-statusline")
   (goBin "codex-consult")
