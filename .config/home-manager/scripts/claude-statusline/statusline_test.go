@@ -45,6 +45,28 @@ func TestHumanize(t *testing.T) {
 	}
 }
 
+func TestSigFig(t *testing.T) {
+	cases := []struct {
+		v    float64
+		n    int
+		want string
+	}{
+		{2.73, 3, "2.73"},  // cost: 3 sig figs
+		{12.34, 3, "12.3"}, // one integer digit consumed, two decimals -> one
+		{127.4, 3, "127"},  // three integer digits -> whole
+		{0.05, 3, "0.05"},  // sub-dollar: trailing zero trimmed, not "0.050"
+		{2.7, 2, "2.7"},    // token mantissa: 2 sig figs
+		{12.34, 2, "12"},   //
+		{178.9, 2, "179"},  // hundreds keep the third digit (integer, rounded)
+		{1.0, 2, "1"},      // trailing zeros trimmed
+	}
+	for _, c := range cases {
+		if got := sigFig(c.v, c.n); got != c.want {
+			t.Errorf("sigFig(%v,%d) = %q, want %q", c.v, c.n, got, c.want)
+		}
+	}
+}
+
 func TestTrimZeros(t *testing.T) {
 	cases := []struct {
 		v     float64
@@ -330,11 +352,11 @@ func TestRenderCost(t *testing.T) {
 	if renderCost(nil) != "" {
 		t.Error("nil cost should render empty")
 	}
-	got := renderCost(&costInfo{USD: 2.7, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
-	// Cost is 2-sig-fig ($2.7, not $2.70), tokens humanized; order is cache-read,
-	// cache-creation, input, then output. Color codes break up the ↑ group, so
-	// assert the pieces, not one contiguous substring.
-	for _, want := range []string{glyphCost, "$2.7", "1.7M", "78K", "7.8K", "41K"} {
+	got := renderCost(&costInfo{USD: 2.73, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
+	// Cost is 3-sig-fig ($2.73, precision matters); tokens are humanized at 2-sig-fig.
+	// Order is cache-read, cache-creation, input, then output. Color codes break up
+	// the ↑ group, so assert the pieces, not one contiguous substring.
+	for _, want := range []string{glyphCost, "$2.73", "1.7M", "78K", "7.8K", "41K"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("renderCost missing %q in %q", want, got)
 		}
@@ -353,7 +375,7 @@ func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
 	got := render(p, nil, &costInfo{USD: 1.17, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000)
-	if !strings.Contains(got, "$1.2") { // 1.17 -> 2 sig figs -> $1.2
+	if !strings.Contains(got, "$1.17") { // cost at 3 sig figs keeps the cents
 		t.Errorf("render should include the cost segment, got %q", got)
 	}
 }
