@@ -1,6 +1,6 @@
 ---
 name: codex-advisor
-description: Cross-model second opinion from OpenAI Codex: `codex-consult --context` reviews the current session, or pipe a brief. Triggers on "ask codex", "codex review", "second opinion", or the "Cross-model review" rules.
+description: Cross-model second opinion from OpenAI Codex — `codex-consult --context` reviews the current session, or pipe a brief. Triggers on "ask codex", "codex review", "second opinion", or the "Cross-model review" rules.
 ---
 
 # Codex advisor / reviewer
