@@ -11,7 +11,7 @@ argument-hint: "[task-description]"
 - Don't declare the task done until the Verify step passes; show evidence, not assertions.
 
 # Workflow
-1. **Prepare** — read the `/define` plan file end to end and settle any open policy decisions yourself. Choose or create the working branch (branch off the default branch first — Codex commits as it goes). For a repo rooted at `$HOME` (this dotfiles repo), delegate from a `git worktree` checkout — the wrapper refuses a writable run rooted at `$HOME`. Write the brief: the plan-file path plus only what Codex can't infer from the repo — in-session decisions, the branch, scope boundaries. The wrapper's preamble already fixes the coding principles, conventions, skill playbooks, and the commit/never-push policy; don't restate them.
+1. **Prepare** — read the `/define` plan file end to end and settle any open policy decisions yourself. Choose or create the working branch (branch off the default branch first — Codex commits as it goes). For a repo rooted at `$HOME` (this dotfiles repo), delegate from a `git worktree` checkout — the wrapper refuses a writable run rooted at `$HOME`. Write the brief: the plan-file path plus only what Codex can't infer from the repo — in-session decisions, the branch, scope boundaries. Codex auto-loads the coding principles, conventions, and skill playbooks from the git-tracked `~/.codex/AGENTS.md`, and the wrapper's preamble fixes the commit/never-push policy and report format; don't restate either.
 2. **Delegate** — one long-running call, in the background (it can exceed foreground command timeouts), with a unique log path per run:
    ```bash
    codex-run work -C <repo> --log /tmp/codex-work-<slug>.jsonl < brief.md

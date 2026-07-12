@@ -4,7 +4,8 @@
 // failed. The mode fixes the role and default sandbox per call site: `advise` reviews
 // without writing (read-only), `work` implements a delegated task — up to a whole
 // requirements document — with full access (danger-full-access), committing locally as it
-// goes and pointed at the house rules and skills by an auto-appended preamble.
+// goes. The house rules and skills are not injected here: codex auto-loads them from
+// ~/.codex/AGENTS.md (git-tracked), which every run — including interactive ones — sees.
 //
 // Built by home-manager (buildGoModule) from ~/.config/home-manager/scripts and installed on
 // PATH as `codex-run`; edits take effect on the next `home-manager switch`. Stdlib only.
@@ -41,7 +42,7 @@ Be direct and decisive. Separate real defects from speculative risks, prefer con
 
 const workRole = `You are an autonomous implementation agent from a different model family than the orchestrating agent (Claude), entrusted with a delegated implementation — typically an entire requirements document — inside a larger operating loop. Claude reviews the result after you finish; deliver work that survives that review.`
 
-const workCold = ` You receive no conversation history — work from the task below, the repository you are in, and the house assets listed below.`
+const workCold = ` You receive no conversation history — work from the task below, the repository you are in, and the house assets named in your AGENTS.md instructions.`
 
 const workContext = ` The task below includes a redacted transcript of the orchestrating agent's current session, provided as background only — the delegated task itself is authoritative.`
 
@@ -268,7 +269,7 @@ func run() int {
 
 	role, cold, context, discipline := adviseRole, adviseCold, adviseContext, adviseDiscipline
 	if mode == "work" {
-		role, cold, context, discipline = workRole, workCold, workContext, workDiscipline+workAssets()
+		role, cold, context, discipline = workRole, workCold, workContext, workDiscipline
 	}
 	preamble := role + cold + discipline
 	if withContext {
@@ -354,25 +355,6 @@ func answerStatus(answer []byte) string {
 		return strings.TrimSpace(s)
 	}
 	return ""
-}
-
-// workAssets points Codex at the house engineering assets, so every delegation reuses them
-// without each brief retyping them. Paths, not inlined content: reads are allowed in every
-// sandbox mode, and Codex then pulls exactly the depth it needs. Appended only in work mode —
-// advise stays an unanchored outside view, which is the point of consulting another model
-// family. Best effort: with no resolvable home there is nothing to point at.
-func workAssets() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf(`
-
-House assets — mandatory initialization before any edit or commit:
-1. Read %[1]s/.claude/rules/code.md (coding principles) and %[1]s/.claude/rules/conventions.md (tool and prose conventions) in full.
-2. List %[1]s/.claude/skills/ and read commit/SKILL.md (commit-message format); read tdd/SKILL.md for testable code, japanese-tech-writing/SKILL.md before writing human-facing prose, frontend-design/SKILL.md for web UI, and any other skill relevant to this task.
-3. If a mandatory asset cannot be read, stop and report it.
-These are read-only references written for Claude Code — treat tool mechanics as advisory, the methods and standards as binding; never modify them. Do not begin coding until this initialization is complete.`, home)
 }
 
 // turnCompleted reports whether the log holds a turn.completed event — the cross-check that
