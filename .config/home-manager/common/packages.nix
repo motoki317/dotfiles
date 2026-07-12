@@ -10,12 +10,43 @@ let
     src = ../scripts/${name};
     vendorHash = null;
   };
+  # HTTP client for AI agents (https://github.com/yusukebe/ax), preferred over curl in agent
+  # sessions. Not in nixpkgs and not on npm; upstream ships only prebuilt Bun binaries, so
+  # install the release binary. Bump version and both hashes together (see checksums.txt on
+  # the release).
+  ax =
+    let
+      version = "0.1.10";
+      bin = {
+        x86_64-linux = {
+          suffix = "linux-x64";
+          hash = "sha256-dJWaZpyB58SmXv6SRMxyM8d1LSNSnM7wBHkFbjM04NA=";
+        };
+        aarch64-darwin = {
+          suffix = "darwin-arm64";
+          hash = "sha256-FCCrnigkNiCtCHsuzpskyZaxfJGGUdltOMu2A+WKvOk=";
+        };
+      }.${pkgs.system};
+    in
+    pkgs.stdenvNoCC.mkDerivation {
+      pname = "ax";
+      inherit version;
+      src = pkgs.fetchurl {
+        url = "https://github.com/yusukebe/ax/releases/download/v${version}/ax-${bin.suffix}";
+        inherit (bin) hash;
+      };
+      dontUnpack = true;
+      installPhase = ''
+        install -Dm755 $src $out/bin/ax
+      '';
+    };
 in
 with pkgs; [
   _1password-cli
   age
   agent-browser
   awscli2
+  ax
   buf
   cachix
   inputs.ccusage.packages.${pkgs.system}.default # statusline session cost (see flake.nix)
