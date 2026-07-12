@@ -23,6 +23,7 @@
 !/.codex/
 /.codex/*
 !/.codex/AGENTS.md
+!/.codex/context-limits.config.toml
 
 !/.config/
 /.config/*

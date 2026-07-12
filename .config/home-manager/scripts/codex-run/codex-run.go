@@ -255,6 +255,7 @@ func run() int {
 	// still writes the final answer to its own file, so stdout stays clean.
 	cmdArgs := []string{
 		"exec",
+		"--profile", "context-limits",
 		"--json",
 		"-C", workdir,
 		"--sandbox", sandbox,
