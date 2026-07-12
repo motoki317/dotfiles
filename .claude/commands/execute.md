@@ -22,18 +22,7 @@ Execute tasks by decomposing them and delegating detailed work to specialized su
 6. **Verify** — before declaring done: run the available tests/build/lint, invoke the `feedback` skill for static review, and the `qa-review` skill when there is runnable behavior — for analysis only; tell each not to run its close-the-loop phase, since this step owns the fix loop. Fix critical and major findings (re-delegate as needed) and re-check. Report the evidence — commands run and results — and don't finish with unresolved critical or major findings.
 
 # Agents
-| Agent | Spawn as | Purpose |
-|-------|----------|---------|
-| quality | quality-assurance | Syntax, type, format verification |
-| security | security | Vulnerability detection |
-| test | test | Test creation, coverage |
-| docs | docs | Documentation updates |
-| review | quality-assurance | Post-implementation review |
-| performance | performance | Performance optimization |
-| database | database | Database design and optimization |
-| infrastructure | devops | Infrastructure design |
-| git | git | Git workflow design |
-| validator | validator | Cross-validation |
+Spawn `general-purpose` for work units and `reviewer` (read-only) for checks and cross-validation. The step-4 assignment carries the specialization, not the agent type.
 
 # Codex Usage
 Use the Codex MCP only for code generation (new files/functions) and code modification — never for research, verification, tests, docs, or reviews. Keep each call to one small task; no multi-file edits in a single call.

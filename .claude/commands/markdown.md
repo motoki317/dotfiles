@@ -28,9 +28,6 @@ User-specified file path takes precedence.
 2. Determine appropriate output file location
 3. Write cleaned, formatted content (no revision history)
 
-# Agents
-- **docs**: Documentation management
-
 # Constraints
 - Use context-appropriate filename
 - Avoid including consideration process or discussion history

@@ -24,12 +24,12 @@ Review and prepare changes before submitting a PR to an upstream OSS repo: fetch
 | Agent | Spawn as | Role |
 |-------|----------|------|
 | guidelines | general-purpose | Parse CONTRIBUTING.md, extract requirements |
-| changes | quality-assurance | Review the diff for quality |
-| tests | test | Evaluate test coverage |
+| changes | reviewer | Review the diff for quality |
+| tests | reviewer | Evaluate test coverage |
 | history | general-purpose | Analyze the author's past PR feedback (`gh pr list --author @me --repo upstream --state all --limit 20`) |
 | metadata | general-purpose | Generate compliant PR title/description |
 | verify | general-purpose | Determine verification commands, detect change types |
-| validator | validator | Cross-validate findings |
+| validator | reviewer | Cross-validate findings |
 
 # Change Type Detection
 | Type | File Patterns |

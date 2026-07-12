@@ -15,10 +15,9 @@ Find the root cause of an error or anomaly by enumerating competing hypotheses, 
 
 # Workflow
 1. **Gather** in parallel — collect error messages, stack traces, and logs; recent changes (`git log --oneline -20`, `git diff HEAD~5..HEAD --stat`); related code paths; relevant config. Spawn the read-only agents that fit:
-   - `quality-assurance` — stack-trace and error analysis
-   - `explore` — error locations, related code paths
-   - `general-purpose` — log and dependency analysis
-   - `fact-check` — external source verification
+   - `Explore` — error locations, related code paths
+   - `reviewer` — stack-trace and error analysis
+   - `general-purpose` — log, dependency, and external-source checks
 2. **Hypothesize** — list at least 3 hypotheses ranked by likelihood, each with the evidence that suggests it.
 3. **Verify systematically** — for each hypothesis (most likely first): define what evidence would confirm or refute it, gather that evidence, and record a verdict (Confirmed / Refuted / Inconclusive). Re-rank the remaining hypotheses when new information lands.
 4. **Report** — once a cause is confirmed, give the root cause, its evidence chain, impact, a suggested fix for /execute, and the rejected hypotheses.
