@@ -14,10 +14,7 @@
     "command": "~/.nix-profile/bin/claude-statusline"
   },
   "enabledPlugins": {
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true
+    "context7@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
