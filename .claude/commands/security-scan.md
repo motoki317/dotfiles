@@ -55,7 +55,7 @@ Execute the following three phases **sequentially**. Within each phase, launch s
 
 ## Phase 1: DISCOVERY — Find potential vulnerabilities
 
-Launch the following **parallel** sub-tasks using the `security` subagent type. Each sub-task should scan the **entire repository** for its assigned category.
+Launch the following **parallel** sub-tasks using the `general-purpose` subagent type. Each sub-task should scan the **entire repository** for its assigned category.
 
 Provide each sub-task with the repository context above and the safety constraints.
 
@@ -131,7 +131,7 @@ Code: `relevant code snippet`
 
 ## Phase 2: FILTERING — Eliminate false positives
 
-Collect ALL findings from Phase 1. For each finding (or batch of related findings), launch a **parallel** `security` sub-task to validate it.
+Collect ALL findings from Phase 1. For each finding (or batch of related findings), launch a **parallel** `general-purpose` sub-task to validate it.
 
 Each filtering sub-task receives ONE finding and must:
 
@@ -191,7 +191,7 @@ Data-flow: Brief description of how untrusted input reaches the vulnerable code 
 
 ## Phase 3: REPRODUCTION — Actively verify confirmed vulnerabilities
 
-For each finding that passed Phase 2 (confidence ≥ 8), launch a **parallel** `security` sub-task to attempt **local reproduction**.
+For each finding that passed Phase 2 (confidence ≥ 8), launch a **parallel** `general-purpose` sub-task to attempt **local reproduction**.
 
 **REMINDER**: Reproduce ONLY against localhost. NEVER target remote systems. All actions must be non-destructive.
 

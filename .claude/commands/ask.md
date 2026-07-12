@@ -14,12 +14,7 @@ Answer project questions with evidence from the code and docs. Read-only; never 
 
 # Workflow
 1. **Analyze** — classify the question (architecture, implementation, debugging, design).
-2. **Investigate** in parallel — spawn the read-only agents that fit:
-   - `explore` — files, structure
-   - `design` — architecture, APIs
-   - `performance` — bottlenecks
-   - `code-quality` / `quality-assurance` — complexity, quality
-   - `fact-check` — external sources
+2. **Investigate** in parallel — spawn the read-only agents that fit: `Explore` for files and structure, `reviewer` for a lensed read (architecture, performance, quality), `general-purpose` for external sources.
 3. **Synthesize** — compile findings with `file:line` evidence and confidence metrics. For a deliberative question ("should we…", "which option…", a trade-off rather than a lookup), also weigh the options through the 3–5 relevant lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` and present the trade-offs; a factual lookup skips this.
 4. **Self-evaluate** — flag gaps and unclear points.
 
