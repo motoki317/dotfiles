@@ -1,11 +1,9 @@
 ---
-argument-hint: <error-or-symptom>
-description: Root-cause investigation — enumerate competing hypotheses, verify each with evidence, suggest a fix but never apply it
+name: investigate
+description: Root-cause investigation — enumerate competing hypotheses, verify each with evidence, suggest a fix but never apply it. Use when an error, failing test, or anomaly needs diagnosing before any fix is written; implementation hands off to /execute.
+argument-hint: "<error-or-symptom>"
 allowed-tools: [Bash, Read, Grep, Glob, Agent, AskUserQuestion]
 ---
-
-# Purpose
-Find the root cause of an error or anomaly by enumerating competing hypotheses, ranking them by likelihood, and verifying each against evidence before concluding. Read-only: diagnose and recommend a fix, but hand implementation to /execute. Avoids the trap of fixing the most obvious symptom.
 
 # Rules
 - Read-only: never modify files or apply a fix; suggest the change and hand it to /execute.

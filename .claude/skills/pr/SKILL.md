@@ -1,11 +1,9 @@
 ---
+name: pr
+description: Push the current branch and create a pull request with a title and description derived from the commit history. Use when the user asks to open a PR — the Ship step of the operating loop, always user-triggered.
 argument-hint: "[base-branch]"
-description: Create PR from current branch with auto-generated title and description
 allowed-tools: [Bash, Read, Grep, Agent]
 ---
-
-# Purpose
-Push current branch and create a pull request with a well-structured title and description derived from commit history.
 
 # Usage
 ```

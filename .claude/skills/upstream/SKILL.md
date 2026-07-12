@@ -1,10 +1,8 @@
 ---
-argument-hint: [upstream-url]
-description: Upstream PR preparation and review command
+name: upstream
+description: Prepare a contribution to an upstream OSS repo — fetch the contribution guide, review the diff and tests against it, and draft compliant PR metadata. Use before submitting a PR to an external repository. Read-only; never opens the PR.
+argument-hint: "[upstream-url]"
 ---
-
-# Purpose
-Review and prepare changes before submitting a PR to an upstream OSS repo: fetch the contribution guide, analyze the diff, evaluate tests, and generate compliant PR metadata. Read-only; never opens the PR.
 
 # Rules
 - Read-only: analyze and report only, no file modifications.
