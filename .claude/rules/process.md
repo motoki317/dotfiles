@@ -6,7 +6,7 @@
 3. **Implement** — `/execute` to orchestrate; `/tdd` for testable code; `/frontend-design` for web UI.
 4. **Verify** — run the available tests/build/lint, then `/feedback` (static review) and `/qa-review` (dynamic QA, when there is runnable behavior) — analysis only; their close-the-loop phase fires on an explicit invocation, not this routine check. Report the commands run and what they returned, not just "done".
 5. **Commit** — `/commit`.
-6. **Tidy** — `/rebase-clean` the branch's history.
+6. **Tidy** — `/rebase-clean` the unshipped history.
 7. **Ship** — `/pr`; then `/address` for the PR's reviews and CI.
 
 - Stop only after step 2 (plan approval) and step 6 (Ship is user-triggered); auto-advance every other step. Once a PR is open, follow-up pushes close the loop, not a new Ship: `/feedback`, `/qa-review`, and `/address` may update it via `/rebase-clean` (`--force-with-lease`).
