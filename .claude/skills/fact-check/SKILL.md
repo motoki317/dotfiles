@@ -1,65 +1,18 @@
 ---
-name: Fact Check
-description: This skill should be used when the user asks to "verify claims", "fact check", "validate documentation", "check sources", or needs verification of external source references. Provides patterns for systematic fact verification using Context7 and WebSearch.
+name: fact-check
+description: Verify claims against authoritative sources — Context7 for library/framework APIs, WebSearch/WebFetch for standards and cited URLs. Use when asked to fact-check, verify claims, validate documentation, or check source references.
 ---
 
-# Fact Verification Patterns
+# Fact Check
 
-## Tools
+## Process
+1. **Extract claims** — the verifiable assertions: library API behaviour, documentation references, standard compliance, version-specific behaviour.
+2. **Select source** — library/framework API → Context7 (`resolve-library-id`, then `query-docs`; trust score 7+); web standard or spec → WebSearch (w3.org, MDN); cited URL → WebFetch; general technical fact → WebSearch.
+3. **Assess** — score confidence 0–100 against the source and flag anything below 80. Cross-reference disputed claims with a second source; note version context for version-specific claims.
 
-### Context7 (Primary for libraries)
-- `resolve-library-id` - Get library ID first
-- `query-docs` - Verify API behavior, best practices, deprecations
+## Report per flagged claim
+Claim / where it was made / evidence found (with its source) / confidence / recommended correction.
 
-### Web Tools (Fallback)
-- `WebSearch` - Standards, specifications, general technical facts
-- `WebFetch` - Verify specific documentation URLs
-
-## Verification Process
-
-### 1. Extract Claims
-Identify verifiable assertions:
-- Library API claims: "useState returns a tuple"
-- Documentation references: "according to the React docs"
-- Standard compliance: "follows WCAG 2.1 AA"
-- Version-specific behavior: "in React 18, Suspense..."
-
-### 2. Select Source
-| Claim Type | Source |
-|------------|--------|
-| Library/framework API | Context7 (trust score 7+) |
-| Web standard/spec | WebSearch (w3.org, MDN) |
-| Specific URL cited | WebFetch |
-| General technical fact | WebSearch |
-
-### 3. Assess Confidence
-- **90-100**: Exact match with authoritative source
-- **80-89**: Strong match, minor wording differences
-- **70-79**: Partial match, some details unverified
-- **60-69**: Weak match, significant uncertainty
-- **<60**: No match or contradictory evidence
-
-**Threshold**: Flag claims with confidence below 80
-
-## Discrepancy Report Format
-```
-Claim: [original assertion]
-Source: [where claim was made]
-Verification: [Context7/WebSearch result]
-Evidence: [actual information from source]
-Confidence: [0-100]
-Recommendation: [correction or note]
-```
-
-## Critical Rules
-- Always verify against authoritative sources before flagging
-- Context7 is primary for library/framework claims
-- Document evidence source for every verification
-- Note version context for version-specific claims
-- Cross-reference disputed claims with multiple sources
-
-## Anti-Patterns
-- Marking verified without actual source check
-- Single source reliance for disputed claims
-- Ignoring version context differences
-- Over-verifying obvious facts
+## Rules
+- Never mark a claim verified without an actual source check; document the evidence source every time.
+- Don't over-verify obvious facts.
