@@ -30,7 +30,7 @@ Run the three **core** viewpoints for almost any change. Add each **conditional*
 When tests are central to the change, also spawn a second Maintainability agent scoped to the Testability sub-characteristic.
 
 # Step 3 — Run in parallel
-Launch one `general-purpose` agent per selected viewpoint, all in one message (sequential spawning risks timeout); the rubric, not the agent type, carries each viewpoint's expertise. Give each agent only its own slice:
+Launch one `reviewer` agent per selected viewpoint, all in one message (sequential spawning risks timeout); the rubric, not the agent type, carries each viewpoint's expertise. `reviewer` cannot edit files and treats Bash as inspection-only, so review leaves the worktree untouched. Give each agent only its own slice:
 1. the change (diff or file list),
 2. the intent,
 3. its viewpoint rubric: `$HOME/.claude/skills/feedback/references/<viewpoint>.md` (kebab-case, e.g. `security.md`) — lists the sub-characteristics to review against and the official source. Pass this full path; a freshly spawned agent can't resolve one relative to the skill,
