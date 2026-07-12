@@ -8,6 +8,7 @@
 .venv
 .vscode
 
+docs/plans
 **/.claude/settings.local.json
 **/.claude/plans
 .serena
