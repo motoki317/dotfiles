@@ -20,6 +20,10 @@
 !/.claude/rules
 !/.claude/rules/**
 
+!/.codex/
+/.codex/*
+!/.codex/AGENTS.md
+
 !/.config/
 /.config/*
 !/.config/git
