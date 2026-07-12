@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Stage meaningful diffs and create commits with WHY-focused messages. Use when agent needs to commit code changes.
+description: Stage meaningful diffs and create commits with WHY-focused messages. Use when committing changes.
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git restore:*), Bash(git show:*)
 model: sonnet
 ---

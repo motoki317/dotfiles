@@ -1,0 +1,8 @@
+# Close the loop (shared by /feedback and /qa-review)
+
+Runs by default once the report is done. Stop at the report — and let the caller remediate — only when the caller says "analysis only" (e.g. `/execute`'s Verify owns its own fix loop and says so). The signal is the caller's word, not a guess about who invoked you.
+
+1. **Fix the justified findings.** Re-judge each Critical/Blocker (and each Warning/Major worth fixing) for technical validity — don't blind-fix. Use scoped fix sub-agents, one narrow task each; never route a fix through `/execute` (its Verify re-invokes the review skill, which loops). Leave declined items in the report with a one-line reason.
+2. **Re-verify, bounded.** Re-run the affected viewpoints or scenarios to confirm each fix without regression. If a fix introduces a new Critical/Blocker, do at most one more fix → re-verify pass, then stop and report what remains — never commit one unresolved.
+3. **Commit** the fixes by following the `commit` skill. Never on `main` or a detached HEAD; if the worktree holds unrelated edits, stage only the fix files.
+4. **Push — only to an open PR, from a clean worktree.** With an open PR (`gh pr view --json number,state`) and no unrelated uncommitted edits, clean up history and push via `/rebase-clean` (it soft-resets to the merge base and rebuilds commits from the whole worktree — stray edits would be swept in — then force-pushes with `--force-with-lease`), then point the agent at `/address` for the review and CI the push re-triggers. If unrelated edits remain, stop after the commit and report that the push needs a clean or stashed worktree. With no open PR, stop after the commit — publishing a branch and opening a PR stay user-triggered (`~/.claude/rules/process.md`).
