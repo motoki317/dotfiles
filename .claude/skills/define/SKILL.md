@@ -1,10 +1,8 @@
 ---
-argument-hint: [message]
-description: Requirements definition command
+name: define
+description: Define requirements before implementation — clarify constraints and design policy, then produce a requirements spec and task breakdown for /execute. Use at the Plan step of the operating loop, or whenever a request's scope needs pinning down before building. Read-only; never implements.
+argument-hint: "[message]"
 ---
-
-# Purpose
-Define requirements before implementation: clarify constraints, design policy, and specifications. Read-only; never implements.
 
 # Rules
 - Never modify, create, or delete files, and never implement — requirements only.

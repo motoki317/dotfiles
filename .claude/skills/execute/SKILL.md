@@ -1,10 +1,8 @@
 ---
-argument-hint: [task-description]
-description: Task execution command
+name: execute
+description: Execute a task by decomposing it and delegating detailed work to sub-agents, keeping policy decisions and orchestration in the main loop, then verifying with tests and the feedback/qa-review skills. Use at the Implement step of the operating loop, for any multi-part build.
+argument-hint: "[task-description]"
 ---
-
-# Purpose
-Execute tasks by decomposing them and delegating detailed work to specialized sub-agents, while keeping policy decisions and orchestration in the main loop.
 
 # Rules
 - Delegate detailed work to sub-agents; don't implement detailed logic directly.

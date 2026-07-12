@@ -1,10 +1,8 @@
 ---
-argument-hint: [question]
-description: Question and inquiry command
+name: ask
+description: Answer questions about the project with file:line evidence from code and docs — read-only, never modifies files. Use when the user asks how or why something works, or weighs a "should we" question that needs an investigated answer rather than a change.
+argument-hint: "[question]"
 ---
-
-# Purpose
-Answer project questions with evidence from the code and docs. Read-only; never modifies files.
 
 # Rules
 - Never modify, create, or delete files.
