@@ -1,0 +1,3 @@
+module codex-run
+
+go 1.23

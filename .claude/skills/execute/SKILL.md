@@ -8,7 +8,7 @@ argument-hint: "[task-description]"
 - Delegate detailed work to sub-agents; don't implement detailed logic directly.
 - Run independent tasks in parallel.
 - Verify sub-agent outputs before integrating them.
-- Prefer basic tools (Read/Edit/Write) over the Codex MCP when they suffice.
+- Prefer basic tools (Read/Edit/Write) over `codex-run work` when they suffice.
 - Don't declare the task done until the Verify step passes; show evidence, not assertions.
 
 # Workflow
@@ -23,4 +23,7 @@ argument-hint: "[task-description]"
 Spawn `general-purpose` for work units and `reviewer` (read-only) for checks and cross-validation. The step-4 assignment carries the specialization, not the agent type.
 
 # Codex Usage
-Use the Codex MCP only for code generation (new files/functions) and code modification — never for research, verification, tests, docs, or reviews. Keep each call to one small task; no multi-file edits in a single call.
+`codex-run work -C <repo> < task.md` delegates one implementation unit to OpenAI Codex (cross-model; workspace-write sandbox — see `codex-run --help`). Use it only for code generation (new files/functions) and code modification — never for standalone research, verification, docs, or review tasks. A work unit still includes its own tests and runs the smallest relevant check.
+- One small task per call, scoped to a few files at most. Write the task brief like a step-4 assignment: scope, target paths, references, and the `/define` plan-file path.
+- Codex edits the working tree directly: don't edit the same checkout while a call runs; parallel calls need disjoint files or separate worktrees.
+- Non-zero exit = failed turn, and partial edits may remain — check `git status`/`git diff` before integrating or retrying.
