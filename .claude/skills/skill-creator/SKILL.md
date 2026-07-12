@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
+description: Create, improve, and evaluate skills. Use when the user wants to create a skill from scratch, edit or optimize an existing one, run evals or benchmarks on it, or optimize its description for better triggering accuracy.
 ---
 
 # Skill Creator
@@ -137,6 +137,8 @@ Output: feat(auth): implement JWT-based authentication
 ### Writing Style
 
 Try to explain to the model why things are important in lieu of heavy-handed musty MUSTs. Use theory of mind and try to make the skill general and not super-narrow to specific examples. Start by writing a draft and then look at it with fresh eyes and improve it.
+
+Write the least that carries the meaning — less is usually more understandable, and each level of a skill costs context at a different rate: the description is charged to every session, the body to every invocation, references/ only when read. So keep the description to what the skill does plus its triggers (stay pushy on triggers, per the description note above), keep the body to operative rules, and push detail down a level: cut restatements of the description, justification prose, and summaries of content a reference file already owns.
 
 ### Test Cases
 
