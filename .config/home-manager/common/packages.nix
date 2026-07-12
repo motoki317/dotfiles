@@ -21,7 +21,7 @@ with pkgs; [
   inputs.ccusage.packages.${pkgs.system}.default # statusline session cost (see flake.nix)
   # claude-code
   (goBin "claude-statusline")
-  (goBin "codex-consult")
+  (goBin "codex-run")
   (goBin "session-transcript")
   curl
   dive

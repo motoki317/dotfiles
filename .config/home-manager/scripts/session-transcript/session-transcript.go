@@ -1,5 +1,5 @@
 // session-transcript — dump the current Claude Code session as a redacted, compacted
-// transcript for codex-consult's --context mode (which runs this; standalone: `… | less`).
+// transcript for codex-run's --context mode (which runs this; standalone: `… | less`).
 // It reads the session's on-disk JSONL — found via $CLAUDE_CODE_SESSION_ID — and prints the
 // visible conversation (task, messages, tool calls + results). Thinking is NOT recoverable:
 // Claude Code persists it as an opaque signature, not plaintext.
@@ -9,7 +9,7 @@
 // sidechains, truncates long blocks, and caps size (keeping first + most recent turns) — a
 // lossy approximation, not the byte-exact context the server-side advisor sees.
 //
-// Built and installed on PATH by home-manager, like codex-consult. Malformed/partial JSON
+// Built and installed on PATH by home-manager, like codex-run. Malformed/partial JSON
 // lines (the last may be mid-write) are skipped; stdlib only.
 package main
 
@@ -430,7 +430,7 @@ func assemble(turns []string, budget int) string {
 func usage(w io.Writer) {
 	fmt.Fprint(w, `session-transcript — dump the current Claude Code session as a redacted transcript.
 
-  session-transcript | less        # inspect; codex-consult --context runs this for you
+  session-transcript | less        # inspect; codex-run advise --context runs this for you
 
   -f, --file <path>    transcript JSONL (default: auto-locate via $CLAUDE_CODE_SESSION_ID)
   -b, --budget <n>     max output chars; keeps first + most recent turns (default: 120000)
