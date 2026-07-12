@@ -12,17 +12,17 @@ Actively QA-test a just-implemented feature. Seven skeptical personas design adv
 - **How to exercise it** — URL + test env, CLI, API + auth, and/or DB access. Drive a web/Electron UI with `agent-browser` (load `agent-browser skills get dogfood` first). If nothing runs, say so: findings become `by-inspection` / `could-not-verify`, never `executed`.
 
 # Step 2 — Phase A: design scenarios (parallel)
-Spawn all seven in one message — a fixed checklist, each leaving ≥1 concrete check, tactics adapted to the surface. Give each only: the change + how to exercise it, the intent (its Test Basis), and its rubric at the full path `$HOME/.claude/skills/qa-review/references/<slug>.md`. Each returns `{persona, title, priority, basis, preconditions, test_data, steps, expected, evidence_to_collect}` — design only, no fixes. With a UI, explore it read-only via `agent-browser` to ground the design (read-only is parallel-safe; mutation is not).
+Spawn all seven as `general-purpose` agents in one message — a fixed checklist, each leaving ≥1 concrete check, tactics adapted to the surface; the rubric, not the agent type, carries each persona's expertise. Give each only: the change + how to exercise it, the intent (its Test Basis), and its rubric at the full path `$HOME/.claude/skills/qa-review/references/<slug>.md`. Each returns `{persona, title, priority, basis, preconditions, test_data, steps, expected, evidence_to_collect}` — design only, no fixes. With a UI, explore it read-only via `agent-browser` to ground the design (read-only is parallel-safe; mutation is not).
 
-| # | Persona — angle | slug | agent |
-|---|-----------------|------|-------|
-| P1 | New user — careless: misclicks, empty submits, impatient retries | `p1-new-user` | `general-purpose` |
-| P2 | Veteran operator — fast/bulk: keyboard, shortcuts, batch/concurrent | `p2-veteran-operator` | `general-purpose` |
-| P3 | Malicious operator — boundary/invalid/out-of-permission, double-submit | `p3-malicious-operator` | `security` |
-| P4 | Data-integrity auditor — verify the authoritative state, not the surface | `p4-data-integrity-auditor` | `database` |
-| P5 | Migration specialist — legacy data: missing fields, format/encoding, counts | `p5-migration-specialist` | `general-purpose` |
-| P6 | Regression guardian — did existing/peripheral behaviour break? | `p6-regression-guardian` | `quality-assurance` |
-| P7 | Spec skeptic — reconcile primary spec against actual behaviour | `p7-spec-skeptic` | `general-purpose` |
+| # | Persona — angle | slug |
+|---|-----------------|------|
+| P1 | New user — careless: misclicks, empty submits, impatient retries | `p1-new-user` |
+| P2 | Veteran operator — fast/bulk: keyboard, shortcuts, batch/concurrent | `p2-veteran-operator` |
+| P3 | Malicious operator — boundary/invalid/out-of-permission, double-submit | `p3-malicious-operator` |
+| P4 | Data-integrity auditor — verify the authoritative state, not the surface | `p4-data-integrity-auditor` |
+| P5 | Migration specialist — legacy data: missing fields, format/encoding, counts | `p5-migration-specialist` |
+| P6 | Regression guardian — did existing/peripheral behaviour break? | `p6-regression-guardian` |
+| P7 | Spec skeptic — reconcile primary spec against actual behaviour | `p7-spec-skeptic` |
 
 New feature → P3, P4 lead. Migration → P5, P7 lead (see Migration mode).
 
