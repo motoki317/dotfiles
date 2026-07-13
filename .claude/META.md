@@ -1,6 +1,6 @@
-# Maintaining CLAUDE.md and rules/
+# Maintaining the house assets
 
-Claude Code auto-loads only `~/.claude/CLAUDE.md` (plus `CLAUDE.local.md`) and every `.md` under `~/.claude/rules/`, recursively. This file is neither, so it never enters agent context — it is documentation for whoever edits those files.
+Claude Code auto-loads only `~/.claude/CLAUDE.md` (plus `CLAUDE.local.md`) and every `.md` under `~/.claude/rules/`, recursively. This file is neither, so it never enters agent context — it is documentation for whoever edits the shared guidance or skills.
 
 ## File roles
 
@@ -8,6 +8,8 @@ Claude Code auto-loads only `~/.claude/CLAUDE.md` (plus `CLAUDE.local.md`) and e
 - `rules/code.md` — the shape of the artifact: what code to write and not write.
 - `rules/process.md` — how work flows: operating loop, cross-model review gates, error handling.
 - `rules/conventions.md` — mechanics: tools, prose.
+- `skills/` — task-specific workflows, loaded only when invoked or matched.
+- `../.agents/skills/` — the cross-agent registry: real directories own external skills; relative symlinks expose Claude-owned skills.
 
 One role per file. A new rule goes where its role says; if no role fits, question whether it belongs at all.
 
@@ -20,6 +22,12 @@ Learned 2026-07 while diagnosing why agents stayed verbose despite the values ("
 - Every line must pay behavioral rent. Before adding one, name the agent behavior it changes; after editing, compare diffs on a few fixed representative prompts — rules are not evidence that behavior moved.
 - Dedup across files: a sentence living in two files is a future contradiction.
 - Budget: always-loaded total was 77 lines as of 2026-07. Steady growth is the pitfall these principles exist to prevent.
+
+## Shared skill registry
+
+- A real directory owns a skill. A symlink only exposes that skill to another agent; never mirror a symlink or replace another owner's real directory.
+- After adding, deleting, or renaming a top-level skill under `~/.claude/skills`, run `sync-claude-skills` and include its link changes in the same commit.
+- Before finishing an edit under `~/.claude/skills` or `~/.agents/skills`, run `sync-claude-skills --check`.
 
 ## Context-loading mechanics (verified 2026-07-11)
 
