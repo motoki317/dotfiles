@@ -14,7 +14,10 @@
     };
     # Statusline session cost, tracked from upstream (not nixpkgs, which lags): ccusage
     # bakes its price table in at build time, so an old build can't price new models.
-    ccusage.url = "github:ccusage/ccusage";
+    ccusage = {
+      url = "github:ccusage/ccusage";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
