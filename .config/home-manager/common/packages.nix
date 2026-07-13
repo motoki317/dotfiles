@@ -8,6 +8,35 @@ let
     src = ../scripts/${name};
     vendorHash = null;
   };
+  # headless browser automation CLI for AI agents (https://github.com/vercel-labs/agent-browser).
+  # In nixpkgs but lagging (0.27 vs 0.31), so pin the latest prebuilt binary like ax/hunk; this
+  # let binding shadows pkgs.agent-browser in the list. Bump: ./fetch-prebuilt-hashes.sh agent-browser <ver>.
+  agent-browser =
+    let
+      version = "0.31.1";
+      bin = {
+        x86_64-linux = {
+          suffix = "linux-x64";
+          hash = "sha256-csE7z9L9axiDJb3SPGRtBsppoalkqc2qs35P+PR6pcY=";
+        };
+        aarch64-darwin = {
+          suffix = "darwin-arm64";
+          hash = "sha256-/XrNF7MHH/f3WgPB7NMFAZWdnC0GO9qgWttvd6vyp78=";
+        };
+      }.${pkgs.system};
+    in
+    pkgs.stdenvNoCC.mkDerivation {
+      pname = "agent-browser";
+      inherit version;
+      src = pkgs.fetchurl {
+        url = "https://github.com/vercel-labs/agent-browser/releases/download/v${version}/agent-browser-${bin.suffix}";
+        inherit (bin) hash;
+      };
+      dontUnpack = true;
+      installPhase = ''
+        install -Dm755 $src $out/bin/agent-browser
+      '';
+    };
   # HTTP client for AI agents (https://github.com/yusukebe/ax), preferred over curl. Not
   # packaged; upstream ships only prebuilt binaries. Bump: ./fetch-prebuilt-hashes.sh ax <ver>.
   ax =

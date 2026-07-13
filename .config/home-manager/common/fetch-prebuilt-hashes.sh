@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Print the fetchurl SRI hashes for a prebuilt-binary package in packages.nix
-# (ax, hunk). `nix store prefetch-file` hashes the downloaded file flat, exactly
-# as fetchurl pins it, so its output is drop-in.
+# (ax, hunk, agent-browser). `nix store prefetch-file` hashes the downloaded file
+# flat, exactly as fetchurl pins it, so its output is drop-in.
 #
 # To bump: edit `version` for the tool in packages.nix, run this, paste both hashes.
 #   ./fetch-prebuilt-hashes.sh hunk 0.18.0
@@ -9,13 +9,14 @@ set -euo pipefail
 
 tool=${1:-}
 version=${2:-}
-[[ -n $tool && -n $version ]] || { echo "usage: $0 <ax|hunk> <version>" >&2; exit 1; }
+[[ -n $tool && -n $version ]] || { echo "usage: $0 <ax|hunk|agent-browser> <version>" >&2; exit 1; }
 
 # %s is the release asset's platform suffix, filled in per system below.
 case $tool in
-  ax)   template="https://github.com/yusukebe/ax/releases/download/v$version/ax-%s" ;;
-  hunk) template="https://github.com/modem-dev/hunk/releases/download/v$version/hunkdiff-%s.tar.gz" ;;
-  *)    echo "unknown tool: $tool (want ax or hunk)" >&2; exit 1 ;;
+  ax)            template="https://github.com/yusukebe/ax/releases/download/v$version/ax-%s" ;;
+  hunk)          template="https://github.com/modem-dev/hunk/releases/download/v$version/hunkdiff-%s.tar.gz" ;;
+  agent-browser) template="https://github.com/vercel-labs/agent-browser/releases/download/v$version/agent-browser-%s" ;;
+  *)             echo "unknown tool: $tool (want ax, hunk, or agent-browser)" >&2; exit 1 ;;
 esac
 
 echo "$tool $version"
