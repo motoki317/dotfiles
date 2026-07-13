@@ -1,19 +1,15 @@
 { pkgs, inputs }:
 let
-  # Personal Go helpers under ../scripts, built and installed on PATH. buildGoModule runs each
-  # package's tests in its check phase, so a broken helper fails `home-manager switch` instead
-  # of shipping. Stdlib-only, hence vendorHash = null. Editing one now takes effect on the next
-  # switch — they previously self-built from ~/.claude on every call.
+  # Personal Go helpers under ../scripts, built onto PATH. buildGoModule runs each package's
+  # tests at build, so a broken helper fails the switch; stdlib-only, hence vendorHash = null.
   goBin = name: pkgs.buildGoModule {
     pname = name;
     version = "0";
     src = ../scripts/${name};
     vendorHash = null;
   };
-  # HTTP client for AI agents (https://github.com/yusukebe/ax), preferred over curl in agent
-  # sessions. Not in nixpkgs and not on npm; upstream ships only prebuilt Bun binaries, so
-  # install the release binary. Bump version and both hashes together (see checksums.txt on
-  # the release).
+  # HTTP client for AI agents (https://github.com/yusukebe/ax), preferred over curl. Not
+  # packaged; upstream ships only prebuilt binaries. Bump: ./fetch-prebuilt-hashes.sh ax <ver>.
   ax =
     let
       version = "0.1.10";
@@ -38,6 +34,36 @@ let
       dontUnpack = true;
       installPhase = ''
         install -Dm755 $src $out/bin/ax
+      '';
+    };
+  # review-first terminal diff viewer (https://github.com/modem-dev/hunk), driven from nvim.
+  # Prebuilt, not upstream's flake: that builds via bun2nix, whose flake-parts eval trips
+  # nixpkgs >=26.11's dropped-x86_64-darwin error. Bump: ./fetch-prebuilt-hashes.sh hunk <ver>.
+  hunk =
+    let
+      version = "0.17.0";
+      bin = {
+        x86_64-linux = {
+          suffix = "linux-x64";
+          hash = "sha256-DGJvemaHqYJjBOod9pbaXUnt+EJx7M31f//1g0KJ4OI=";
+        };
+        aarch64-darwin = {
+          suffix = "darwin-arm64";
+          hash = "sha256-cAIhZppRt4yDWYW0nKZ+Wku6r9tDSmygP50mL3qCaT4=";
+        };
+      }.${pkgs.system};
+    in
+    pkgs.stdenvNoCC.mkDerivation {
+      pname = "hunk";
+      inherit version;
+      src = pkgs.fetchurl {
+        url = "https://github.com/modem-dev/hunk/releases/download/v${version}/hunkdiff-${bin.suffix}.tar.gz";
+        inherit (bin) hash;
+      };
+      installPhase = ''
+        runHook preInstall
+        install -Dm755 hunk $out/bin/hunk
+        runHook postInstall
       '';
     };
 in
@@ -71,6 +97,7 @@ with pkgs; [
   google-cloud-sdk
   hackgen-nf-font
   htop
+  hunk
   jq
   just
   k6
