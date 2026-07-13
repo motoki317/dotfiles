@@ -17,7 +17,7 @@ argument-hint: "[message]"
    Also view the request through the 3–5 relevant decision lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` (feasibility, risk, impact, alternatives, security, …) to surface requirement questions and NFR coverage — fold these into the investigation, don't spawn a separate lens fan-out.
 3. **Clarify** — score each candidate question by design-branching impact, irreversibility, investigation-impossibility, and effort (1–5 each); ask the highest-scoring first, and don't proceed without clear answers.
 4. **Verify** — validate the user's decisions against technical evidence.
-5. **Document** — write the requirements spec and task breakdown (format below) to `./docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output dies with the context window; the file is what post-compaction agents, the /execute delegate (Codex via `codex-run work`), and human reviewers read. Create the directory if needed, as it is ignored globally in `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
+5. **Document** — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output dies with the context window; the file is what post-compaction agents, the /execute delegate (Codex via `codex-run work`), and human reviewers read. Create the directory if needed, as it is ignored globally in `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
 
 # Output Format
 The structure of the plan file (the chat reply is just its path and a summary):
