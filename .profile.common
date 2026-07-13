@@ -6,7 +6,7 @@ alias n=nvim
 alias cy='claude --dangerously-skip-permissions'
 alias cr='claude --dangerously-skip-permissions --resume'
 alias cf='claude --dangerously-skip-permissions --resume --fork-session'
-alias cdy='codex --profile context-limits --dangerously-bypass-approvals-and-sandbox'
+alias cdy='codex --config model_context_window=272000 --config model_auto_compact_token_limit=240000 --dangerously-bypass-approvals-and-sandbox'
 alias docker-wrap='docker run --rm -it --workdir $(pwd) -v $(pwd):$(pwd) --network host --entrypoint bash'
 
 export EDITOR=nvim
