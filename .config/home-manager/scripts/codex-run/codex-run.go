@@ -1,7 +1,10 @@
 // codex-run — run OpenAI Codex for one non-interactive turn; only its final answer goes to
 // stdout (so it pipes), while everything Codex emits streams verbatim to a log (temp file,
 // or -l) you can tail. A non-zero exit with no `turn.completed` in the log means the run
-// failed. The mode fixes the role and default sandbox per call site: `advise` reviews
+// failed. Each run prints its Codex session id: `--resume <id>`/`--last` continues that session
+// (retry a turn that died on a network error), and `codex resume <id>` opens it in the Codex TUI
+// — but only after the run exits, since two writers on one session interleave its history. The
+// mode fixes the role and default sandbox per call site: `advise` reviews
 // without writing (read-only), `work` implements a delegated task — up to a whole
 // requirements document — with full access (danger-full-access), committing locally as it
 // goes. The house rules and skills are not injected here: codex auto-loads them from
@@ -60,6 +63,12 @@ Before declaring completion, re-read the authoritative requirements and audit ev
 // it. work has no equivalent — an implementer with no task has nothing to do.
 const defaultContextPrompt = `Review the session transcript above — the task, the approach taken, and the work done so far. Surface blind spots, unstated assumptions, risks, and anything wrong, missing, or worth reconsidering before I proceed. Be direct and specific, and end with a clear verdict on whether the current direction is sound.`
 
+// defaultResumePrompt is sent when --resume/--last is given with no piped follow-up: the
+// network-failure retry, where the goal is simply to finish the interrupted turn. The role and
+// discipline are already in the resumed session's history, so only this nudge is needed. Any
+// piped stdin replaces it (an advise follow-up question, or a corrective instruction to work).
+const defaultResumePrompt = `The previous turn was interrupted before it finished. Continue from where you left off and complete it, then give your final response.`
+
 func main() { os.Exit(run()) }
 
 func run() int {
@@ -98,6 +107,8 @@ func run() int {
 	logPath := ""
 	verbose := false
 	withContext := false
+	resumeID := ""
+	resumeLast := false
 
 	// After the mode: flags plus a stdin prompt — there is no positional prompt, so a
 	// brief's shell metacharacters can never be interpreted. -C/-s/-m/-l take a value.
@@ -139,6 +150,14 @@ func run() int {
 			verbose = true
 		case a == "-x" || a == "--context":
 			withContext = true
+		case a == "--resume":
+			v, ok := needVal(i, "--resume")
+			if !ok {
+				return 2
+			}
+			resumeID, i = v, i+1
+		case a == "--last":
+			resumeLast = true
 		case a == "-h" || a == "--help":
 			usage(os.Stderr)
 			return 0
@@ -153,9 +172,31 @@ func run() int {
 		}
 	}
 
+	// Normalize the resume selectors. --resume takes a session id; --last picks the most
+	// recent. Fold `--resume --last` (the value lands as the string "--last") into --last so
+	// either spelling works, then reject the ambiguous or malformed combinations.
+	if resumeID == "--last" {
+		resumeID, resumeLast = "", true
+	}
+	resuming := resumeID != "" || resumeLast
+	if resumeID != "" && resumeLast {
+		fmt.Fprintln(os.Stderr, "codex-run: pass either --resume <id> or --last, not both")
+		return 2
+	}
+	if strings.HasPrefix(resumeID, "-") {
+		fmt.Fprintf(os.Stderr, "codex-run: --resume needs a session id, got %q\n", resumeID)
+		return 2
+	}
+	if resuming && withContext {
+		fmt.Fprintln(os.Stderr, "codex-run: --context cannot be combined with --resume/--last — the resumed session already holds its history")
+		return 2
+	}
+
 	// With full access, an implicit working root is how accidents happen: work must name
 	// its repository rather than inherit whatever directory the caller happened to be in.
-	if mode == "work" && !workdirSet {
+	// A resume inherits the session's recorded cwd, so it needs no -C (workdir only scopes
+	// which session --last selects and gives the run its workspace, both via cmd.Dir below).
+	if mode == "work" && !workdirSet && !resuming {
 		fmt.Fprintln(os.Stderr, "codex-run: work requires an explicit -C <repo>")
 		return 2
 	}
@@ -172,7 +213,7 @@ func run() int {
 	// needs one too: with no session and no question, Codex has nothing to review. Under
 	// `advise --context` an empty brief is instead the low-friction "advise me" call: fall
 	// back to a fixed session-trajectory prompt (assigned below).
-	if prompt == "" && (mode == "work" || !withContext) {
+	if !resuming && prompt == "" && (mode == "work" || !withContext) {
 		if mode == "work" {
 			fmt.Fprintln(os.Stderr, "codex-run: empty prompt — pipe the delegated task via stdin (e.g. `codex-run work … < task.md`)")
 		} else {
@@ -201,16 +242,27 @@ func run() int {
 		prompt = transcript + divider + prompt
 	}
 
+	// A resume with no piped follow-up is the network-failure retry: nudge the session to
+	// finish where it stopped. (--context is incompatible with resume, so this cannot collide
+	// with the transcript prompt above.)
+	if resuming && prompt == "" {
+		prompt = defaultResumePrompt
+	}
+
 	// read-only stops writes, not reads: a working root at (or above) $HOME lets Codex scan
 	// the whole home tree — make the exposure visible, but proceed. A writable sandbox there
 	// would make everything you own project scope, so that is an error, not a warning — even
-	// for a repo rooted at $HOME, which must be delegated via a git worktree instead.
-	if home, err := os.UserHomeDir(); err == nil && coversHome(workdir, home) {
-		if sandbox != "read-only" {
-			fmt.Fprintln(os.Stderr, "codex-run: working root covers $HOME with a writable sandbox — pass -C <repo>; for a repo rooted at $HOME, pass a git worktree of it")
-			return 2
+	// for a repo rooted at $HOME, which must be delegated via a git worktree instead. A resume
+	// inherits the session's own recorded sandbox and cwd — workdir only scopes --last here and
+	// cannot broaden that scope — so the guard does not apply to it.
+	if !resuming {
+		if home, err := os.UserHomeDir(); err == nil && coversHome(workdir, home) {
+			if sandbox != "read-only" {
+				fmt.Fprintln(os.Stderr, "codex-run: working root covers $HOME with a writable sandbox — pass -C <repo>; for a repo rooted at $HOME, pass a git worktree of it")
+				return 2
+			}
+			fmt.Fprintln(os.Stderr, "codex-run: warning — working root covers $HOME; Codex can read your whole home tree. Pass -C <repo> to scope it.")
 		}
-		fmt.Fprintln(os.Stderr, "codex-run: warning — working root covers $HOME; Codex can read your whole home tree. Pass -C <repo> to scope it.")
 	}
 
 	// Open the log. Default to a temp file; honor -l so the caller can pick a path it
@@ -246,39 +298,73 @@ func run() int {
 	// run (and reads stderr incrementally) learns where to watch immediately.
 	fmt.Fprintf(os.Stderr, "codex-run: streaming events → %s\n", logPath)
 
-	// Announce token usage and the log path on the way out — normal or error — so the
-	// caller can always find the log. A signal terminates the process before this runs,
-	// but the log is already on disk, so only the banner is lost.
-	defer announce(logPath, mode, sandbox)
+	// Announce token usage, the session id, and the log path on the way out — normal or
+	// error — so the caller can always find the log and knows how to resume. A signal
+	// terminates the process before this runs, but the log is already on disk, so only the
+	// banner is lost. A resumed run's real sandbox is the session's own, not this mode's
+	// default, so label it "resumed" rather than assert a sandbox we did not set.
+	sandboxLabel := sandbox
+	if resuming {
+		sandboxLabel = "resumed"
+	}
+	defer announce(logPath, mode, sandboxLabel)
 
 	// --json makes Codex emit progress events as they happen; --output-last-message
-	// still writes the final answer to its own file, so stdout stays clean.
-	cmdArgs := []string{
-		"exec",
-		"--config", "model_context_window=272000",
-		"--config", "model_auto_compact_token_limit=240000",
-		"--json",
-		"-C", workdir,
-		"--sandbox", sandbox,
-		"--color", "never",
-		"--skip-git-repo-check",
-		"--output-last-message", answerPath,
+	// still writes the final answer to its own file, so stdout stays clean. A resume reuses
+	// this whole pipeline (log, answer capture, token banner, STATUS gate) — it only swaps in
+	// the `exec resume` subcommand and drops -C/--sandbox, which resume rejects because the
+	// session already recorded both; cwd comes from cmd.Dir below instead.
+	var cmdArgs []string
+	if resuming {
+		cmdArgs = []string{"exec", "resume"}
+		if resumeLast {
+			cmdArgs = append(cmdArgs, "--last")
+		} else {
+			cmdArgs = append(cmdArgs, resumeID)
+		}
+		cmdArgs = append(cmdArgs,
+			"--config", "model_context_window=272000",
+			"--config", "model_auto_compact_token_limit=240000",
+			"--json",
+			"--skip-git-repo-check",
+			"--output-last-message", answerPath,
+		)
+	} else {
+		cmdArgs = []string{
+			"exec",
+			"--config", "model_context_window=272000",
+			"--config", "model_auto_compact_token_limit=240000",
+			"--json",
+			"-C", workdir,
+			"--sandbox", sandbox,
+			"--color", "never",
+			"--skip-git-repo-check",
+			"--output-last-message", answerPath,
+		}
 	}
 	if model != "" {
 		cmdArgs = append(cmdArgs, "--model", model)
 	}
 	cmdArgs = append(cmdArgs, "-") // read the prompt from stdin
 
-	role, cold, context, discipline := adviseRole, adviseCold, adviseContext, adviseDiscipline
-	if mode == "work" {
-		role, cold, context, discipline = workRole, workCold, workContext, workDiscipline
-	}
-	preamble := role + cold + discipline
-	if withContext {
-		preamble = role + context + discipline
-	}
 	cmd := exec.Command("codex", cmdArgs...)
-	cmd.Stdin = strings.NewReader(preamble + "\n\n---\n\n" + prompt)
+	if resuming {
+		// The session already holds the preamble in its history; re-injecting the role would
+		// duplicate it. Send only the follow-up prompt. cmd.Dir gives resume its workspace and
+		// scopes which recorded session --last selects.
+		cmd.Stdin = strings.NewReader(prompt)
+		cmd.Dir = workdir
+	} else {
+		role, cold, context, discipline := adviseRole, adviseCold, adviseContext, adviseDiscipline
+		if mode == "work" {
+			role, cold, context, discipline = workRole, workCold, workContext, workDiscipline
+		}
+		preamble := role + cold + discipline
+		if withContext {
+			preamble = role + context + discipline
+		}
+		cmd.Stdin = strings.NewReader(preamble + "\n\n---\n\n" + prompt)
+	}
 	// Codex's raw output is the log. -v also tees it to stderr for a live foreground view.
 	var sink io.Writer = logf
 	if verbose {
@@ -401,10 +487,41 @@ func sessionTranscript() (string, error) {
 	return out.String(), nil
 }
 
-// announce prints the log path and Codex's token usage to stderr. Tokens come from the
-// last turn.completed event in the log; "n/a" when the run produced none (e.g. failed).
+// announce prints token usage, the session id, and how to resume it to stderr. Tokens come
+// from the last turn.completed event in the log; "n/a" when the run produced none (e.g.
+// failed). When the log carries a session id, the resume hints are the payload: `codex resume`
+// opens it in the TUI and `codex-run <mode> --resume` retries it headlessly — both only after
+// this run exits, never against a session another run is still writing.
 func announce(logPath, mode, sandbox string) {
-	fmt.Fprintf(os.Stderr, "── codex %s (%s) · tokens: %s · log: %s ──\n", mode, sandbox, lastUsage(logPath), logPath)
+	fmt.Fprintf(os.Stderr, "── codex %s (%s) · tokens: %s ──\n", mode, sandbox, lastUsage(logPath))
+	if tid := threadID(logPath); tid != "" {
+		fmt.Fprintf(os.Stderr, "   session: %s\n", tid)
+		fmt.Fprintf(os.Stderr, "   resume:  codex resume %s  (TUI, after this run exits)  ·  codex-run %s --resume %s  (headless retry)\n", tid, mode, tid)
+	}
+	fmt.Fprintf(os.Stderr, "   log:     %s\n", logPath)
+}
+
+// threadID returns the session/thread UUID from the log's first thread.started event — the id
+// codex resume (TUI) and codex exec resume (headless) both accept, and the name of the durable
+// rollout under ~/.codex/sessions. "" when the run died before the session was created. Mirrors
+// lastUsage: one known field of one event type, so the log itself stays a verbatim copy.
+func threadID(logPath string) string {
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if !strings.Contains(line, `"thread.started"`) {
+			continue
+		}
+		var ev struct {
+			ThreadID string `json:"thread_id"`
+		}
+		if json.Unmarshal([]byte(line), &ev) == nil && ev.ThreadID != "" {
+			return ev.ThreadID
+		}
+	}
+	return ""
 }
 
 // lastUsage scans the log backward for the most recent turn.completed event and reports
@@ -478,6 +595,8 @@ func usage(w io.Writer) {
   codex-run advise [options] < brief.md                         # cold review; brief required, read from stdin
   cat brief.md <(git diff main) | codex-run advise [options]    # question + diff
   codex-run work -C <repo> [options] < task.md                  # implement a delegated task (-C and task required)
+  codex-run work --resume <id> -C <repo>                        # continue a session that died mid-turn (retry)
+  codex-run <mode> --last [options] [< followup.md]             # continue the most recent session for this repo
 
 The mode fixes Codex's role and default sandbox per call:
   advise  independent reviewer/advisor; read-only sandbox
@@ -498,10 +617,19 @@ The mode fixes Codex's role and default sandbox per call:
   -x, --context         prepend the current session's transcript as context (runs
                         session-transcript; aborts if extraction fails). Under advise,
                         makes the brief optional — with none, Codex reviews the session.
+      --resume <id>     continue an existing session (its session id is printed in an earlier
+                        run's banner) instead of starting fresh. Sandbox and cwd inherit from that
+                        session; a piped stdin prompt is sent as the follow-up, else the
+                        session is nudged to finish where it stopped. Skips the preamble
+                        (already in history) and -C/-s (rejected by resume). work keeps its
+                        STATUS gate; -C still scopes the run's workspace.
+      --last            like --resume, but for the most recent session in the -C repo (no id).
   -h, --help            this help
 
-stdout = final answer only.   stderr = log path (at start) + token usage (at end).
+stdout = final answer only.   stderr = session id + resume hints + token usage (at end); log path (at start).
 The log is Codex's raw --json event stream, written live — tail it to watch progress.
-A failed work turn can leave partial edits — inspect git status before retrying.
+Each run prints its session id: retry a run that died with --resume/--last, or open it in the
+Codex TUI with "codex resume <id>" — but only after it exits (two writers on one session
+interleave its history). A failed work turn can leave partial edits — inspect git status first.
 `)
 }
