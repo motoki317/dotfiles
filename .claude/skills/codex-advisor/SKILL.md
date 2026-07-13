@@ -16,4 +16,5 @@ codex-run advise -C <repo> --log /tmp/codex.jsonl < brief.md  # cold review of a
 - `--context` sends the current session to OpenAI. Codex sees your actions, not your thinking or injected context — put load-bearing reasoning in the brief and point Codex at the files.
 - A gate call (`~/.claude/rules/process.md`) runs foreground — wait for the verdict; background only a non-gating opinion.
 - Read-only by default; `-s workspace-write` grants workspace write access (e.g. so Codex can run tests) — only when asked. stdout is the verdict.
+- A dropped or interrupted call prints its `session: <id>` in the stderr banner; `codex-run advise --resume <id> < followup.md` continues that same review — recover a network drop, or ask a follow-up on the same context — instead of a fresh cold call. Resume only after the call exits.
 - Implemented in Go under `~/.config/home-manager/scripts/{codex-run,session-transcript}`; home-manager builds them and puts them on PATH.
