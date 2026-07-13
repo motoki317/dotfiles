@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // ANSI colors. Real ESC bytes, so rendered segments concatenate directly.
@@ -146,7 +147,7 @@ func main() {
 	codex := codexRateLimits(home)
 	now := time.Now().Unix()
 	cost := sessionCost(sessionID(p), now)
-	fmt.Println(render(p, codex, cost, now))
+	fmt.Println(render(p, codex, cost, now, termWidth()))
 }
 
 func readAll(f *os.File) ([]byte, error) {
@@ -159,21 +160,92 @@ func readAll(f *os.File) ([]byte, error) {
 	return []byte(b.String()), sc.Err()
 }
 
-// render builds the whole status line. Pure given its inputs (now is passed, not
-// read from the clock) so every branch is testable.
-func render(p Payload, codex *CodexRL, cost *costInfo, now int64) string {
-	context := renderContext(p)
+// termWidth reads the per-pane width Claude Code injects as COLUMNS. Zero means
+// unknown and retains single-line output; terminal queries cannot be used because
+// statusline output is captured rather than attached to a TTY. This assumes
+// statusLine.padding is zero; subtract configured padding here if that changes.
+func termWidth() int {
+	width, err := strconv.Atoi(os.Getenv("COLUMNS"))
+	if err != nil || width <= 0 {
+		return 0
+	}
+	return width
+}
 
+// visWidth returns the rendered cell width of s without ANSI CSI escapes, counting
+// every other rune as one cell. Exact for the current glyphs on a terminal that
+// renders East-Asian-Ambiguous runes as narrow. Caveat: renderCost's ↑/↓
+// (U+2191/2193) are Ambiguous, so a terminal set to render them double-width makes
+// this undercount that row by up to 2 cells, which can overflow and right-truncate
+// it. A full fix needs an East-Asian width table (go-runewidth), rejected by
+// NFR-001; revisit if emoji/CJK or the wide arrows start mattering.
+func visWidth(s string) int {
+	width := 0
+	for i := 0; i < len(s); {
+		if s[i] == '\x1b' && i+1 < len(s) && s[i+1] == '[' {
+			j := i + 2
+			for j < len(s) && (s[j] < 0x40 || s[j] > 0x7e) {
+				j++
+			}
+			if j < len(s) {
+				i = j + 1
+				continue
+			}
+		}
+		_, size := utf8.DecodeRuneInString(s[i:])
+		width++
+		i += size
+	}
+	return width
+}
+
+// layout greedily packs segments into width-bounded rows while preserving their
+// order. A non-positive width retains the legacy single-line output. A segment
+// wider than width still gets its own row and overflows; per-segment splitting is
+// intentionally out of scope.
+func layout(segments []string, width int) string {
+	const sep = " | " // one source for the join, its width term, and the concat
+	if width <= 0 {
+		return strings.Join(segments, sep)
+	}
+
+	var rows []string
+	row := ""
+	for i, segment := range segments {
+		if i == 0 {
+			row = segment
+			continue
+		}
+		if visWidth(row)+visWidth(sep)+visWidth(segment) <= width {
+			row += sep + segment
+			continue
+		}
+		rows = append(rows, row)
+		row = segment
+	}
+	if len(segments) > 0 {
+		rows = append(rows, row)
+	}
+	return strings.Join(rows, "\n")
+}
+
+// render builds the whole status line. Pure given its inputs (now and width are
+// passed rather than read from process state) so every branch is testable.
+func render(p Payload, codex *CodexRL, cost *costInfo, now int64, width int) string {
+	segments := []string{
+		glyphModel + " " + modelName(p.Model.DisplayName),
+		glyphToken + " " + renderContext(p),
+	}
 	if s := renderCost(cost); s != "" {
-		context += " | " + s
+		segments = append(segments, s)
 	}
 	if segs := claudeSegments(p, now); len(segs) > 0 {
-		context += " | " + glyphTimer + " " + strings.Join(segs, ", ")
+		segments = append(segments, glyphTimer+" "+strings.Join(segs, ", "))
 	}
 	if segs := codexSegments(codex, now); len(segs) > 0 {
-		context += " | " + glyphTimer + " Codex " + strings.Join(segs, ", ")
+		segments = append(segments, glyphTimer+" Codex "+strings.Join(segs, ", "))
 	}
-	return glyphModel + " " + modelName(p.Model.DisplayName) + " | " + glyphToken + " " + context
+	return layout(segments, width)
 }
 
 // modelName strips a trailing context-window annotation from the harness display

@@ -133,6 +133,88 @@ func TestSupportsTrueColor(t *testing.T) {
 	}
 }
 
+func TestVisWidth(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want int
+	}{
+		{"plain ASCII", "hello", 5},
+		{"colored text", cGreen + "green" + cReset, 5},
+		{"nerd font glyph", glyphModel, 1},
+		{"truecolor escape", "\x1b[38;2;12;34;56mcolor" + cReset, 5},
+		{"unterminated escape", "\x1b[31", 4}, // no final byte: the bytes count as visible
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := visWidth(c.in); got != c.want {
+				t.Errorf("visWidth(%q) = %d, want %d", c.in, got, c.want)
+			}
+		})
+	}
+}
+
+func TestLayout(t *testing.T) {
+	cases := []struct {
+		name     string
+		segments []string
+		width    int
+		want     string
+		rowsFit  bool
+	}{
+		{"unknown width", []string{"one", "two"}, 0, "one | two", false},
+		{"wide enough", []string{"one", "two"}, 9, "one | two", true},
+		{"one over", []string{"one", "two"}, 8, "one\ntwo", true},
+		{"wraps greedily", []string{"aa", "bb", "ccc"}, 8, "aa | bb\nccc", true},
+		{"packs after wrap", []string{"aa", "bb", "ccc", "d"}, 8, "aa | bb\nccc | d", true},
+		{"measures visible width", []string{cGreen + "aaa" + cReset, "bbb"}, 9, cGreen + "aaa" + cReset + " | bbb", true},
+		{"over-wide segment", []string{"aa", "toolong", "b"}, 4, "aa\ntoolong\nb", false},
+		{"empty", nil, 40, "", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := layout(c.segments, c.width)
+			if got != c.want {
+				t.Errorf("layout(%q, %d) = %q, want %q", c.segments, c.width, got, c.want)
+			}
+			if c.rowsFit {
+				for _, row := range strings.Split(got, "\n") {
+					if visWidth(row) > c.width {
+						t.Errorf("row %q has width %d, want <= %d", row, visWidth(row), c.width)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestTermWidth(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		unset bool
+		want  int
+	}{
+		{"unset", "", true, 0},
+		{"positive", "94", false, 94},
+		{"zero", "0", false, 0},
+		{"non-numeric", "abc", false, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("COLUMNS", c.value)
+			if c.unset {
+				if err := os.Unsetenv("COLUMNS"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if got := termWidth(); got != c.want {
+				t.Errorf("termWidth() with COLUMNS=%q = %d, want %d", c.value, got, c.want)
+			}
+		})
+	}
+}
+
 func TestGradient(t *testing.T) {
 	const lo, hi = int64(0), int64(100)
 	// Endpoints and midpoint land exactly on the palette stops.
@@ -292,7 +374,7 @@ func TestRenderFull(t *testing.T) {
 		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
 	}
 
-	got := render(p, codex, nil, now)
+	got := render(p, codex, nil, now, 0)
 	// A color reset sits between "178.2K" and "/1M", so check the parts separately.
 	// The token glyph must prefix the context (regression: it was dropped once).
 	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
@@ -305,7 +387,7 @@ func TestRenderFull(t *testing.T) {
 func TestRenderCodexAbsent(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, nil, 1_000_000)
+	got := render(p, nil, nil, 1_000_000, 0)
 	if strings.Contains(got, "Codex") {
 		t.Errorf("no Codex data should render no Codex group, got %q", got)
 	}
@@ -389,9 +471,48 @@ func TestRenderCostUnpriced(t *testing.T) {
 func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, &costInfo{USD: 1.17, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000)
+	got := render(p, nil, &costInfo{USD: 1.17, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
 	if !strings.Contains(got, "$1.17") { // cost at 3 sig figs keeps the cents
 		t.Errorf("render should include the cost segment, got %q", got)
+	}
+}
+
+func TestRenderWraps(t *testing.T) {
+	const now int64 = 1_000_000
+	var p Payload
+	p.Model.DisplayName = "Opus 4.8"
+	p.ContextWindow = &ContextWindow{
+		TotalInputTokens:  pi(178200),
+		ContextWindowSize: pi(1_000_000),
+		UsedPercentage:    pf(17.8),
+	}
+	p.RateLimits = &RateLimits{
+		FiveHour: &ClaudeWindow{UsedPercentage: pf(28), ResetsAt: pi(now + 5000)},
+		SevenDay: &ClaudeWindow{UsedPercentage: pf(15), ResetsAt: pi(now + 500000)},
+	}
+	codex := &CodexRL{
+		Primary:   &CodexWindow{UsedPercent: pf(94), WindowMinutes: pn(300), ResetsAt: pi(now + 3000)},
+		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
+	}
+	cost := &costInfo{USD: 1.17, Input: 1000, Output: 500}
+
+	narrow := render(p, codex, cost, now, 40)
+	if !strings.Contains(narrow, "\n") {
+		t.Fatalf("width 40 should wrap, got %q", narrow)
+	}
+	for _, row := range strings.Split(narrow, "\n") {
+		if visWidth(row) > 40 {
+			t.Errorf("row %q has width %d, want <= 40", row, visWidth(row))
+		}
+	}
+
+	unwrapped := render(p, codex, cost, now, 0)
+	wide := render(p, codex, cost, now, 200)
+	if strings.Contains(unwrapped, "\n") || strings.Contains(wide, "\n") {
+		t.Errorf("non-wrapping widths produced a newline: width 0=%q, width 200=%q", unwrapped, wide)
+	}
+	if wide != unwrapped {
+		t.Errorf("wide render differs from legacy render:\nwide %q\nlegacy %q", wide, unwrapped)
 	}
 }
 
