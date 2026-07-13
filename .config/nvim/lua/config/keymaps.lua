@@ -5,6 +5,14 @@
 -- Neo-tree: focus or open if closed
 vim.keymap.set("n", "<leader>e", "<cmd>Neotree focus<cr>", { desc = "Focus Neo-tree" })
 
+-- Hunk: review the working-tree diff in a floating terminal, lazygit-style.
+-- `hunk diff` shows current changes (incl. untracked); run at the repo root so it
+-- works from any buffer. Mirrors LazyVim's <leader>gg lazygit map. Bound to <leader>gv
+-- ("git view"), a free key that leaves gitsigns' <leader>gh "hunks" group untouched.
+vim.keymap.set("n", "<leader>gv", function()
+  Snacks.terminal({ "hunk", "diff" }, { cwd = LazyVim.root.git() })
+end, { desc = "Hunk (Root Dir)" })
+
 -- Focus main buffer pane (move to right window)
 vim.keymap.set("n", "<leader>.", "<cmd>wincmd l<cr>", { desc = "Focus main buffer" })
 
