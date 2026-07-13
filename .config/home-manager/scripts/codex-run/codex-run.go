@@ -255,7 +255,8 @@ func run() int {
 	// still writes the final answer to its own file, so stdout stays clean.
 	cmdArgs := []string{
 		"exec",
-		"--profile", "context-limits",
+		"--config", "model_context_window=272000",
+		"--config", "model_auto_compact_token_limit=240000",
 		"--json",
 		"-C", workdir,
 		"--sandbox", sandbox,
