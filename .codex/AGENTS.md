@@ -1,18 +1,22 @@
 # House assets
 
-Standing guidance for every Codex run on this machine. The engineering assets are shared
-with Claude Code and live under `~/.claude`; they bind Codex too.
+The canonical engineering guidance lives under `~/.claude` and binds Codex too.
 
-Mandatory initialization before any edit or commit:
+Before substantive work, read these files in full, preferably in one batched operation:
 
-1. Read `~/.claude/rules/code.md` (coding principles) and `~/.claude/rules/conventions.md`
-   (tool and prose conventions) in full.
-2. List `~/.claude/skills/` and read `commit/SKILL.md` (commit-message format); read
-   `tdd/SKILL.md` for testable code, `japanese-tech-writing/SKILL.md` before writing
-   human-facing prose, `frontend-design/SKILL.md` for web UI, and any other skill relevant
-   to the task.
-3. If a mandatory asset cannot be read, stop and report it.
+1. `~/.claude/CLAUDE.md`
+2. Every Markdown file directly under `~/.claude/rules/`, in lexical order
 
-These are read-only references written for Claude Code — treat tool mechanics as advisory,
-the methods and standards as binding; never modify them. Do not begin coding until this
-initialization is complete.
+If a required file cannot be read, stop and report it. Preserve the methods, constraints,
+and standards in those files. Translate Claude-specific tool names, slash commands, agent
+types, and interaction mechanics to the closest available Codex mechanism.
+
+Do not duplicate these assets. Modify them only when a task explicitly targets the shared
+house guidance or skills, and read `~/.claude/META.md` before editing them.
+
+## Skills
+
+Claude-owned skills live under `~/.claude/skills` and are exposed to Codex through tracked
+symlinks under `~/.agents/skills`. Do not enumerate or preload their `SKILL.md` files during
+initialization. Select skills from their name and description, then read the full skill only
+when the task invokes or matches it.

@@ -54,6 +54,7 @@ with pkgs; [
   (goBin "claude-statusline")
   (goBin "codex-run")
   (goBin "session-transcript")
+  (goBin "sync-claude-skills")
   curl
   dive
   docker-buildx

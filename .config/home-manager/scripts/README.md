@@ -8,6 +8,7 @@ home-manager — see the `goBin` helper in [`../common/packages.nix`](../common/
 | `claude-statusline/`  | `claude-statusline`  | Claude Code status line (`~/.claude/settings.json`)  |
 | `codex-run/`          | `codex-run`          | the `codex-advisor` and `execute` skills             |
 | `session-transcript/` | `session-transcript` | `codex-run … --context` (invokes it by PATH name)    |
+| `sync-claude-skills/` | `sync-claude-skills` | shared Claude/Codex skill registry                   |
 
 ## Editing these
 
