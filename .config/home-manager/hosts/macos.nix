@@ -8,11 +8,7 @@
   # tmux clipboard tool consumed by common/tmux.nix
   _module.args.clipboardCommand = "pbcopy";
 
-  home.packages = import ../common/packages.nix { inherit pkgs inputs; }
-   ++
-   (with pkgs; [
-    lima
-   ]);
+  home.packages = import ../common/packages.nix { inherit pkgs inputs; };
 
   home.file = {
     # Not needed with Docker Desktop
