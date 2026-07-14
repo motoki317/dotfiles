@@ -298,16 +298,18 @@ func run() int {
 	// run (and reads stderr incrementally) learns where to watch immediately.
 	fmt.Fprintf(os.Stderr, "codex-run: streaming events → %s\n", logPath)
 
-	// Announce token usage, the session id, and the log path on the way out — normal or
-	// error — so the caller can always find the log and knows how to resume. A signal
-	// terminates the process before this runs, but the log is already on disk, so only the
-	// banner is lost. A resumed run's real sandbox is the session's own, not this mode's
-	// default, so label it "resumed" rather than assert a sandbox we did not set.
+	// Close with the token-usage line on the way out — normal or error. The session id and
+	// resume hints are printed earlier instead (sessionAnnouncer, below), the instant Codex
+	// emits them: a signal (Ctrl-C, hangup) kills the process before this deferred banner runs,
+	// so an id shown only here would be lost exactly when a resume is most needed. `printed`
+	// tells announce the id is already out; it reprints only as a backstop. A resumed run's real
+	// sandbox is the session's own, not this mode's default, so label it "resumed".
 	sandboxLabel := sandbox
 	if resuming {
 		sandboxLabel = "resumed"
 	}
-	defer announce(logPath, mode, sandboxLabel)
+	printed := false
+	defer announce(logPath, mode, sandboxLabel, &printed)
 
 	// --json makes Codex emit progress events as they happen; --output-last-message
 	// still writes the final answer to its own file, so stdout stays clean. A resume reuses
@@ -370,7 +372,11 @@ func run() int {
 	if verbose {
 		sink = io.MultiWriter(logf, os.Stderr)
 	}
-	cmd.Stdout, cmd.Stderr = sink, sink
+	// Surface the session id the moment Codex's first thread.started event flows past — early,
+	// so a run later killed by a signal has already shown how to resume it — while forwarding
+	// every byte to the log unchanged.
+	ann := &sessionAnnouncer{sink: sink, out: os.Stderr, mode: mode, printed: &printed}
+	cmd.Stdout, cmd.Stderr = ann, ann
 
 	rc := 0
 	if err := cmd.Run(); err != nil {
@@ -487,30 +493,78 @@ func sessionTranscript() (string, error) {
 	return out.String(), nil
 }
 
-// announce prints token usage, the session id, and how to resume it to stderr. Tokens come
-// from the last turn.completed event in the log; "n/a" when the run produced none (e.g.
-// failed). When the log carries a session id, the resume hints are the payload: `codex resume`
-// opens it in the TUI and `codex-run <mode> --resume` retries it headlessly — both only after
-// this run exits, never against a session another run is still writing.
-func announce(logPath, mode, sandbox string) {
+// announce prints the closing token-usage line — the one fact known only at completion; tokens
+// come from the last turn.completed event, "n/a" when the run produced none (e.g. failed). The
+// session id and resume hints are surfaced earlier, the instant Codex emits them (see
+// sessionAnnouncer), so a signal-killed run still shows how to resume. announce reprints them
+// here only as a backstop: the rare run whose live stream-watch missed the id but whose completed
+// log still holds it. The log path is not repeated — it was printed at start.
+func announce(logPath, mode, sandbox string, printed *bool) {
 	fmt.Fprintf(os.Stderr, "── codex %s (%s) · tokens: %s ──\n", mode, sandbox, lastUsage(logPath))
-	if tid := threadID(logPath); tid != "" {
-		fmt.Fprintf(os.Stderr, "   session: %s\n", tid)
-		fmt.Fprintf(os.Stderr, "   resume:  codex resume %s  (TUI, after this run exits)  ·  codex-run %s --resume %s  (headless retry)\n", tid, mode, tid)
+	if !*printed {
+		if tid := threadID(logPath); tid != "" {
+			printSession(os.Stderr, mode, tid)
+		}
 	}
-	fmt.Fprintf(os.Stderr, "   log:     %s\n", logPath)
+}
+
+// printSession writes the session id and how to resume it. The headless retry (`codex-run
+// --resume`) leads, since recovering a dropped run is the common case; `codex resume <id>` opens
+// the same session in the Codex TUI — both only after this run exits, never against a session
+// another run is still writing. Takes a writer so the stream watcher (stderr) and tests share it.
+func printSession(w io.Writer, mode, tid string) {
+	fmt.Fprintf(w, "   session: %s\n", tid)
+	fmt.Fprintf(w, "   resume:  codex-run %s --resume %s  (headless retry)  ·  codex resume %s  (TUI, after this run exits)\n", mode, tid, tid)
+}
+
+// sessionAnnouncer wraps the log sink and prints the session id and resume hints (to out) the
+// moment Codex's first thread.started event flows past — early, so a run later killed by a signal
+// (Ctrl-C, hangup), which never reaches the deferred banner, has still shown how to resume it.
+// thread.started is Codex's opening event, so it lands in the first bytes; once seen — or 64 KiB
+// pass without it, meaning the run created no session — scanning stops. Every byte is forwarded to
+// the sink unchanged, so the log stays a verbatim copy. *printed lets the deferred announce know
+// the id is already out. Its Write runs in os/exec's copier goroutine; cmd.Run joins that goroutine
+// before returning, so announce's later read of *printed sees this write (no race).
+type sessionAnnouncer struct {
+	sink    io.Writer // the log (and stderr under -v); receives every byte verbatim
+	out     io.Writer // where the session banner goes (os.Stderr in prod)
+	mode    string
+	printed *bool
+	buf     []byte // accumulates the opening bytes until thread.started is found
+	giveUp  bool   // set once found or once 64 KiB passed without it
+}
+
+func (s *sessionAnnouncer) Write(p []byte) (int, error) {
+	n, err := s.sink.Write(p)
+	if !s.giveUp && !*s.printed {
+		s.buf = append(s.buf, p[:n]...)
+		if tid := scanThreadID(string(s.buf)); tid != "" {
+			printSession(s.out, s.mode, tid)
+			*s.printed, s.giveUp, s.buf = true, true, nil
+		} else if len(s.buf) > 64<<10 {
+			s.giveUp, s.buf = true, nil
+		}
+	}
+	return n, err
 }
 
 // threadID returns the session/thread UUID from the log's first thread.started event — the id
 // codex resume (TUI) and codex exec resume (headless) both accept, and the name of the durable
-// rollout under ~/.codex/sessions. "" when the run died before the session was created. Mirrors
-// lastUsage: one known field of one event type, so the log itself stays a verbatim copy.
+// rollout under ~/.codex/sessions. "" when the run died before the session was created.
 func threadID(logPath string) string {
 	data, err := os.ReadFile(logPath)
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	return scanThreadID(string(data))
+}
+
+// scanThreadID pulls the thread_id from the first complete thread.started line in data — the
+// shared parser for both the finished log (threadID) and the live stream (sessionAnnouncer).
+// A line still mid-write fails to unmarshal and is skipped, so a straddled event is picked up
+// on the next chunk. Mirrors lastUsage: one known field of one event type, no format ownership.
+func scanThreadID(data string) string {
+	for _, line := range strings.Split(data, "\n") {
 		if !strings.Contains(line, `"thread.started"`) {
 			continue
 		}
@@ -626,7 +680,7 @@ The mode fixes Codex's role and default sandbox per call:
       --last            like --resume, but for the most recent session in the -C repo (no id).
   -h, --help            this help
 
-stdout = final answer only.   stderr = session id + resume hints + token usage (at end); log path (at start).
+stdout = final answer only.   stderr = log path + session id + resume hints (at start); token usage (at end).
 The log is Codex's raw --json event stream, written live — tail it to watch progress.
 Each run prints its session id: retry a run that died with --resume/--last, or open it in the
 Codex TUI with "codex resume <id>" — but only after it exits (two writers on one session
