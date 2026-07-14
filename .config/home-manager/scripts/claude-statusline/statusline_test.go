@@ -141,7 +141,10 @@ func TestVisWidth(t *testing.T) {
 	}{
 		{"plain ASCII", "hello", 5},
 		{"colored text", cGreen + "green" + cReset, 5},
-		{"nerd font glyph", glyphModel, 1},
+		{"supplementary PUA icon is 2 cells", glyphModel, 2},
+		{"BMP PUA icon is 2 cells", glyphToken, 2},
+		{"ambiguous arrows are 2 cells each", "↑↓", 4},
+		{"glyph plus ASCII", glyphTimer + " 5h", 5}, // 2 + 1 + 1 + 1
 		{"truecolor escape", "\x1b[38;2;12;34;56mcolor" + cReset, 5},
 		{"unterminated escape", "\x1b[31", 4}, // no final byte: the bytes count as visible
 	}
@@ -151,6 +154,34 @@ func TestVisWidth(t *testing.T) {
 				t.Errorf("visWidth(%q) = %d, want %d", c.in, got, c.want)
 			}
 		})
+	}
+}
+
+// TestLayoutWrapsGlyphHeavyLine reproduces the reported overflow: a glyph-heavy
+// line whose real width (100 cells) exceeds a 97-column pane. Before runeCells
+// taught visWidth that the PUA icons and ↑/↓ are two cells, this line measured 93,
+// so layout left it on one row and Claude Code truncated it with an ellipsis. It
+// must now measure over the pane width and wrap, with every row inside the pane.
+func TestLayoutWrapsGlyphHeavyLine(t *testing.T) {
+	segments := []string{
+		glyphModel + " Opus 4.8",
+		glyphToken + " 222K/1M",
+		glyphCost + " $9.9 ↑6.9M/429K/78 ↓86K",
+		glyphTimer + " ~5h, 52% 5d1h/7d",
+		glyphTimer + " Codex 18% 3h7m/5h",
+	}
+	const pane = 97
+	if w := visWidth(strings.Join(segments, " | ")); w <= pane {
+		t.Fatalf("joined width = %d, want > %d so the line must wrap", w, pane)
+	}
+	rows := strings.Split(layout(segments, pane), "\n")
+	if len(rows) < 2 {
+		t.Errorf("layout did not wrap: got %d row(s)", len(rows))
+	}
+	for _, row := range rows {
+		if visWidth(row) > pane {
+			t.Errorf("row %q has width %d, want <= %d", row, visWidth(row), pane)
+		}
 	}
 }
 
