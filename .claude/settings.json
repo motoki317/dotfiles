@@ -11,7 +11,8 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "~/.nix-profile/bin/claude-statusline"
+    "command": "~/.nix-profile/bin/claude-statusline",
+    "refreshInterval": 60
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true

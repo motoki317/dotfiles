@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 	"unicode/utf8"
 )
@@ -139,13 +140,21 @@ type codexEvent struct {
 }
 
 func main() {
+	// --refresh-codex is the detached self-invocation spawned by codexRateLimits: it
+	// fetches the live snapshot from the backend and writes the cache, then exits
+	// without touching stdin/stdout, so it never interferes with a render.
+	if len(os.Args) > 1 && os.Args[1] == "--refresh-codex" {
+		refreshCodexCache()
+		return
+	}
+
 	var p Payload
 	if data, err := readAll(os.Stdin); err == nil {
 		_ = json.Unmarshal(data, &p) // best effort: a decode error leaves p zero
 	}
 	home, _ := os.UserHomeDir()
-	codex := codexRateLimits(home)
 	now := time.Now().Unix()
+	codex := codexRateLimits(home, now)
 	cost := sessionCost(sessionID(p), now)
 	fmt.Println(render(p, codex, cost, now, termWidth()))
 }
@@ -556,12 +565,261 @@ func rlSegment(label string, windowSecs int64, pct *float64, resetsAt *int64, no
 		pc, pctInt, cReset, tc, fmtDur(elapsed), cReset, cGray, label, cReset)
 }
 
-// codexRateLimits returns the freshest Codex rate-limit snapshot, or nil when
-// Codex is not installed or has no session data. It reads the newest rollout
-// files by mtime and picks the entry with the newest event timestamp, so a
-// just-started session that has not hit the API yet does not hide older-but-real
-// data, and concurrent sessions resolve to the genuinely latest event.
-func codexRateLimits(home string) *CodexRL {
+// codexRefreshInterval bounds how often the live snapshot is refreshed, in seconds. It
+// doubles as the cache-staleness threshold and the between-attempts backoff (via the
+// lock file's mtime), so a logged-out or failing fetch cannot retry on every render.
+// Reads of the account-status endpoint are not metered against the usage budget, so a
+// per-minute refresh is well within Codex's own background-poll norms; pair it with
+// statusLine.refreshInterval in settings.json to keep the line fresh while idle.
+const codexRefreshInterval = 45
+
+// codexRateLimits returns the Codex rate-limit snapshot for rendering. It reads the
+// cache maintained by the background refresh; when the cache is missing or older than
+// codexRefreshInterval it kicks off a detached refresh (non-blocking) that updates the
+// cache for the next render. The log scan is the fallback, so the segment still appears
+// before the first successful fetch and when the backend is unreachable.
+func codexRateLimits(home string, now int64) *CodexRL {
+	cache := readCodexCache()
+	if cache == nil || now-cache.FetchedAt > codexRefreshInterval {
+		spawnCodexRefresh(now)
+	}
+	if cache != nil {
+		return cache.RateLimits
+	}
+	if home == "" {
+		return nil
+	}
+	return codexRateLimitsFromLogs(home)
+}
+
+// codexCacheFile is the on-disk snapshot the background refresh writes and every render
+// reads. FetchedAt (unix seconds) drives staleness; RateLimits is stored in CodexRL's
+// own shape so the render path is unchanged.
+type codexCacheFile struct {
+	FetchedAt  int64    `json:"fetched_at"`
+	RateLimits *CodexRL `json:"rate_limits"`
+}
+
+// codexCachePath and codexLockPath locate the cache and its refresh-backoff lock under
+// the user cache dir (~/Library/Caches on macOS, $XDG_CACHE_HOME on Linux). Empty means
+// the cache dir is unavailable, which disables the cached path (render falls back to logs).
+func codexCachePath() string {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(dir, "claude-statusline", "codex-rate-limits.json")
+}
+
+func codexLockPath() string {
+	if p := codexCachePath(); p != "" {
+		return p + ".lock"
+	}
+	return ""
+}
+
+// readCodexCache returns the cached snapshot, or nil when it is absent or unreadable.
+func readCodexCache() *codexCacheFile {
+	p := codexCachePath()
+	if p == "" {
+		return nil
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return nil
+	}
+	var c codexCacheFile
+	if json.Unmarshal(data, &c) != nil {
+		return nil
+	}
+	return &c
+}
+
+// writeCodexCache atomically replaces the cache (temp file + rename) so a render never
+// reads a half-written file.
+func writeCodexCache(c *codexCacheFile) error {
+	p := codexCachePath()
+	if p == "" {
+		return fmt.Errorf("no user cache dir")
+	}
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return err
+	}
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	tmp := p + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, p)
+}
+
+// spawnCodexRefresh starts a detached `claude-statusline --refresh-codex` process to
+// refresh the cache, unless codex is absent or an attempt ran within codexRefreshInterval.
+// The lock file's mtime records the last attempt (success or failure alike), so a failing
+// fetch backs off instead of retrying on every render. A lost stat/write race spawns at
+// most one extra fetch — harmless — so no stricter locking is warranted. Setsid detaches
+// the child from the statusline's process group so it outlives this short-lived render.
+func spawnCodexRefresh(now int64) {
+	lock := codexLockPath()
+	if lock == "" {
+		return
+	}
+	if st, err := os.Stat(lock); err == nil && now-st.ModTime().Unix() < codexRefreshInterval {
+		return
+	}
+	if _, err := exec.LookPath("codex"); err != nil {
+		return
+	}
+	self, err := os.Executable()
+	if err != nil {
+		return
+	}
+	if os.MkdirAll(filepath.Dir(lock), 0o755) != nil {
+		return
+	}
+	if os.WriteFile(lock, []byte(strconv.FormatInt(now, 10)), 0o644) != nil {
+		return
+	}
+	cmd := exec.Command(self, "--refresh-codex")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if cmd.Start() == nil {
+		_ = cmd.Process.Release()
+	}
+}
+
+// refreshCodexCache runs in the detached child: it fetches the live snapshot and, on
+// success, writes it to the cache. A failed fetch leaves the previous cache untouched.
+func refreshCodexCache() {
+	if rl := fetchCodexRateLimits(); rl != nil {
+		_ = writeCodexCache(&codexCacheFile{FetchedAt: time.Now().Unix(), RateLimits: rl})
+	}
+}
+
+// fetchCodexRateLimits drives `codex app-server` over stdio to call account/rateLimits/read
+// — a live GET to the backend's accounts/check, which is authoritative and account-global.
+// The app-server owns auth and token refresh, so this stays a thin JSON-RPC client. Returns
+// nil on any failure (codex missing, logged out, timeout, malformed reply).
+func fetchCodexRateLimits() *CodexRL {
+	bin, err := exec.LookPath("codex")
+	if err != nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), codexFetchTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, bin, "app-server")
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	if cmd.Start() != nil {
+		return nil
+	}
+	defer func() { _ = cmd.Process.Kill(); _ = cmd.Wait() }()
+
+	enc := json.NewEncoder(stdin)
+	sc := bufio.NewScanner(stdout)
+	sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
+
+	// Handshake: initialize (id 0), await its result, then initialized + the read (id 1).
+	_ = enc.Encode(rpcMsg{JSONRPC: "2.0", ID: pint(0), Method: "initialize",
+		Params: map[string]any{"clientInfo": map[string]any{"name": "claude-statusline", "version": "0"}}})
+	if awaitRPCResult(sc, 0) == nil {
+		return nil
+	}
+	_ = enc.Encode(rpcMsg{JSONRPC: "2.0", Method: "initialized"})
+	_ = enc.Encode(rpcMsg{JSONRPC: "2.0", ID: pint(1), Method: "account/rateLimits/read", Params: map[string]any{}})
+	result := awaitRPCResult(sc, 1)
+	if result == nil {
+		return nil
+	}
+	return parseAppServerRateLimits(result)
+}
+
+// codexFetchTimeout caps the whole app-server round-trip; a hang degrades to no refresh
+// (the previous cache stands) rather than a lingering process.
+const codexFetchTimeout = 15 * time.Second
+
+// rpcMsg is one outbound JSON-RPC message. A nil ID omits the field, marking a notification.
+type rpcMsg struct {
+	JSONRPC string `json:"jsonrpc"`
+	ID      *int   `json:"id,omitempty"`
+	Method  string `json:"method"`
+	Params  any    `json:"params,omitempty"`
+}
+
+func pint(i int) *int { return &i }
+
+// awaitRPCResult scans line-delimited JSON-RPC messages until one carries id with a
+// result, returning that raw result. Nil on EOF/timeout or an error reply. Interleaved
+// notifications (no id) and other ids are skipped.
+func awaitRPCResult(sc *bufio.Scanner, id int) json.RawMessage {
+	for sc.Scan() {
+		var m struct {
+			ID     *int            `json:"id"`
+			Result json.RawMessage `json:"result"`
+		}
+		if json.Unmarshal(sc.Bytes(), &m) != nil {
+			continue
+		}
+		if m.ID != nil && *m.ID == id && m.Result != nil {
+			return m.Result
+		}
+	}
+	return nil
+}
+
+// parseAppServerRateLimits converts account/rateLimits/read's result into CodexRL. The
+// app-server uses camelCase (usedPercent, windowDurationMins, resetsAt), distinct from
+// the snake_case the rollout logs carry, so this cannot reuse CodexRL's own unmarshal.
+func parseAppServerRateLimits(result json.RawMessage) *CodexRL {
+	var r struct {
+		RateLimits struct {
+			Primary   *appWindow `json:"primary"`
+			Secondary *appWindow `json:"secondary"`
+		} `json:"rateLimits"`
+	}
+	if json.Unmarshal(result, &r) != nil {
+		return nil
+	}
+	primary, secondary := r.RateLimits.Primary.toCodex(), r.RateLimits.Secondary.toCodex()
+	if primary == nil && secondary == nil {
+		return nil
+	}
+	return &CodexRL{Primary: primary, Secondary: secondary}
+}
+
+// appWindow is one window as account/rateLimits/read reports it. toCodex maps it to the
+// render-side CodexWindow, dropping a window whose used percent is absent.
+type appWindow struct {
+	UsedPercent        *float64 `json:"usedPercent"`
+	WindowDurationMins *int     `json:"windowDurationMins"`
+	ResetsAt           *int64   `json:"resetsAt"`
+}
+
+func (w *appWindow) toCodex() *CodexWindow {
+	if w == nil || w.UsedPercent == nil {
+		return nil
+	}
+	return &CodexWindow{UsedPercent: w.UsedPercent, WindowMinutes: w.WindowDurationMins, ResetsAt: w.ResetsAt}
+}
+
+// codexRateLimitsFromLogs returns the freshest Codex rate-limit snapshot found in the
+// rollout logs, or nil when Codex is not installed or has no session data. It reads the
+// newest rollout files by mtime and picks the entry with the newest event timestamp, so
+// a just-started session that has not hit the API yet does not hide older-but-real data,
+// and concurrent sessions resolve to the genuinely latest event.
+//
+// This is the cold-start/offline fallback for codexRateLimits: the logged snapshot is a
+// passive echo of the last /responses call, so it lags a window rollover and misses
+// consumption from other clients. codexRateLimits prefers the live backend snapshot.
+func codexRateLimitsFromLogs(home string) *CodexRL {
 	if home == "" {
 		return nil
 	}
