@@ -181,13 +181,11 @@ func termWidth() int {
 	return width
 }
 
-// visWidth returns the rendered cell width of s without ANSI CSI escapes, counting
-// every other rune as one cell. Exact for the current glyphs on a terminal that
-// renders East-Asian-Ambiguous runes as narrow. Caveat: renderCost's ↑/↓
-// (U+2191/2193) are Ambiguous, so a terminal set to render them double-width makes
-// this undercount that row by up to 2 cells, which can overflow and right-truncate
-// it. A full fix needs an East-Asian width table (go-runewidth), rejected by
-// NFR-001; revisit if emoji/CJK or the wide arrows start mattering.
+// visWidth returns the rendered cell width of s, skipping ANSI CSI escapes and
+// summing each remaining rune's runeCells. It has to match what the terminal
+// actually draws: when it undercounts, layout packs a row past the pane width and
+// Claude Code right-truncates the overflow with an ellipsis (the bug this fixes —
+// the earlier one-cell-per-rune count lost ~7 cells on a glyph-heavy line).
 func visWidth(s string) int {
 	width := 0
 	for i := 0; i < len(s); {
@@ -201,11 +199,32 @@ func visWidth(s string) int {
 				continue
 			}
 		}
-		_, size := utf8.DecodeRuneInString(s[i:])
-		width++
+		r, size := utf8.DecodeRuneInString(s[i:])
+		width += runeCells(r)
 		i += size
 	}
 	return width
+}
+
+// runeCells returns the terminal cell width of r. Every rune this program prints
+// is either ASCII or one of two double-width classes: nerd-font icons, which live
+// in the Private Use Area (glyphModel/glyphToken/glyphTimer/glyphCost), and
+// renderCost's ↑/↓, which are East-Asian Ambiguous and drawn wide here. That
+// closed alphabet is why the full width table (go-runewidth) an arbitrary string
+// would need — an external dep the stdlib-only build bars — is unnecessary: these
+// ranges catch every wide rune actually emitted. Erring wide is the safe
+// direction; a terminal that drew these narrow would only wrap a few cells early,
+// where the reverse overflows and truncates.
+func runeCells(r rune) int {
+	switch {
+	case r >= 0xE000 && r <= 0xF8FF: // BMP Private Use Area
+		return 2
+	case r >= 0xF0000 && r <= 0xFFFFD: // Supplementary Private Use Area-A (md icons)
+		return 2
+	case r == 0x2191 || r == 0x2193: // ↑ ↓
+		return 2
+	}
+	return 1
 }
 
 // layout greedily packs segments into width-bounded rows while preserving their
