@@ -598,14 +598,41 @@ func TestCodexRateLimitsNewestByEventTimestamp(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "rollout-b.jsonl"), []byte(older+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	rl := codexRateLimits(home)
+	rl := codexRateLimitsFromLogs(home)
 	if rl == nil || rl.Primary == nil || *rl.Primary.UsedPercent != 80.0 {
 		t.Errorf("expected the newer event (80%%), got %+v", rl)
 	}
 }
 
 func TestCodexRateLimitsAbsent(t *testing.T) {
-	if rl := codexRateLimits(t.TempDir()); rl != nil {
+	if rl := codexRateLimitsFromLogs(t.TempDir()); rl != nil {
 		t.Errorf("no ~/.codex should yield nil, got %+v", rl)
+	}
+}
+
+func TestParseAppServerRateLimits(t *testing.T) {
+	// Both windows present: camelCase field names map to CodexWindow.
+	both := `{"rateLimits":{"primary":{"usedPercent":42,"windowDurationMins":300,"resetsAt":9999999999},
+		"secondary":{"usedPercent":8,"windowDurationMins":10080,"resetsAt":9999999999}}}`
+	rl := parseAppServerRateLimits([]byte(both))
+	if rl == nil || rl.Primary == nil || *rl.Primary.UsedPercent != 42 || *rl.Primary.WindowMinutes != 300 {
+		t.Fatalf("primary mismatch: %+v", rl)
+	}
+	if rl.Secondary == nil || *rl.Secondary.WindowMinutes != 10080 {
+		t.Fatalf("secondary mismatch: %+v", rl)
+	}
+
+	// This account's shape: a single primary window, secondary null. Must not be dropped.
+	primaryOnly := `{"rateLimits":{"primary":{"usedPercent":8,"windowDurationMins":10080,"resetsAt":1784608504},"secondary":null}}`
+	rl = parseAppServerRateLimits([]byte(primaryOnly))
+	if rl == nil || rl.Primary == nil || rl.Secondary != nil {
+		t.Fatalf("primary-only mismatch: %+v", rl)
+	}
+
+	// No usable window -> nil, so the segment is omitted rather than rendered empty.
+	for _, empty := range []string{`{"rateLimits":{"primary":null,"secondary":null}}`, `{}`, `not json`} {
+		if rl := parseAppServerRateLimits([]byte(empty)); rl != nil {
+			t.Errorf("parseAppServerRateLimits(%q) = %+v, want nil", empty, rl)
+		}
 	}
 }
