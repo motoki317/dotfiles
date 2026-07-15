@@ -12,7 +12,7 @@ argument-hint: "[task-description]"
 
 # Workflow
 1. **Prepare** — read the `/define` plan file end to end and settle any open policy decisions yourself. Choose or create the working branch (branch off the default branch first — Codex commits as it goes). For a repo rooted at `$HOME` (this dotfiles repo), delegate from a `git worktree` checkout — the wrapper refuses a writable run rooted at `$HOME`. Write the brief: the plan-file path plus only what Codex can't infer from the repo — in-session decisions, the branch, scope boundaries. Codex auto-loads the coding principles, conventions, and skill playbooks from the git-tracked `~/.codex/AGENTS.md`, and the wrapper's preamble fixes the commit/never-push policy and report format; don't restate either.
-2. **Delegate** — one long-running call, in the background (it can exceed foreground command timeouts), with a unique log path per run:
+2. **Delegate** — check the budget first: `claude-statusline` renders a `Codex <used>% <elapsed>/<window>` segment per OpenAI window, where the duration is time *elapsed into* the window, not time left, and the percentage turns red at 80. A long run needs headroom to finish — one that hits the limit mid-task strands a half-finished checkout — so on a red window, report the number and let the user pick: delegate anyway, wait for the reset, or take the task in-session. Then one long-running call, in the background (it can exceed foreground command timeouts), with a unique log path per run:
    ```bash
    codex-run work -C <repo> --log /tmp/codex-work-<slug>.jsonl < brief.md
    ```
