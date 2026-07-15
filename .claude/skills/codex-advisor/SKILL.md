@@ -3,9 +3,9 @@ name: codex-advisor
 description: Cross-model second opinion from OpenAI Codex — `codex-run advise --context` reviews the current session, or pipe a brief. Triggers on "ask codex", "codex review", "second opinion", or the "Cross-model review" rules.
 ---
 
-# Codex advisor / reviewer
+# Codex advisor
 
-Cross-model outside view from OpenAI Codex. `codex-run advise` reads the prompt from stdin; `codex-run --help` lists flags and the sibling `work` mode (implementation delegation, owned by the `execute` skill).
+Cross-model outside view from OpenAI Codex. `codex-run advise` reads the prompt from stdin; `codex-run --help` lists the flags.
 
 ```bash
 codex-run advise --context                                    # review the current session ("advise me", no brief)
@@ -13,9 +13,9 @@ codex-run advise --context < brief.md                         # session + a spec
 codex-run advise -C <repo> --log /tmp/codex.jsonl < brief.md  # cold review of a repo (no session)
 ```
 
-- `--context` sends the current session to OpenAI. Codex sees your actions, not your thinking or injected context — put load-bearing reasoning in the brief and point Codex at the files.
+- `--context` sends the session to OpenAI. Codex sees your actions, not your thinking or injected context — put load-bearing reasoning in the brief and point Codex at the files.
 - A gate call (`~/.claude/rules/process.md`) runs foreground — wait for the verdict; background only a non-gating opinion.
-- Read-only by default; `-s workspace-write` grants workspace write access (e.g. so Codex can run tests) — only when asked. stdout is the verdict.
-- A dropped or interrupted call prints its `session: <id>` in the stderr banner; `codex-run advise --resume <id> < followup.md` continues that same review — recover a network drop, or ask a follow-up on the same context — instead of a fresh cold call. Resume only after the call exits.
-- Budget: `claude-statusline` renders a `Codex <used>% <elapsed>/<window>` segment per OpenAI window — the duration is time *elapsed into* the window, not time left. One advise call is cheap enough not to gate; check when a call fails for no clear reason (a spent window is the usual cause) or before a long `-s workspace-write` review. `/execute` owns the pre-delegation gate.
-- Implemented in Go under `~/.config/home-manager/scripts/{codex-run,session-transcript}`; home-manager builds them and puts them on PATH.
+- Read-only by default; `-s workspace-write` lets Codex run tests — only when asked. stdout is the verdict.
+- A dropped call prints `session: <id>`; `codex-run advise --resume <id> < followup.md` continues that review — a network drop, or a follow-up on the same context — instead of a cold call. Resume only after the call exits.
+- Budget: `claude-statusline` prints `Codex <used>% <elapsed>/<window>` per window; the duration is time elapsed *into* the window, not time left. One advise call is too cheap to gate — check it when a call fails for no clear reason, a spent window being the usual cause.
+- Source: `~/.config/home-manager/scripts/{codex-run,session-transcript}` (Go, built onto PATH by home-manager).
