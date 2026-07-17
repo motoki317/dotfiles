@@ -4,7 +4,7 @@ description: QA-test a feature by exercising the running software with adversari
 ---
 
 # Purpose
-Seven skeptical personas design adversarial scenarios in parallel (Phase A); the orchestrator executes them against the live target and reports defects with evidence (Phase B). Design fans out, but execution is serial — parallel mutation corrupts shared state. Stance: don't trust "it should work". (`/feedback` reasons statically about the diff; this exercises the running software.)
+Skeptical personas design adversarial scenarios in parallel (Phase A); the orchestrator executes them against the live target and reports defects with evidence (Phase B). Design fans out, but execution is serial — parallel mutation corrupts shared state. Stance: don't trust "it should work". (`/feedback` reasons statically about the diff; this exercises the running software.)
 
 # Step 1 — Scope
 - **Target** — what to test: explicit arg (PR/path/feature) → else `git diff $(git merge-base HEAD <base>)..HEAD` + uncommitted → else ask.
@@ -12,7 +12,7 @@ Seven skeptical personas design adversarial scenarios in parallel (Phase A); the
 - **How to exercise it** — URL + test env, CLI, API + auth, and/or DB access. Drive a web/Electron UI with `agent-browser` (load `agent-browser skills get dogfood` first). If nothing runs, say so: findings become `by-inspection` / `could-not-verify`, never `executed`.
 
 # Step 2 — Phase A: design scenarios (parallel)
-Spawn all seven as `reviewer` agents in one message — a fixed checklist, tactics adapted to the surface, each leaving ≥1 concrete check; the rubric, not the agent type, carries each persona's expertise. Give each only: the change + how to exercise it, the intent (its Test Basis), and its rubric at the full path `$HOME/.claude/skills/qa-review/references/<slug>.md`. Each returns `{persona, title, priority, basis, preconditions, test_data, steps, expected, evidence_to_collect}` — design only, no fixes. With a UI, ground the design by exploring it read-only via `agent-browser` (read-only is parallel-safe; mutation is not).
+Select the personas whose angle applies to the change — a narrow fix warrants a few, a new user-facing surface most or all seven; record skips in Coverage. Spawn the selected personas as `reviewer` agents in one message — tactics adapted to the surface, each leaving ≥1 concrete check; the rubric, not the agent type, carries each persona's expertise. Give each only: the change + how to exercise it, the intent (its Test Basis), and its rubric at the full path `$HOME/.claude/skills/qa-review/references/<slug>.md`. Each returns `{persona, title, priority, basis, preconditions, test_data, steps, expected, evidence_to_collect}` — design only, no fixes. With a UI, ground the design by exploring it read-only via `agent-browser` (read-only is parallel-safe; mutation is not).
 
 | # | Persona — angle | slug |
 |---|-----------------|------|

@@ -12,7 +12,7 @@ argument-hint: "[message]"
 
 # Workflow
 1. **Analyze** — parse the request, identify constraints, draft candidate questions.
-2. **Investigate** in parallel — spawn the read-only agents that fit: `Explore` for files and patterns, `reviewer` for a lensed read (architecture, schema, risk), `general-purpose` for external sources and estimation.
+2. **Investigate** — inline when the scope is small; for broad or independent surfaces spawn read-only agents in parallel: `Explore` for files and patterns, `reviewer` for a lensed read (architecture, schema, risk), `general-purpose` for external sources and estimation.
 
    Also view the request through the 3–5 relevant decision lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` (feasibility, risk, impact, alternatives, security, …) to surface requirement questions and NFR coverage — fold these into the investigation, don't spawn a separate lens fan-out.
 3. **Clarify** — score each candidate question by design-branching impact, irreversibility, investigation-impossibility, and effort (1–5 each); ask the highest-scoring first, and don't proceed without clear answers.
