@@ -35,7 +35,7 @@ Orchestrator owns one session and runs the consolidated suite:
 - Report defects; don't fix them mid-run (a fix would invalidate the execution). Never declare "passed" or release-approved — a human gates release.
 
 # Step 4 — Report
-Normalize to `{severity, persona, area, expected vs actual, repro, evidence, status, basis}`; one defect → report once under its aptest persona, cross-noting. Group by severity, then persona.
+Normalize to `{severity, persona, area, expected vs actual, repro, evidence, status, basis}`; one defect → report once under its aptest persona, cross-noting. Group by severity, then persona. The report is the deliverable — fixing belongs to the Implementer loop, and a dynamic defect counts as fixed only when its scenario re-executes clean.
 
 ```markdown
 ## QA Review — <feature> (intent: <one line>; exercised via: <UI/CLI/static>)
@@ -54,10 +54,6 @@ Coverage: personas <…>; execution <…>; skipped <… — why>.
 ### Could not verify
 - [P<n>] <what, and why — no test env, missing spec>
 ```
-
-# Step 5 — Close the loop
-Follow `$HOME/.claude/skills/feedback/references/close-the-loop.md`, with a stricter gate: a dynamic defect is confirmed fixed only by re-execution, so fix only findings you `executed` and can re-execute — "re-verify" there means re-exercising the live target. If nothing runs (findings are `by-inspection` / `could-not-verify`), report and stop. Even a clean re-run never means release-approved — a human gates that.
-
 # Migration mode
 Migrating or backfilling existing data, not a greenfield feature: the basis is the existing canonical spec, and "correct" = behaves as specified. P5 and P7 lead; still run the rest. Add a requirement-coverage view (testable / testable-pending / not-testable) and a config + design-pattern coverage list, disclosing which were exercised.
 

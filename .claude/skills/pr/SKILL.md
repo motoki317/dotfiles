@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Push the current branch and create a pull request with a title and description derived from the commit history. Use when the user asks to open a PR — the Ship step of the operating loop, always user-triggered.
+description: Push the current branch and create a pull request with a title and description derived from the commit history. Use when the user asks to open a PR — the Ship step of the Orchestrator loop, always user-triggered.
 argument-hint: "[base-branch]"
 allowed-tools: [Bash, Read, Grep, Agent]
 ---
@@ -56,9 +56,9 @@ Why this PR is needed — the problem, user pain, or business context driving th
 
 ## Test plan
 - [ ] How to verify the changes
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
+
+End the body with your standard attribution footer.
 
 ### Step 4: Push and Create PR
 
