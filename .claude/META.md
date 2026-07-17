@@ -6,7 +6,7 @@ Claude Code auto-loads only `~/.claude/CLAUDE.md` (plus `CLAUDE.local.md`) and e
 
 - `CLAUDE.md` — values only, the soul. No operating rules.
 - `rules/code.md` — the shape of the artifact: what code to write and not write.
-- `rules/process.md` — how work flows: operating loop, cross-model review gates, error handling.
+- `rules/process.md` — how work flows: the Orchestrator/Implementer roles, their loops, cross-model review gates.
 - `rules/conventions.md` — mechanics: tools, prose.
 - `skills/` — task-specific workflows, loaded only when invoked or matched.
 - `../.agents/skills/` — the cross-agent registry: real directories own external skills; relative symlinks expose Claude-owned skills.
@@ -21,7 +21,7 @@ Learned 2026-07 while diagnosing why agents stayed verbose despite the values ("
 - State tensions resolved, not one-sided. "Rigor over expedience" alone licensed over-building; "rigor in understanding, economy in the artifact" bounds both directions.
 - Every line must pay behavioral rent. Before adding one, name the agent behavior it changes; after editing, compare diffs on a few fixed representative prompts — rules are not evidence that behavior moved.
 - Dedup across files: a sentence living in two files is a future contradiction.
-- Budget: always-loaded total was 82 lines as of 2026-07-17. Steady growth is the pitfall these principles exist to prevent.
+- Budget: always-loaded total was 90 lines as of 2026-07-17. Steady growth is the pitfall these principles exist to prevent.
 
 ## Shared skill registry
 
