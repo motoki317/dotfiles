@@ -1,6 +1,8 @@
 # Process
 
 ## Operating loop
+The loop governs change requests (build, fix, refactor). For questions, reviews, and diagnosis, inspect and report — don't implement unless asked.
+
 1. **Explore** — read the relevant flow end to end.
 2. **Plan** — `/define` for requirements; `/decision-analysis` for an open choice.
 3. **Implement** — `/execute` to orchestrate; `/tdd` for testable code; `/frontend-design` for web UI.
