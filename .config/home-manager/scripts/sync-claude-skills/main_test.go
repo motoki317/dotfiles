@@ -112,12 +112,12 @@ func TestCommandExcludesClaudeOnlySkillsFromCodexExposure(t *testing.T) {
 	root := t.TempDir()
 	claudeSkills := filepath.Join(root, ".claude", "skills")
 	agentSkills := filepath.Join(root, ".agents", "skills")
-	for _, name := range []string{"execute", "alpha"} {
+	for _, name := range []string{"codex-work", "alpha"} {
 		mustMkdirAll(t, filepath.Join(claudeSkills, name))
 		mustWriteFile(t, filepath.Join(claudeSkills, name, "SKILL.md"), "")
 	}
 	mustMkdirAll(t, agentSkills)
-	if err := os.Symlink("../../.claude/skills/execute", filepath.Join(agentSkills, "execute")); err != nil {
+	if err := os.Symlink("../../.claude/skills/codex-work", filepath.Join(agentSkills, "codex-work")); err != nil {
 		t.Fatalf("create excluded skill link: %v", err)
 	}
 
@@ -126,7 +126,7 @@ func TestCommandExcludesClaudeOnlySkillsFromCodexExposure(t *testing.T) {
 		t.Fatalf("sync command failed: %v\n%s", err, output)
 	}
 
-	if _, err := os.Lstat(filepath.Join(agentSkills, "execute")); !os.IsNotExist(err) {
+	if _, err := os.Lstat(filepath.Join(agentSkills, "codex-work")); !os.IsNotExist(err) {
 		t.Errorf("excluded skill link still exists: %v", err)
 	}
 	if _, err := os.Readlink(filepath.Join(agentSkills, "alpha")); err != nil {

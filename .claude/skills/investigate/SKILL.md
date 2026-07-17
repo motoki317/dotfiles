@@ -6,7 +6,7 @@ allowed-tools: [Bash, Read, Grep, Glob, Agent, AskUserQuestion]
 ---
 
 # Rules
-- Read-only: never modify files or apply a fix; suggest the change and hand it to the Implementer (`/execute` when orchestrating).
+- Read-only: never modify files or apply a fix; suggest the change and hand it to the Implementer (`/codex-work` when orchestrating).
 - Judge from evidence (logs and code first), never speculation; build the chain from symptom to cause, and report honestly when it can't be confirmed.
 - Enumerate at least 3 hypotheses before investigating any — tunnel vision on the most recent change, or iterating on a failed approach instead of re-examining assumptions, is the failure mode this guards against.
 - Ask the user only for what you can't infer: scope boundaries, reproduction conditions, when the issue began.

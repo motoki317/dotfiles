@@ -1,5 +1,5 @@
 ---
-name: codex-advisor
+name: codex-advise
 description: Cross-model second opinion from OpenAI Codex — `codex-run advise --context` reviews the current session, or pipe a brief. Triggers on "ask codex", "codex review", "second opinion", or the "Cross-model review" rules.
 ---
 

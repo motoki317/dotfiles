@@ -29,6 +29,6 @@ Distilled 2026-07-17 from the vendor guides below plus an OpenAI Codex cross-rev
 
 ## Cross-agent notes (assets shared between Claude Code and Codex)
 
-- Claude-only skills must not be exposed to Codex: `execute` and `codex-advisor` delegate TO Codex (recursive when Codex is the caller), and names can collide with Codex's built-in `.system` skills. `sync-claude-skills` owns the exclusion list.
+- Claude-only skills must not be exposed to Codex: `codex-work` and `codex-advise` delegate TO Codex (recursive when Codex is the caller), and names can collide with Codex's built-in `.system` skills. `sync-claude-skills` owns the exclusion list.
 - Codex loads skills progressively like Claude (metadata → SKILL.md → resources), and closely adheres to AGENTS.md, which it injects as user-role messages once per run.
 - Codex-side environments lack Claude-specific tools (Context7 MCP, Agent tool types); shared skills should name capabilities, not harness-specific tool names, or qualify them with "when available".

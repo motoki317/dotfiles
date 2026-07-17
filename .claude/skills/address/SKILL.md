@@ -51,7 +51,7 @@ gh api repos/{owner}/{repo}/pulls/{pr_number}/comments --paginate
 
 For **each** summary body and inline comment:
 1. **Evaluate** — technically correct? aligned with project conventions? a reasonable tradeoff? Don't blindly accept reviewer feedback.
-2. **Implement** only the justified fixes — trivial ones directly, substantial ones as an Implementer brief (`/execute`); verify each introduces no new issue.
+2. **Implement** only the justified fixes — trivial ones directly, substantial ones as an Implementer brief (`/codex-work`); verify each introduces no new issue.
 3. **Reply** on GitHub to every comment and summary body — concise, in Japanese, with code snippets or references when they help:
    - Inline comment → `gh api repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies -f body="<reply>"`; summary body (no reply thread) → `gh pr comment {pr} --body "<reply>"`.
    - Addressed → state the fix (e.g. `対応しました。COMMENT ON COLUMN を追加しています。`); declined → reasoning the reviewer can accept (e.g. `こちらは意図的な設計です。理由: ...`).
