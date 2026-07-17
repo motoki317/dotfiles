@@ -3,7 +3,7 @@
 ## Tools
 - GitHub: `gh` CLI for all operations.
 - HTTP requests: `ax`, not `curl` — curl flags work; every fetch prints a `{status, ok, ms, headers, body}` report. Details: `ax --help`.
-- Web pages: `ax <url> --md --budget <n>` gives the page's exact text, cut from the top when over budget (a typical docs page is ~2k tokens whole). WebFetch answers through a sub-model summary instead — use it for a single fact in a huge page, or for claude.ai URLs only it can reach; when exact wording matters, ax.
+- Web pages: `ax <url> --md --all --budget <n>` gives the page's exact text (`--all` matters: without it extract modes stop at 50 blocks; `--budget` still caps tokens, truncation is announced). Empty output = JS-rendered page: try appending `.md` to the URL (docs sites often serve raw markdown — read it with `--body`), else WebFetch. WebFetch answers through a sub-model summary — use it for a single fact in a huge page, or claude.ai URLs only it can reach; when exact wording matters, ax.
 - Missing command: retry with `nix run nixpkgs#<command>`.
 - Text processing: `perl`, never `sed`/`awk`.
 - Long output: `<cmd> | tee /tmp/<name>.log`, then grep the file.
