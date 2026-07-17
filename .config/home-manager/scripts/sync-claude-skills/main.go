@@ -10,12 +10,12 @@ import (
 
 const managedTargetPrefix = "../../.claude/skills/"
 
-// Claude-only skills, never exposed to Codex: execute and codex-advisor
+// Claude-only skills, never exposed to Codex: codex-work and codex-advise
 // delegate TO Codex (recursive when Codex is the caller), and skill-creator
 // collides with Codex's built-in .system/skill-creator.
 var codexExcluded = map[string]bool{
-	"codex-advisor": true,
-	"execute":       true,
+	"codex-advise":  true,
+	"codex-work":    true,
 	"skill-creator": true,
 }
 
