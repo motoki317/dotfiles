@@ -17,5 +17,4 @@ codex-run advise -C <repo> --log /tmp/codex.jsonl < brief.md  # cold review of a
 - A gate call (`~/.claude/rules/process.md`) runs foreground — wait for the verdict; background only a non-gating opinion.
 - Read-only by default; `-s workspace-write` lets Codex run tests — only when asked. stdout is the verdict.
 - A dropped call prints `session: <id>`; `codex-run advise --resume <id> < followup.md` continues that review — a network drop, or a follow-up on the same context — instead of a cold call. Resume only after the call exits.
-- Budget: `claude-statusline` prints `Codex <used>% <elapsed>/<window>` per window; the duration is time elapsed *into* the window, not time left. One advise call is too cheap to gate — check it when a call fails for no clear reason, a spent window being the usual cause.
 - Source: `~/.config/home-manager/scripts/{codex-run,session-transcript}` (Go, built onto PATH by home-manager).

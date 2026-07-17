@@ -6,13 +6,13 @@ argument-hint: "[task-description]"
 
 # Rules
 - Codex is the primary implementer — assume it is better than you at coding and at testing its own work. Delegate the whole plan in one run; don't subdivide into per-file tasks, don't write the logic yourself. Split only when the plan exceeds one run's context, at plan-defined, independently verifiable milestones — never finer.
-- Direct Read/Edit/Write is for trivial glue (a config line, a rename) — or for the whole task when step 2's budget gate sends it in-session.
+- Direct Read/Edit/Write is for trivial glue (a config line, a rename); delegate the actual build.
 - Never edit the checkout while a run is active; parallel runs need separate worktrees.
 - Don't declare done until Verify passes; show evidence, not assertions.
 
 # Workflow
 1. **Prepare** — read the `/define` plan file end to end; settle open policy decisions yourself. Branch off the default branch (Codex commits as it goes). A repo rooted at `$HOME` (this dotfiles repo) needs a `git worktree` checkout — the wrapper refuses a writable run at `$HOME`. Brief = the plan-file path plus only what Codex can't infer from the repo: in-session decisions, the branch, scope boundaries. Don't restate `~/.codex/AGENTS.md` (principles, conventions, playbooks — auto-loaded) or the wrapper's preamble (commit/never-push policy, report format).
-2. **Delegate** — check the budget first: `claude-statusline` prints a `Codex <used>% <elapsed>/<window>` segment per OpenAI window; the duration is time elapsed *into* the window, not time left. Red (≥80%) → implement in-session instead and say so in one line; a run that hits the limit mid-task strands a half-finished checkout. Otherwise delegate: one long background call (it can outlast foreground timeouts), unique log path per run.
+2. **Delegate** — one long background call (it can outlast foreground timeouts), unique log path per run.
    ```bash
    codex-run work -C <repo> --log /tmp/codex-work-<slug>.jsonl < brief.md
    ```
