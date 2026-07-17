@@ -1,6 +1,6 @@
 ---
 name: define
-description: Define requirements before implementation — clarify constraints and design policy, then write a requirements spec and task breakdown for /execute to a gitignored plan file. Use at the Plan step of the operating loop, or whenever a request's scope needs pinning down before building. Never implements; the plan file is its only write.
+description: Define requirements before implementation — clarify constraints and design policy, then write a requirements spec and task breakdown for the Implementer to a gitignored plan file. Use at the Plan step of the Orchestrator loop, or whenever a request's scope needs pinning down before building. Never implements; the plan file is its only write.
 argument-hint: "[message]"
 ---
 

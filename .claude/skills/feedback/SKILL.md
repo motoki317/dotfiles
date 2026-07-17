@@ -37,10 +37,7 @@ Launch one `reviewer` agent per selected viewpoint, all in one message (sequenti
 4. the ask: report findings as `{severity, file:line, problem, concrete fix}`, judging only the change, not pre-existing unrelated issues.
 
 # Step 4 — Synthesize
-Normalize to `{severity, file:line, problem, fix, characteristic}`. One root issue can surface under several lenses (an unhandled error path is Reliability + Security + Functional Correctness) — report it once, under the aptest characteristic, cross-noting the others. Group by characteristic, rank by severity.
-
-# Step 5 — Close the loop
-Follow `$HOME/.claude/skills/feedback/references/close-the-loop.md` (shared with `/qa-review`): fix justified findings, re-verify bounded, commit, push only to an open PR. In Planning mode there is no code to fix — report and stop.
+Normalize to `{severity, file:line, problem, fix, characteristic}`. One root issue can surface under several lenses (an unhandled error path is Reliability + Security + Functional Correctness) — report it once, under the aptest characteristic, cross-noting the others. Group by characteristic, rank by severity. The report is the deliverable — fixing belongs to the Implementer loop (`~/.claude/rules/process.md`).
 
 # Planning mode (target = `plan`)
 Reviewing a plan, not code: apply the same viewpoints as forward-looking questions ("does the plan account for failure modes? security surface? scaling?"). Keep it to a few agents — a lighter, secondary path.
