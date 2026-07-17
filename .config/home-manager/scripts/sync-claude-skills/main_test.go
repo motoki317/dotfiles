@@ -108,6 +108,32 @@ func TestCommandPrunesLinksToIneligibleClaudeSources(t *testing.T) {
 	}
 }
 
+func TestCommandExcludesClaudeOnlySkillsFromCodexExposure(t *testing.T) {
+	root := t.TempDir()
+	claudeSkills := filepath.Join(root, ".claude", "skills")
+	agentSkills := filepath.Join(root, ".agents", "skills")
+	for _, name := range []string{"execute", "alpha"} {
+		mustMkdirAll(t, filepath.Join(claudeSkills, name))
+		mustWriteFile(t, filepath.Join(claudeSkills, name, "SKILL.md"), "")
+	}
+	mustMkdirAll(t, agentSkills)
+	if err := os.Symlink("../../.claude/skills/execute", filepath.Join(agentSkills, "execute")); err != nil {
+		t.Fatalf("create excluded skill link: %v", err)
+	}
+
+	command := exec.Command("go", "run", ".", "--root", root)
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("sync command failed: %v\n%s", err, output)
+	}
+
+	if _, err := os.Lstat(filepath.Join(agentSkills, "execute")); !os.IsNotExist(err) {
+		t.Errorf("excluded skill link still exists: %v", err)
+	}
+	if _, err := os.Readlink(filepath.Join(agentSkills, "alpha")); err != nil {
+		t.Errorf("non-excluded skill link missing: %v", err)
+	}
+}
+
 func TestCommandRejectsOwnershipCollisionBeforeApplyingChanges(t *testing.T) {
 	root := t.TempDir()
 	claudeSkills := filepath.Join(root, ".claude", "skills")
