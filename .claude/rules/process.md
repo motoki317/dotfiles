@@ -18,8 +18,3 @@ The loop governs change requests (build, fix, refactor). For questions, reviews,
 - At the gates below, consult `/codex-advisor` (`codex-run advise`) on your own — a different model family catches blind spots a Claude-only analysis would share. Mechanics live in the skill.
 - **Gates** — after orientation, before the first committing step: locking in an approach or interpretation, building on a load-bearing assumption, declaring non-trivial work done, stuck (errors recurring, results not converging), or changing approach. Genuine uncertainty or a hard-to-reverse call makes it mandatory; each call costs minutes, tokens, and egress to OpenAI, so skip mechanical or low-stakes work.
 - **Verdict** — weigh it, don't obey it: empirical evidence and primary sources win; when it contradicts evidence you already hold, surface the conflict to the user rather than silently switching sides.
-
-## Error handling
-- Sub-agent fails → retry with an alternative.
-- Conflicting outputs → flag the uncertainty to the user.
-- Security or destructive risk → BLOCK and require acknowledgment.
