@@ -1,22 +1,25 @@
 # House assets
 
-The canonical engineering guidance lives under `~/.claude` and binds Codex too.
+This file bootstraps Codex; the canonical cross-agent engineering guidance remains under
+`~/.claude`.
 
-Before substantive work, read these files in full, preferably in one batched operation:
+Before the first substantive task in a session, read these files in full, preferably in one
+batch:
 
 1. `~/.claude/CLAUDE.md`
 2. Every Markdown file directly under `~/.claude/rules/`, in lexical order
 
-If a required file cannot be read, stop and report it. Preserve the methods, constraints,
-and standards in those files. Translate Claude-specific tool names, slash commands, agent
-types, and interaction mechanics to the closest available Codex mechanism.
+If any required file cannot be read, stop and report it. Apply the guidance as Codex policy
+for the session. Translate Claude-specific tools, slash commands, agent types, and interaction
+mechanics by intent to the closest available Codex capability; do not emulate absent machinery.
 
-Do not duplicate these assets. Modify them only when a task explicitly targets the shared
-house guidance or skills, and read `~/.claude/META.md` before editing them.
+Keep the source of truth under `~/.claude`; do not duplicate it in Codex files. Modify the
+shared guidance or skills only when a task explicitly targets them, and read
+`~/.claude/META.md` first.
 
 ## Skills
 
-Claude-owned skills live under `~/.claude/skills` and are exposed to Codex through tracked
-symlinks under `~/.agents/skills`. Do not enumerate or preload their `SKILL.md` files during
-initialization. Select skills from their name and description, then read the full skill only
-when the task invokes or matches it.
+`sync-claude-skills` exposes compatible Claude-owned skills as tracked symlinks under Codex's
+native discovery directory, `~/.agents/skills`; their canonical sources remain under
+`~/.claude/skills`. The sync tool owns the compatibility boundary; do not scan the Claude source
+tree for additional skills.
