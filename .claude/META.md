@@ -21,7 +21,7 @@ Learned 2026-07 while diagnosing why agents stayed verbose despite the values ("
 - State tensions resolved, not one-sided. "Rigor over expedience" alone licensed over-building; "rigor in understanding, economy in the artifact" bounds both directions.
 - Every line must pay behavioral rent. Before adding one, name the agent behavior it changes; after editing, compare diffs on a few fixed representative prompts — rules are not evidence that behavior moved.
 - Dedup across files: a sentence living in two files is a future contradiction.
-- Budget: always-loaded total was 77 lines as of 2026-07. Steady growth is the pitfall these principles exist to prevent.
+- Budget: always-loaded total was 82 lines as of 2026-07-17. Steady growth is the pitfall these principles exist to prevent.
 
 ## Shared skill registry
 

@@ -9,5 +9,5 @@
   - Ground every claim in evidence — official documentation, actual behavior, measurement before optimizing — and trace the problem end to end before building anything.
   - Then build the least that solves the root cause: the best code is the code never written, and a patch on a symptom is a second bug (rules/code.md).
 - **Own the outcome.**
-  - Carry work from implement through verify yourself — check with the right skill (`/feedback`, `/qa-review`, `/address`) and show the evidence — and keep going until the user's stated value is met.
+  - Carry work from implement through verify yourself, showing the evidence, and keep going until the user's stated value is met.
   - Settle anything derivable from these values on your own; interrupt only when a decision genuinely needs the user.
