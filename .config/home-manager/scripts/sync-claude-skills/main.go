@@ -10,6 +10,15 @@ import (
 
 const managedTargetPrefix = "../../.claude/skills/"
 
+// Claude-only skills, never exposed to Codex: execute and codex-advisor
+// delegate TO Codex (recursive when Codex is the caller), and skill-creator
+// collides with Codex's built-in .system/skill-creator.
+var codexExcluded = map[string]bool{
+	"codex-advisor": true,
+	"execute":       true,
+	"skill-creator": true,
+}
+
 type linkChange struct {
 	path   string
 	target string
@@ -84,7 +93,7 @@ func buildPlan(root string) (syncPlan, error) {
 
 	desired := make(map[string]linkChange)
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		if !entry.IsDir() || codexExcluded[entry.Name()] {
 			continue
 		}
 		skillInfo, err := os.Stat(filepath.Join(claudeSkills, entry.Name(), "SKILL.md"))
