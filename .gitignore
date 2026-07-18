@@ -17,6 +17,7 @@
 !/.claude/scripts/**
 !/.claude/skills
 !/.claude/skills/**
+.claude/skills/unslop
 !/.claude/rules
 !/.claude/rules/**
 
