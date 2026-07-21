@@ -60,7 +60,7 @@ Why this PR is needed — the problem, user pain, or business context driving th
 @codex review
 ```
 
-Then end the body with your standard attribution footer. The `@codex review` line triggers Codex's automated review as a backstop in case repo auto-review is off; drop it for repos where Codex isn't configured.
+Then end the body with your standard attribution footer. Always include the `@codex review` line which triggers Codex's automated review
 
 ### Step 4: Push and Create PR
 
