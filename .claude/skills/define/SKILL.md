@@ -35,5 +35,5 @@ The structure of the plan file (the chat reply is just its path and a summary):
 ## Task Breakdown
 - Dependency graph
 - Phased tasks with files and overview
-- Execute handoff: decisions, references, constraints
+- Implementer handoff: decisions, references, constraints
 ```
