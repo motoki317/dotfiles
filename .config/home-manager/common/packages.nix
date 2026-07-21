@@ -37,6 +37,38 @@ let
         install -Dm755 $src $out/bin/agent-browser
       '';
     };
+  # terminal UI for viewing coding-agent (Claude Code / Codex) logs and costs
+  # (https://github.com/motoki317/agtlog). Prebuilt release tarball, not upstream's flake, for
+  # the same x86_64-darwin-drop reason as hunk. Bump: ./fetch-prebuilt-hashes.sh agtlog <ver>.
+  agtlog =
+    let
+      version = "0.1.0";
+      bin = {
+        x86_64-linux = {
+          suffix = "linux-amd64";
+          hash = "sha256-+ZeOyvGxHqZ3m7yKUwKk5bTop4vJoT89Op/f9hX6y0s=";
+        };
+        aarch64-darwin = {
+          suffix = "darwin-arm64";
+          hash = "sha256-lGbiHTC0+YCsna2JbTAkHD+5RSdWL5ePM0dJ/dD42KE=";
+        };
+      }.${pkgs.system};
+    in
+    pkgs.stdenvNoCC.mkDerivation {
+      pname = "agtlog";
+      inherit version;
+      src = pkgs.fetchurl {
+        url = "https://github.com/motoki317/agtlog/releases/download/v${version}/agtlog-${version}-${bin.suffix}.tar.gz";
+        inherit (bin) hash;
+      };
+      # release tarball extracts loose files (no wrapping dir), so unpackPhase needs "." as root.
+      sourceRoot = ".";
+      installPhase = ''
+        runHook preInstall
+        install -Dm755 agtlog $out/bin/agtlog
+        runHook postInstall
+      '';
+    };
   # HTTP client for AI agents (https://github.com/yusukebe/ax), preferred over curl. Not
   # packaged; upstream ships only prebuilt binaries. Bump: ./fetch-prebuilt-hashes.sh ax <ver>.
   ax =
@@ -100,6 +132,7 @@ with pkgs; [
   _1password-cli
   age
   agent-browser
+  agtlog
   awscli2
   ax
   buf
