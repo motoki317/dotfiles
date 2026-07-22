@@ -254,8 +254,11 @@ func run() int {
 	// the whole home tree — make the exposure visible, but proceed. A writable sandbox there
 	// would make everything you own project scope, so that is an error, not a warning — even
 	// for a repo rooted at $HOME, which must be delegated via a git worktree instead. A resume
-	// inherits the session's own recorded sandbox and cwd — workdir only scopes --last here and
-	// cannot broaden that scope — so the guard does not apply to it.
+	// runs in the cwd its session recorded, which workdir here cannot change (workdir only scopes
+	// which session --last selects), so there is no working root to check and the guard is skipped.
+	// Ceiling: that leaves a resumed work run asserting danger-full-access over a cwd this guard
+	// never saw — fine for a session codex-run itself started, since the guard vetted it then;
+	// read the session's cwd out of its rollout before resuming an id from anywhere else.
 	if !resuming {
 		if home, err := os.UserHomeDir(); err == nil && coversHome(workdir, home) {
 			if sandbox != "read-only" {
@@ -303,20 +306,15 @@ func run() int {
 	// resume hints are printed earlier instead (sessionAnnouncer, below), the instant Codex
 	// emits them: a signal (Ctrl-C, hangup) kills the process before this deferred banner runs,
 	// so an id shown only here would be lost exactly when a resume is most needed. `printed`
-	// tells announce the id is already out; it reprints only as a backstop. A resumed run's real
-	// sandbox is the session's own, not this mode's default, so label it "resumed".
-	sandboxLabel := sandbox
-	if resuming {
-		sandboxLabel = "resumed"
-	}
+	// tells announce the id is already out; it reprints only as a backstop.
 	printed := false
-	defer announce(logPath, mode, sandboxLabel, &printed)
+	defer announce(logPath, mode, sandbox, &printed)
 
 	// --json makes Codex emit progress events as they happen; --output-last-message
 	// still writes the final answer to its own file, so stdout stays clean. A resume reuses
 	// this whole pipeline (log, answer capture, token banner, STATUS gate) — it only swaps in
-	// the `exec resume` subcommand and drops -C/--sandbox, which resume rejects because the
-	// session already recorded both; cwd comes from cmd.Dir below instead.
+	// the `exec resume` subcommand, which takes no -C/--sandbox: it works in the cwd the
+	// session recorded, whatever this process's cwd is.
 	var cmdArgs []string
 	if resuming {
 		cmdArgs = []string{"exec", "resume"}
@@ -325,9 +323,15 @@ func run() int {
 		} else {
 			cmdArgs = append(cmdArgs, resumeID)
 		}
+		// The sandbox is asserted, not inherited: `exec resume` has no --sandbox flag and does
+		// not restore the one the session recorded — left alone it silently takes Codex's own
+		// default (workspace-write), which leaves .git read-only, so a resumed work run cannot
+		// commit, and a resumed advise run gains write access the caller never asked for. Setting
+		// sandbox_mode gives a resume the same sandbox its mode (and -s) would give a fresh run.
 		cmdArgs = append(cmdArgs,
 			"--config", "model_context_window=272000",
 			"--config", "model_auto_compact_token_limit=240000",
+			"--config", "sandbox_mode="+sandbox,
 			"--json",
 			"--skip-git-repo-check",
 			"--output-last-message", answerPath,
@@ -674,11 +678,12 @@ The mode fixes Codex's role and default sandbox per call:
                         session-transcript; aborts if extraction fails). Under advise,
                         makes the brief optional — with none, Codex reviews the session.
       --resume <id>     continue an existing session (its session id is printed in an earlier
-                        run's banner) instead of starting fresh. Sandbox and cwd inherit from that
-                        session; a piped stdin prompt is sent as the follow-up, else the
-                        session is nudged to finish where it stopped. Skips the preamble
-                        (already in history) and -C/-s (rejected by resume). work keeps its
-                        STATUS gate; -C still scopes the run's workspace.
+                        run's banner) instead of starting fresh. A piped stdin prompt is sent as
+                        the follow-up, else the session is nudged to finish where it stopped.
+                        Skips the preamble (already in history). The session's recorded cwd is the
+                        workspace — -C cannot change it — while the sandbox comes from this run's
+                        mode and -s, since resume neither takes --sandbox nor restores the
+                        session's own. work keeps its STATUS gate.
       --last            like --resume, but for the most recent session in the -C repo (no id).
   -h, --help            this help
 
