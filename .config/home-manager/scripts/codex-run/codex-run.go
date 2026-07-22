@@ -2,7 +2,8 @@
 // stdout (so it pipes), while everything Codex emits streams verbatim to a log (temp file,
 // or -l) you can tail. A non-zero exit with no `turn.completed` in the log means the run
 // failed. Each run prints its Codex session id: `--resume <id>`/`--last` continues that session
-// (retry a turn that died on a network error), and `codex resume <id>` opens it in the Codex TUI
+// (retry a turn that died on a network error, or steer a live run by interrupting it first — a
+// turn already in flight has no input channel), and `codex resume <id>` opens it in the Codex TUI
 // — but only after the run exits, since two writers on one session interleave its history. The
 // mode fixes the role and default sandbox per call site: `advise` reviews
 // without writing (read-only), `work` holds the Implementer seat of the house
@@ -656,6 +657,7 @@ func usage(w io.Writer) {
   codex-run work -C <repo> [options] < task.md                  # implement a delegated task (-C and task required)
   codex-run work --resume <id> -C <repo>                        # continue a session that died mid-turn (retry)
   codex-run <mode> --last [options] [< followup.md]             # continue the most recent session for this repo
+  pkill -INT -f 'codex exec .*<repo>'; codex-run work --resume <id> < steer.md   # steer a run in flight
 
 The mode fixes Codex's role and default sandbox per call:
   advise  independent reviewer/advisor; read-only sandbox
@@ -692,5 +694,11 @@ The log is Codex's raw --json event stream, written live — tail it to watch pr
 Each run prints its session id: retry a run that died with --resume/--last, or open it in the
 Codex TUI with "codex resume <id>" — but only after it exits (two writers on one session
 interleave its history). A failed work turn can leave partial edits — inspect git status first.
+
+There is no way to message a live turn, so steering one means ending it: interrupt the run
+(Ctrl-C, or SIGINT the codex process), then --resume with the correction piped in. The session
+keeps its whole history — its commits, its uncommitted edits, and everything you told it that was
+never written to disk — so the correction reads as a follow-up, not a re-brief. You lose only the
+interrupted turn's unfinished work.
 `)
 }
