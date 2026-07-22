@@ -641,6 +641,90 @@ func TestCodexRateLimitsAbsent(t *testing.T) {
 	}
 }
 
+func TestParseClaudeUsage(t *testing.T) {
+	cases := []struct {
+		name                  string
+		data                  string
+		fiveUsed, sevenUsed   *float64
+		fiveReset, sevenReset *int64
+	}{
+		{
+			"both windows",
+			`{"five_hour":{"utilization":15,"resets_at":"2026-07-22T03:10:00.272933+00:00"},"seven_day":{"utilization":54,"resets_at":"2026-07-23T06:00:00.272960+00:00"}}`,
+			pf(15), pf(54), pi(1784689800), pi(1784786400),
+		},
+		{
+			"five hour only",
+			`{"five_hour":{"utilization":23.5,"resets_at":"2026-07-22T03:10:00.272933+00:00"}}`,
+			pf(23.5), nil, pi(1784689800), nil,
+		},
+		{
+			"invalid resets remain optional",
+			`{"five_hour":{"utilization":15,"resets_at":""},"seven_day":{"utilization":54,"resets_at":"garbage"}}`,
+			pf(15), pf(54), nil, nil,
+		},
+		{"empty body", "", nil, nil, nil, nil},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rl := parseClaudeUsage([]byte(c.data))
+			if c.fiveUsed == nil && c.sevenUsed == nil {
+				if rl != nil {
+					t.Fatalf("parseClaudeUsage(%q) = %+v, want nil", c.data, rl)
+				}
+				return
+			}
+			if rl == nil {
+				t.Fatal("parseClaudeUsage returned nil")
+			}
+			assertClaudeWindow(t, "five-hour", rl.FiveHour, c.fiveUsed, c.fiveReset)
+			assertClaudeWindow(t, "seven-day", rl.SevenDay, c.sevenUsed, c.sevenReset)
+		})
+	}
+}
+
+func TestClaudeUsageRequiresUsableWindow(t *testing.T) {
+	cases := []struct {
+		name string
+		rl   *RateLimits
+		want bool
+	}{
+		{"nil", nil, false},
+		{"empty", &RateLimits{}, false},
+		{"reset only", &RateLimits{FiveHour: &ClaudeWindow{ResetsAt: pi(123)}}, false},
+		{"five hour", &RateLimits{FiveHour: &ClaudeWindow{UsedPercentage: pf(12)}}, true},
+		{"seven day", &RateLimits{SevenDay: &ClaudeWindow{UsedPercentage: pf(34)}}, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := usableClaudeRateLimits(c.rl)
+			if c.want && got != c.rl {
+				t.Fatalf("usable rate limits = %+v, want original snapshot %+v", got, c.rl)
+			}
+			if !c.want && got != nil {
+				t.Fatalf("unusable rate limits = %+v, want nil payload fallback", got)
+			}
+		})
+	}
+}
+
+func assertClaudeWindow(t *testing.T, name string, got *ClaudeWindow, wantUsed *float64, wantReset *int64) {
+	t.Helper()
+	if wantUsed == nil {
+		if got != nil {
+			t.Errorf("%s = %+v, want nil", name, got)
+		}
+		return
+	}
+	if got == nil || got.UsedPercentage == nil || *got.UsedPercentage != *wantUsed {
+		t.Fatalf("%s utilization mismatch: %+v", name, got)
+	}
+	if (got.ResetsAt == nil) != (wantReset == nil) ||
+		got.ResetsAt != nil && *got.ResetsAt != *wantReset {
+		t.Errorf("%s reset mismatch: %+v", name, got)
+	}
+}
+
 func TestParseAppServerRateLimits(t *testing.T) {
 	// Both windows present: camelCase field names map to CodexWindow.
 	both := `{"rateLimits":{"primary":{"usedPercent":42,"windowDurationMins":300,"resetsAt":9999999999},

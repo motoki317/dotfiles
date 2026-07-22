@@ -18,9 +18,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -140,6 +143,14 @@ type codexEvent struct {
 }
 
 func main() {
+	// --refresh-claude is the detached self-invocation spawned by
+	// claudeUsageRateLimits. Like the Codex refresh below, it never shares the
+	// render's stdin/stdout and only publishes a complete cache snapshot.
+	if len(os.Args) > 1 && os.Args[1] == "--refresh-claude" {
+		refreshClaudeUsageCache()
+		return
+	}
+
 	// --refresh-codex is the detached self-invocation spawned by codexRateLimits: it
 	// fetches the live snapshot from the backend and writes the cache, then exits
 	// without touching stdin/stdout, so it never interferes with a render.
@@ -154,6 +165,9 @@ func main() {
 	}
 	home, _ := os.UserHomeDir()
 	now := time.Now().Unix()
+	if live := claudeUsageRateLimits(now); live != nil {
+		p.RateLimits = live
+	}
 	codex := codexRateLimits(home, now)
 	cost := sessionCost(sessionID(p), now)
 	fmt.Println(render(p, codex, cost, now, termWidth()))
@@ -582,6 +596,248 @@ func rlSegment(label string, windowSecs int64, pct *float64, resetsAt *int64, no
 	}
 	return fmt.Sprintf("%s%d%%%s %s%s%s%s/%s%s",
 		pc, pctInt, cReset, tc, fmtDur(elapsed), cReset, cGray, label, cReset)
+}
+
+// The refresh interval governs both cache freshness and failed-attempt backoff. The
+// endpoint is an unmetered status read, while the timeout prevents a detached child from
+// lingering indefinitely when credentials or the network stop responding. The body cap
+// leaves ample room for ignored future fields without trusting an external response with
+// unbounded memory.
+const (
+	claudeUsageRefreshInterval = 45
+	claudeUsageFetchTimeout    = 15 * time.Second
+	claudeUsageResponseLimit   = 1 << 20
+)
+
+// claudeUsageRateLimits returns the live Anthropic snapshot cached by the detached
+// refresher. Unlike Codex, Claude has no account-global log fallback; nil deliberately
+// leaves the harness payload untouched in main until a live fetch succeeds.
+func claudeUsageRateLimits(now int64) *RateLimits {
+	cache := readClaudeUsageCache()
+	var live *RateLimits
+	if cache != nil {
+		live = usableClaudeRateLimits(cache.RateLimits)
+	}
+	if cache == nil || live == nil || now-cache.FetchedAt > claudeUsageRefreshInterval {
+		spawnClaudeUsageRefresh(now)
+	}
+	return live
+}
+
+// usableClaudeRateLimits protects the payload precedence seam from a syntactically
+// valid but partial cache left by an interrupted upgrade or manual edit. Successful
+// endpoint parsing already guarantees this invariant before any cache write.
+func usableClaudeRateLimits(rl *RateLimits) *RateLimits {
+	if rl == nil {
+		return nil
+	}
+	fiveHour := rl.FiveHour != nil && rl.FiveHour.UsedPercentage != nil
+	sevenDay := rl.SevenDay != nil && rl.SevenDay.UsedPercentage != nil
+	if !fiveHour && !sevenDay {
+		return nil
+	}
+	return rl
+}
+
+// claudeUsageCacheFile keeps the endpoint shape out of the render path and records the
+// successful fetch time separately from the lock's last-attempt time. Failed attempts
+// therefore back off without making an older successful snapshot look fresh.
+type claudeUsageCacheFile struct {
+	FetchedAt  int64       `json:"fetched_at"`
+	RateLimits *RateLimits `json:"rate_limits"`
+}
+
+func claudeUsageCachePath() string {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(dir, "claude-statusline", "claude-usage.json")
+}
+
+func claudeUsageLockPath() string {
+	if p := claudeUsageCachePath(); p != "" {
+		return p + ".lock"
+	}
+	return ""
+}
+
+// readClaudeUsageCache treats every cache problem as absence so statusline rendering
+// remains best-effort even across partial upgrades or externally removed cache files.
+func readClaudeUsageCache() *claudeUsageCacheFile {
+	p := claudeUsageCachePath()
+	if p == "" {
+		return nil
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return nil
+	}
+	var c claudeUsageCacheFile
+	if json.Unmarshal(data, &c) != nil {
+		return nil
+	}
+	return &c
+}
+
+// writeClaudeUsageCache uses the same temp-file replacement as the Codex cache so a
+// concurrent render observes either the prior complete snapshot or the new one.
+func writeClaudeUsageCache(c *claudeUsageCacheFile) error {
+	p := claudeUsageCachePath()
+	if p == "" {
+		return fmt.Errorf("no user cache dir")
+	}
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return err
+	}
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	tmp := p + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, p)
+}
+
+// spawnClaudeUsageRefresh mirrors the Codex detached refresh but checks for the Claude
+// binary as a cheap machine-level eligibility signal. The lock mtime records attempts,
+// not successes, preventing missing credentials or an outage from spawning per-render
+// requests; its intentionally loose race can create at most one harmless extra fetch.
+func spawnClaudeUsageRefresh(now int64) {
+	lock := claudeUsageLockPath()
+	if lock == "" {
+		return
+	}
+	if st, err := os.Stat(lock); err == nil && now-st.ModTime().Unix() < claudeUsageRefreshInterval {
+		return
+	}
+	if _, err := exec.LookPath("claude"); err != nil {
+		return
+	}
+	self, err := os.Executable()
+	if err != nil {
+		return
+	}
+	if os.MkdirAll(filepath.Dir(lock), 0o755) != nil {
+		return
+	}
+	if os.WriteFile(lock, []byte(strconv.FormatInt(now, 10)), 0o644) != nil {
+		return
+	}
+	cmd := exec.Command(self, "--refresh-claude")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if cmd.Start() == nil {
+		_ = cmd.Process.Release()
+	}
+}
+
+// refreshClaudeUsageCache only replaces the last successful snapshot. A transient auth,
+// network, or decode failure therefore falls back to the previous cache rather than
+// erasing useful data; the separate lock still throttles the next attempt.
+func refreshClaudeUsageCache() {
+	if rl := fetchClaudeUsage(); rl != nil {
+		_ = writeClaudeUsageCache(&claudeUsageCacheFile{FetchedAt: time.Now().Unix(), RateLimits: rl})
+	}
+}
+
+// fetchClaudeUsage reads Anthropic's unmetered account-global usage status with the
+// access token already owned by Claude Code. It neither refreshes nor persists auth;
+// every credential, request, status, and body failure leaves the payload fallback intact.
+func fetchClaudeUsage() *RateLimits {
+	ctx, cancel := context.WithTimeout(context.Background(), claudeUsageFetchTimeout)
+	defer cancel()
+	token := claudeAccessToken(ctx)
+	if token == "" {
+		return nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.anthropic.com/api/oauth/usage", nil)
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("User-Agent", "claude-statusline")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	data, err := io.ReadAll(io.LimitReader(resp.Body, claudeUsageResponseLimit+1))
+	if err != nil || len(data) > claudeUsageResponseLimit {
+		return nil
+	}
+	return parseClaudeUsage(data)
+}
+
+// claudeAccessToken reads Claude Code's current OAuth credential without taking
+// ownership of its lifecycle. macOS stores the JSON blob in Keychain; other platforms
+// use the home-directory credential file. Any read or shape error disables live usage.
+func claudeAccessToken(ctx context.Context) string {
+	var data []byte
+	var err error
+	if runtime.GOOS == "darwin" {
+		data, err = exec.CommandContext(ctx, "security", "find-generic-password", "-s", "Claude Code-credentials", "-w").Output()
+	} else {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return ""
+		}
+		data, err = os.ReadFile(filepath.Join(home, ".claude", ".credentials.json"))
+	}
+	if err != nil {
+		return ""
+	}
+	var credentials struct {
+		ClaudeAIOAuth struct {
+			AccessToken string `json:"accessToken"`
+		} `json:"claudeAiOauth"`
+	}
+	if json.Unmarshal(data, &credentials) != nil {
+		return ""
+	}
+	return strings.TrimSpace(credentials.ClaudeAIOAuth.AccessToken)
+}
+
+// parseClaudeUsage converts Anthropic's usage response into the harness-shaped model
+// the render path already consumes. The endpoint may omit either window, so an absent
+// or unusable window is dropped independently and an entirely empty response is nil.
+func parseClaudeUsage(data []byte) *RateLimits {
+	var usage struct {
+		FiveHour *claudeUsageWindow `json:"five_hour"`
+		SevenDay *claudeUsageWindow `json:"seven_day"`
+	}
+	if json.Unmarshal(data, &usage) != nil {
+		return nil
+	}
+	fiveHour, sevenDay := usage.FiveHour.toClaude(), usage.SevenDay.toClaude()
+	if fiveHour == nil && sevenDay == nil {
+		return nil
+	}
+	return &RateLimits{FiveHour: fiveHour, SevenDay: sevenDay}
+}
+
+type claudeUsageWindow struct {
+	Utilization *float64 `json:"utilization"`
+	ResetsAt    string   `json:"resets_at"`
+}
+
+// toClaude leaves an absent or malformed reset unset: utilization is still useful on
+// its own, and every source in the statusline degrades field-by-field rather than
+// discarding a whole segment because one optional value is invalid.
+func (w *claudeUsageWindow) toClaude() *ClaudeWindow {
+	if w == nil || w.Utilization == nil {
+		return nil
+	}
+	result := &ClaudeWindow{UsedPercentage: w.Utilization}
+	if reset, err := time.Parse(time.RFC3339, w.ResetsAt); err == nil {
+		unix := reset.Unix()
+		result.ResetsAt = &unix
+	}
+	return result
 }
 
 // codexRefreshInterval bounds how often the live snapshot is refreshed, in seconds. It
