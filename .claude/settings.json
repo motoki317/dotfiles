@@ -20,11 +20,11 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "autoCompactWindow": 400000,
+  "awaySummaryEnabled": false,
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "awaySummaryEnabled": false
+  }
 }
