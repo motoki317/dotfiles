@@ -42,15 +42,15 @@ let
   # the same x86_64-darwin-drop reason as hunk. Bump: ./fetch-prebuilt-hashes.sh agtlog <ver>.
   agtlog =
     let
-      version = "0.1.7";
+      version = "0.1.8";
       bin = {
         x86_64-linux = {
           suffix = "linux-amd64";
-          hash = "sha256-4GKSyHDazaXMqaQe1xSNS0IcmBYB4xMYEMRz8cx7v7s=";
+          hash = "sha256-dibwk06xHtplLKv/EUkzzRqdyep4AM/t42uONna0F4k=";
         };
         aarch64-darwin = {
           suffix = "darwin-arm64";
-          hash = "sha256-ZkdIH6nGF39/UHsVTL19FNbm3gWHv6gkvnDXeUCAWE4=";
+          hash = "sha256-yxUzhs11DjkPqKUjJDEKkgWXJZe60rETkSjh2hOYcPI=";
         };
       }.${pkgs.system};
     in
