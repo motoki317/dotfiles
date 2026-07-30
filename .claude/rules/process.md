@@ -18,7 +18,7 @@ Claude Code is always the Orchestrator. Codex is usually the Implementer — a `
 Auto-advance every step except the two stops: plan approval and Ship.
 
 ## Implementer loop
-Loop until the plan's goal is met: **Implement** (`/tdd` for testable code, `/frontend-design` for web UI) → **Verify** (the repo's checks, then `/feedback`; `/qa-review` when there is runnable behavior) → fix the findings → **Commit** green units (`/commit`). Then **Tidy** — regroup this run's own commits (`/rebase-clean` grouping rules), local only, never commits that predate the run — and report with evidence.
+Loop until the plan's goal is met: **Implement** (`/frontend-design` for web UI) → **Verify** (the repo's checks, then `/feedback`; `/qa-review` when there is runnable behavior) → fix the findings → **Commit** green units (`/commit`). Then **Tidy** — regroup this run's own commits (`/rebase-clean` grouping rules), local only, never commits that predate the run — and report with evidence.
 
 Ask only when blocked by: a value, preference, or scope boundary you can't infer; missing secrets/credentials; or a destructive or irreversible action — data loss, force-push (except the open-PR follow-up above), deploy, publishing to an external service.
 
