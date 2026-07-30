@@ -12,7 +12,7 @@ Claude Code is always the Orchestrator. Codex is usually the Implementer — a `
 1. **Explore** — read the relevant flow end to end.
 2. **Plan** — `/define` for requirements; `/decision-analysis` for an open choice. Stop for plan approval.
 3. **Implement** — hand the whole plan to the Implementer (`/codex-work`), open policy decisions settled first: one run per plan, split only at plan-defined milestones when it exceeds one run's context.
-4. **Accept** — reconcile the Implementer's report and diff against the plan — never trusting an exit code or a fluent summary — and rerun the checks. Findings go back to the Implementer, not into your own editor; escalate to `/feedback` / `/qa-review` when the change is high-risk or behavior lacks acceptance coverage.
+4. **Accept** — reconcile the Implementer's report and diff against the plan — never trusting an exit code or a fluent summary — and rerun the checks (`/cold-read` when the diff carries durable prose). Findings go back to the Implementer, not into your own editor; escalate to `/feedback` / `/qa-review` when the change is high-risk or behavior lacks acceptance coverage.
 5. **Ship** — `/pr`, user-triggered; then `/address` for the PR's reviews and CI, routing fixes as step-3 briefs. Once a PR is open, follow-up pushes close the loop, not a new Ship (`/rebase-clean` `--force-with-lease`).
 
 Auto-advance every step except the two stops: plan approval and Ship.
