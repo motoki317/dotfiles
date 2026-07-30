@@ -9,6 +9,7 @@
     ],
     "defaultMode": "default"
   },
+  "model": "claude-fable-5[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.nix-profile/bin/claude-statusline",
@@ -26,6 +27,5 @@
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "model": "claude-fable-5[1m]"
+  }
 }
