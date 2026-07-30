@@ -23,7 +23,3 @@ shared guidance or skills only when a task explicitly targets them, and read
 native discovery directory, `~/.agents/skills`; their canonical sources remain under
 `~/.claude/skills`. The sync tool owns the compatibility boundary; do not scan the Claude source
 tree for additional skills.
-
-## Tool Calls
-
-In Code Mode, within each bounded stage, run independent, functions.exec-available tool calls concurrently in one functions.exec call. Use await Promise.allSettled([...]) when partial results are useful, and inspect every result; use await Promise.all([...]) only when any failure should abort the batch. Keep dependencies, waits/resumes, approvals, conflicting or interdependent mutations, and adaptive investigations where each result may change the next step sequential. Do not split otherwise batchable inspections across outer tool calls.
