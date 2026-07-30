@@ -1,6 +1,6 @@
 # Lens catalog
 
-Lenses for `decision-analysis`, and borrowed by `/define` (requirement questions and NFR coverage) and `/ask` (deliberative questions). Pick the 3–5 that best expose *this* decision's blind spots — this is a menu, not a checklist. Each lens names what to ask and what a useful answer looks like.
+Lenses for `decision-analysis`, and borrowed by `/define` (requirement questions and NFR coverage). Pick the 3–5 that best expose *this* decision's blind spots — this is a menu, not a checklist. Each lens names what to ask and what a useful answer looks like.
 
 ## Core — consider for almost any decision
 
