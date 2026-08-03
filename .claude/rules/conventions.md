@@ -11,5 +11,7 @@
 - Output in English.
 
 ## Prose
-- Use the `japanese-tech-writing` skill for all human-facing prose — comments in any language, reports, PR/issue text — and when revising existing prose.
-- At task completion, run `/cold-read` over the task's durable prose — docs, comment blocks, PR/issue text — and apply the report.
+- Load the `tech-writing` skill before you write or revise human-facing prose — reports, PR/issue text, docs, comment blocks — in any language.
+- In any prose: one point per sentence, condition before command, one name per concept. State requirements as requirements ("must", not "should") and real uncertainty as uncertainty.
+- Shorten by cutting points and sentences, never grammar or needed context.
+- At task completion, run `/cold-read` over the task's durable prose and apply the report.
