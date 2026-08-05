@@ -42,3 +42,5 @@
 !/.profile.common
 !/LICENSE
 !/README.md
+
+__pycache__/
