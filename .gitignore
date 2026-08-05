@@ -21,6 +21,9 @@
 .claude/skills/blender
 !/.claude/rules
 !/.claude/rules/**
+!/.claude/refs
+!/.claude/refs/**
+!/.claude/probes.md
 
 !/.codex/
 /.codex/*
