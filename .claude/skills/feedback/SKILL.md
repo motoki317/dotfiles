@@ -34,13 +34,13 @@ Launch one `reviewer` agent per selected viewpoint, all in one message (sequenti
 1. the change (diff or file list),
 2. the intent,
 3. its rubric — the full path `$HOME/.claude/skills/feedback/references/<viewpoint>.md` (kebab-case, e.g. `security.md`); a freshly spawned agent can't resolve a path relative to this skill,
-4. the ask: report findings as `{severity, file:line, problem, concrete fix}`, judging only the change, not pre-existing unrelated issues.
+4. the ask: report findings as `{severity, file:line, problem, concrete fix}` plus any commendable aspect, judging only the change, not pre-existing unrelated issues.
 
 # Step 4 — Synthesize
-Normalize to `{severity, file:line, problem, fix, characteristic}`. One root issue can surface under several lenses (an unhandled error path is Reliability + Security + Functional Correctness) — report it once, under the aptest characteristic, cross-noting the others. Group by characteristic, rank by severity. The report is the deliverable — fixing belongs to the Implementer loop (`~/.claude/rules/process.md`).
+Normalize to `{severity, file:line, problem, fix, characteristic}`. One root issue can surface under several lenses (an unhandled error path is Reliability + Security + Functional Suitability) — report it once, under the aptest characteristic, cross-noting the others. Group by characteristic, rank by severity. A finding conditional on an unmeasured fact ("slow if the table is large") is unfinished — resolve the condition with a count, a timing, or an `EXPLAIN`, or rank the worst case. The report is the deliverable — fixing belongs to the Implementer loop (`~/.claude/rules/process.md`).
 
 # Planning mode (target = `plan`)
-Reviewing a plan, not code: apply the same viewpoints as forward-looking questions ("does the plan account for failure modes? security surface? scaling?"). Keep it to a few agents — a lighter, secondary path.
+Reviewing a plan, not code: apply the same viewpoints as forward-looking questions ("does the plan account for failure modes? security surface? scaling?"). Keep it to a few agents.
 
 # Output
 ```markdown

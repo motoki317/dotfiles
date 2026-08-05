@@ -11,3 +11,4 @@
 - **Time behaviour** — blocking calls on hot paths, sequential awaits that could be concurrent, N+1 queries, missing pagination/streaming, work repeated per-item that could be hoisted.
 - **Resource utilization** — unbounded memory growth, leaks, redundant allocations/copies, connections or file handles held open, missing reuse/pooling.
 - **Capacity** — assumptions about list size, payload size, concurrency, or connection counts that break under realistic load.
+- **Queries** — judge SQL by its execution plan, not its text: a correlated subquery in an UPDATE/DELETE can turn one pass into per-row rescans, and PostgreSQL materializes a CTE referenced more than once into an unindexable buffer. `EXPLAIN` shows these plan shapes even on an empty database.
