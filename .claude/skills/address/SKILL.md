@@ -1,6 +1,6 @@
 ---
 name: address
-description: Run a PR's full review-fix cycle — wait for review and CI, fix failures, evaluate and reply to comments, then commit and push. Use whenever a PR was just opened or updated — the post-Ship phase of the Orchestrator loop.
+description: Run the post-open PR loop — wait for review and CI, fix findings, reply, push. Use after opening or updating a PR.
 ---
 
 # Purpose

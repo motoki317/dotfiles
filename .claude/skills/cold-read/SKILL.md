@@ -1,6 +1,6 @@
 ---
 name: cold-read
-description: Acceptance test for durable prose — docs, README, comment blocks, PR/issue bodies. A reviewer with no session context reads the artifact as its real reader would; the writer applies the surviving cuts. Use after a task that wrote or materially revised such prose; not for chat replies or single-line comments.
+description: A context-free reviewer reads durable prose as its real audience; the writer applies surviving cuts. Use at task completion (Orchestrator Accept) whenever docs, README, comment blocks, or PR/issue bodies were written or revised.
 ---
 
 # Cold read

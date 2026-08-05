@@ -1,6 +1,6 @@
 ---
 name: decision-analysis
-description: Analyze an open decision through the lenses that best expose its blind spots (feasibility, risk, impact, alternatives, cost, …), run in parallel, then synthesize a recommendation with explicit trade-offs. Use *before* deciding — when the user weighs options, compares approaches, assesses feasibility/risk/impact, or thinks a problem through. Not for reviewing an existing change (feedback) or exercising running software (qa-review).
+description: Analyze an open decision through parallel lenses and synthesize a recommendation. Use before deciding — weighing options, feasibility, risk, or impact; not for reviewing an existing change.
 ---
 
 # Step 1 — Frame the decision

@@ -1,6 +1,6 @@
 ---
 name: upstream
-description: Prepare a contribution to an upstream OSS repo — review the diff and tests against its contribution guide and draft compliant PR metadata. Use before submitting a PR to an external repository. Read-only; never opens the PR.
+description: Review a contribution against the upstream repo contribution guide and draft compliant PR metadata. Use before submitting a PR to an external repository; read-only.
 argument-hint: "[upstream-url]"
 ---
 

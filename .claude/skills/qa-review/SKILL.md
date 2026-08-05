@@ -1,6 +1,6 @@
 ---
 name: qa-review
-description: QA-test a feature by exercising the running software with adversarial scenarios. Use after implementing or changing a feature, or when the user asks for QA, to "try to break" something, hunt for defects, or verify behaviour against spec.
+description: Exercise the running software with adversarial scenarios. Use after changing a feature, or on any request to QA, break, or verify behavior against spec.
 ---
 
 # Purpose
