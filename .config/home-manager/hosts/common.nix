@@ -45,6 +45,19 @@
   programs.zsh.initContent = ''
     source ${inputs.ha}/ha.sh
     compdef _ha ha
+
+    # gh keeps one active account per host, so it ignores the attmcojp/ URL split
+    # that url.insteadOf already applies to SSH keys. GH_TOKEN overrides per call.
+    gh() {
+      [[ $1 == auth ]] && { command gh "$@"; return }
+      local account
+      case "$(command git remote get-url origin 2>/dev/null)" in
+        *[:/]attmcojp/*) account=toki-attm ;;
+        *github*)        account=motoki317 ;;
+        *) command gh "$@"; return ;;
+      esac
+      GH_TOKEN=$(command gh auth token --user $account) command gh "$@"
+    }
   '';
   programs.bash.initExtra = ''
     source ${inputs.ha}/ha.sh
