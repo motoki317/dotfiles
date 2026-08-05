@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Push the current branch and create a pull request with a title and description derived from the commit history. Use when the user asks to open a PR — the Ship step of the Orchestrator loop, always user-triggered.
+description: Push the current branch and open a pull request derived from the commit history. Use when the user asks for a PR — the Ship step, always user-triggered.
 argument-hint: "[base-branch]"
 allowed-tools: [Bash, Read, Grep, Agent]
 ---

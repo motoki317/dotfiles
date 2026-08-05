@@ -1,6 +1,6 @@
 ---
 name: codex-work
-description: Delegate a task's implementation wholesale to OpenAI Codex (`codex-run work`) — the whole requirements document in one long autonomous run — keeping policy, orchestration, and acceptance in the main loop. Use at the Implement step of the Orchestrator loop, for any multi-part build.
+description: Delegate a plan wholesale to OpenAI Codex for one autonomous implementation run. Use at the Implement step of the Orchestrator loop.
 argument-hint: "[task-description]"
 ---
 

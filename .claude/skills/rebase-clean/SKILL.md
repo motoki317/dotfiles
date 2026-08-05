@@ -1,6 +1,6 @@
 ---
 name: rebase-clean
-description: Regroup the unshipped commits — a feature branch, or unpushed work on the default branch — into clean, reviewer-readable logical units, then rebase and push where authorized. Use when history shows trial-and-error (fix-ups, reverts, WIP commits) worth tidying — the Implementer loop's Tidy step; the address skill invokes it to publish review fixes.
+description: Regroup unshipped commits into reviewer-readable logical units and push where authorized. Use to tidy trial-and-error history — the Tidy step.
 allowed-tools: [Bash, Read]
 ---
 

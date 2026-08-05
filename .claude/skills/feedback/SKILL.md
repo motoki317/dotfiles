@@ -1,6 +1,6 @@
 ---
 name: feedback
-description: Multi-viewpoint quality review (ISO/IEC 25010) of a change or plan, run by parallel agents. Use after implementing a change, to pressure-test a plan, or when the user asks for feedback, a quality check, or a critique of recent work.
+description: Multi-viewpoint ISO/IEC 25010 quality review of a change or plan by parallel agents. Use after implementing, to pressure-test a plan, or on any request for feedback, critique, or a quality check.
 ---
 
 # Purpose

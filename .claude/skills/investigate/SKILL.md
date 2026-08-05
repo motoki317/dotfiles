@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: Root-cause investigation — enumerate competing hypotheses, verify each with evidence, suggest a fix but never apply it. Use when an error, failing test, or anomaly needs diagnosing before any fix is written; implementation hands off to the Implementer.
+description: Enumerate competing hypotheses and verify each with evidence; suggests a fix but never applies it. Use to diagnose an error, failing test, or anomaly before any fix is written.
 argument-hint: "<error-or-symptom>"
 allowed-tools: [Bash, Read, Grep, Glob, Agent, AskUserQuestion]
 ---

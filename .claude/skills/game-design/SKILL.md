@@ -1,6 +1,6 @@
 ---
 name: game-design
-description: The mechanic-level evaluation toolkit — apply the 5-Component Framework (Clarity, Motivation, Response, Satisfaction, Fit) to any individual mechanic. Use when designing or evaluating a single mechanic, reviewing whether a feature pulls its weight, debugging why a specific action feels off, comparing alternative implementations of the same mechanic, or doing a first-pass critique on a player-facing feature. For session-level pacing or emotional arcs see experience-design; for moment-to-moment juice see game-feel; for system-of-systems interactions see systems-design. This skill is the per-mechanic lens.
+description: Evaluate one game mechanic with the 5-component framework (Clarity, Motivation, Response, Satisfaction, Fit). Use when designing, reviewing, or debugging a single mechanic or player-facing feature.
 ---
 
 # Game Design Framework

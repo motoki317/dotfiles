@@ -1,6 +1,6 @@
 ---
 name: tech-writing
-description: Writing norms for human-facing prose in any language — reports, PR/issue text, docs, comments, articles — sentence mechanics (ASD-STE100-derived), argument rigor, redundancy elimination, filler bans, plus a check mode for proofreading. Use when writing or revising such prose. 日本語の技術文書・書籍原稿・章・草稿・記事・解説文を書くとき、または推敲・リライトするときも使用する。
+description: Writing norms for human-facing prose in any language — sentence mechanics, argument rigor, redundancy, filler, plus a check mode. Load before writing or revising reports, PR/issue text, docs, or comments. 日本語の技術文書・記事・書籍原稿の執筆・推敲にも使用する。
 ---
 
 # Technical writing

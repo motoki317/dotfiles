@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Create, improve, and evaluate skills. Use when the user wants to create a skill from scratch, edit or optimize an existing one, run evals or benchmarks on it, or optimize its description for better triggering accuracy.
+description: Create, improve, and evaluate skills. Use to author a skill, optimize its description, or run skill evals.
 ---
 
 # Skill Creator
