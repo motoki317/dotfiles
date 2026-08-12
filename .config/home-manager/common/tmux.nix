@@ -50,6 +50,14 @@
 
       # clipboard tool is provided per-host (hosts/wsl.nix, hosts/macos.nix)
       set -s copy-command "${clipboardCommand}"
+      # copy-command only covers tmux's own copy-mode. Applications inside a pane
+      # (nvim, TUIs, remote SSH) copy via OSC 52, which tmux's default of
+      # "external" drops outright -- it neither buffers nor forwards it. "on"
+      # accepts the sequence and relays it to the outer terminal.
+      set -g set-clipboard on
+      # some tools wrap OSC 52 in tmux's DCS passthrough instead of emitting it
+      # bare; without this they are dropped even with set-clipboard on.
+      set -g allow-passthrough on
       bind-key -T copy-mode-vi v send-keys -X begin-selection
       bind-key -T copy-mode-vi y send-keys -X copy-pipe
       bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel
