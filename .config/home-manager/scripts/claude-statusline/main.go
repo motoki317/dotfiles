@@ -63,7 +63,7 @@ func main() {
 		p.RateLimits = live
 	}
 	codex := codexRateLimits(home, now)
-	cost := sessionCost(sessionID(p), now)
+	cost := sessionCost(sessionID(p))
 	fmt.Println(render(p, codex, cost, now, termWidth()))
 }
 
