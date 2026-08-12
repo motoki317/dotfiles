@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func pf(f float64) *float64 { return &f }
@@ -437,27 +439,80 @@ func TestSessionID(t *testing.T) {
 }
 
 func TestParseCost(t *testing.T) {
-	// Two sessions; the second is the target. Fields mirror ccusage session --json,
-	// where sub-agents and compaction are already folded into the entry.
-	data := []byte(`{"session":[
-		{"period":"other","totalCost":9.9,"inputTokens":1,"outputTokens":2,"cacheCreationTokens":3,"cacheReadTokens":4},
-		{"period":"sess-1","totalCost":2.7258,"inputTokens":7817,"outputTokens":40734,"cacheCreationTokens":78295,"cacheReadTokens":1770917}
-	]}`)
-	ci := parseCost(data, "sess-1")
+	data := []byte(`{"session":{
+		"tokens":{"uncached_input":7817,"output":40734,"cache_write":78295,"cache_read":1770917},
+		"cost":{"usd":2.7258,"complete":true,"estimated":false,"missing_pricing":[]}
+	}}`)
+	ci := parseCost(data)
 	if ci == nil {
-		t.Fatal("expected a match")
+		t.Fatal("expected a session summary")
 	}
 	if ci.USD != 2.7258 || ci.Input != 7817 || ci.Output != 40734 ||
-		ci.CacheCreation != 78295 || ci.CacheRead != 1770917 {
+		ci.CacheCreation != 78295 || ci.CacheRead != 1770917 || !ci.Complete {
 		t.Errorf("parsed = %+v", ci)
 	}
-	// No matching period -> nil.
-	if parseCost(data, "missing") != nil {
-		t.Error("unmatched session should be nil")
+	// A structured not-found payload must decode as absence, never zero cost.
+	if parseCost([]byte(`{"error":{"code":"not_found","message":"session not found"}}`)) != nil {
+		t.Error("not-found response should be nil")
 	}
-	// Malformed JSON -> nil, never a panic.
-	if parseCost([]byte("not json"), "sess-1") != nil {
+	if parseCost([]byte("not json")) != nil {
 		t.Error("malformed input should be nil")
+	}
+}
+
+func TestAgtlogCostCommand(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "agtlog")
+	argsPath := filepath.Join(dir, "args")
+	fake := `#!/bin/sh
+printf 'call\n' >> "$AGTLOG_TEST_ARGS"
+printf '%s\n' "$@" >> "$AGTLOG_TEST_ARGS"
+printf '%s\n' '{"session":{"tokens":{},"cost":{"usd":1.25,"complete":true}}}'
+`
+	if err := os.WriteFile(bin, []byte(fake), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("AGTLOG_TEST_ARGS", argsPath)
+	t.Setenv("PATH", dir)
+	ci := sessionCost("00000000-0000-4000-8000-000000000001")
+	if ci == nil || ci.USD != 1.25 || !ci.Complete {
+		t.Fatalf("agtlogCost = %+v", ci)
+	}
+	args, err := os.ReadFile(argsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "call\nshow\nclaude:00000000-0000-4000-8000-000000000001\n--no-events\n--offline\n"
+	if string(args) != want {
+		t.Errorf("agtlog arguments = %q, want %q", args, want)
+	}
+}
+
+func TestAgtlogCostFailures(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "agtlog")
+	notFound := `#!/bin/sh
+printf '%s\n' '{"error":{"code":"not_found"}}' >&2
+exit 3
+`
+	if err := os.WriteFile(bin, []byte(notFound), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if ci := agtlogCost(bin, "missing"); ci != nil {
+		t.Errorf("exit 3 should return nil, got %+v", ci)
+	}
+
+	blocking := "#!/bin/sh\nexec /bin/sleep 10\n"
+	if err := os.WriteFile(bin, []byte(blocking), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if ci := agtlogCostContext(ctx, bin, "slow"); ci != nil {
+		t.Errorf("timeout should return nil, got %+v", ci)
+	}
+	if costTimeout != 2*time.Second {
+		t.Errorf("costTimeout = %v, want 2s", costTimeout)
 	}
 }
 
@@ -465,7 +520,7 @@ func TestRenderCost(t *testing.T) {
 	if renderCost(nil) != "" {
 		t.Error("nil cost should render empty")
 	}
-	got := renderCost(&costInfo{USD: 2.73, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
+	got := renderCost(&costInfo{USD: 2.73, Complete: true, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
 	// Cost is 3-sig-fig ($2.73, precision matters); tokens are humanized at 2-sig-fig.
 	// Order is cache-read, cache-creation, input, then output. Color codes break up
 	// the ↑ group, so assert the pieces, not one contiguous substring.
@@ -485,8 +540,7 @@ func TestRenderCost(t *testing.T) {
 }
 
 func TestRenderCostUnpriced(t *testing.T) {
-	// ccusage can't price a new model offline: totalCost 0 with real token counts.
-	// Show "$?", never a misleading "$0"; the token counts still render.
+	// An incomplete agtlog total with no priced tokens is unknown, not a real $0.
 	got := renderCost(&costInfo{USD: 0, Input: 7, CacheCreation: 39800, CacheRead: 148136, Output: 22715})
 	if !strings.Contains(got, "$?") {
 		t.Errorf("unpriced session should render $?, got %q", got)
@@ -499,10 +553,28 @@ func TestRenderCostUnpriced(t *testing.T) {
 	}
 }
 
+func TestRenderCostCompleteZero(t *testing.T) {
+	got := renderCost(&costInfo{Complete: true})
+	if !strings.Contains(got, "$0") || strings.Contains(got, "$?") || strings.Contains(got, "!") {
+		t.Errorf("complete zero cost should render $0, got %q", got)
+	}
+}
+
+func TestRenderCostPartial(t *testing.T) {
+	got := renderCost(&costInfo{USD: 2.73})
+	want := "$2.73" + cReset + cGray + "!" + cReset
+	if !strings.Contains(got, want) {
+		t.Errorf("partial cost should render a gray ! after the total, got %q", got)
+	}
+	if strings.Contains(got, "$?") {
+		t.Errorf("partial nonzero cost should render its known total, got %q", got)
+	}
+}
+
 func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, &costInfo{USD: 1.17, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
+	got := render(p, nil, &costInfo{USD: 1.17, Complete: true, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
 	if !strings.Contains(got, "$1.17") { // cost at 3 sig figs keeps the cents
 		t.Errorf("render should include the cost segment, got %q", got)
 	}
@@ -525,7 +597,7 @@ func TestRenderWraps(t *testing.T) {
 		Primary:   &CodexWindow{UsedPercent: pf(94), WindowMinutes: pn(300), ResetsAt: pi(now + 3000)},
 		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
 	}
-	cost := &costInfo{USD: 1.17, Input: 1000, Output: 500}
+	cost := &costInfo{USD: 1.17, Complete: true, Input: 1000, Output: 500}
 
 	narrow := render(p, codex, cost, now, 40)
 	if !strings.Contains(narrow, "\n") {
