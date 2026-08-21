@@ -23,6 +23,7 @@
   "autoCompactWindow": 400000,
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
+  "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
