@@ -17,7 +17,7 @@ One role per file. A new rule goes where its role says; if no role fits, questio
 
 ## Editing principles
 
-Two grounding episodes: the verbose-agents episode (2026-07, commit 0fd7ce6 — aspirational values did not steer; operational devices did) and the backfill-dismissal incident (2026-08, commit 9fb5dbd — reviews detected the defect three times; undisciplined disposition of the findings shipped a 40-minute migration). Their synthesis: the effective axis is checkable vs aspirational, not general vs detailed. Compress by subsumption into checkable generalizations ("dismissal is a claim too"), never by abstraction into vibes ("be rigorous").
+Two grounding episodes: the verbose-agents episode (2026-07, commit 0fd7ce6 — aspirational values did not steer; operational devices did) and the backfill-dismissal incident (2026-08, commit 9fb5dbd — reviews detected the defect three times; undisciplined disposition of the findings shipped a 40-minute migration). Their synthesis: the effective axis is checkable vs aspirational, not general vs detailed. Compress by subsumption into checkable generalizations ("dismissal is a claim too"), never by abstraction into vibes ("be rigorous"). A standing calibration behind the writing devices: the user's edit passes cut 50–90% of agent-written prose (measured 2026-07-30) — the producing context cannot self-grade.
 
 A line survives in any asset only if it is one of:
 1. an environment fact the model cannot derive (`ax` exists, the `reviewer` agent is read-only, who pushes);
@@ -40,6 +40,7 @@ Recurring fat, deleted on sight: workflow narration the model performs anyway; e
 - Rules are not evidence that behavior moved: gate every cut and demotion with `probes.md` — a change survives only if no probe flips.
 - House rules and skills are procedures for a reader that cannot ask questions — write new English ones in STE form (imperative, condition before command, must/can; `skills/tech-writing`). Vendored and Japanese text keeps its source style; an existing English line keeps its style until rewritten wholesale.
 - Dedup across files: a sentence living in two files is a future contradiction.
+- In skill files, reference bundled files by absolute `$HOME/.claude/...` path, never relative — a subagent may not run from the skill's directory.
 
 ## Shared skill registry
 

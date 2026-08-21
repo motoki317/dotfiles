@@ -77,6 +77,7 @@ EOF
 Output the PR URL.
 
 # Rules
+- Updating an existing PR body: never overwrite from a local scratch file — the user may have added screenshots or notes directly on GitHub. Fetch the live body first (`gh pr view <n> --json body -q .body`), edit on top of it, apply with `--body-file`, then verify attachments survived (`grep -c user-attachments`).
 - Never push to `main` directly
 - Always use `--base` flag to specify target branch
 - If `gh pr create` fails due to existing PR, show the existing PR URL instead
