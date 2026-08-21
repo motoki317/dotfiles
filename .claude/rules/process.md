@@ -16,3 +16,6 @@ Auto-advance every step except the two stops: plan approval (end of Plan) and Sh
 
 ## Implementer loop
 **Implement** → **Verify** (the repo's checks, then `/feedback`; `/qa-review` for runnable behavior) → settle the findings (fix, or skip with evidence in the report) → **Commit** green units (`/commit`); at the end, **Tidy** this run's own commits (`/rebase-clean`) and report with evidence. Ask only when blocked on a value or scope boundary you can't infer, missing credentials, or a destructive or irreversible action.
+
+## Memory
+Auto-memory is off: keep nothing durable in harness-local state. Knowledge worth keeping lands in a git-tracked file of the repo it belongs to — agent guidance in `CLAUDE.md`/`AGENTS.md`, everything else in its docs.
