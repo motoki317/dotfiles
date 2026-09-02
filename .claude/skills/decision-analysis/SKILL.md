@@ -10,7 +10,7 @@ State the decision in one line, and what a good answer delivers: a go/no-go, a r
 Pick the 3–5 lenses from `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` that would most expose blind spots in *this* problem — the broader or more irreversible the decision, the more apply, but cap at five or the synthesis blurs into a survey. Record the skipped ones so coverage is visible.
 
 # Step 3 — Investigate in parallel
-Spawn one agent per lens, in a single message (sequential spawning risks timeout). Give each only the Step 1 framing, its lens, and the catalog path above (a freshly spawned agent can't resolve a path relative to this skill). Read-only analysis, not implementation: `Explore` for codebase-grounded lenses, `reviewer` otherwise.
+Spawn one agent per lens, in a single message so they run concurrently. Give each only the Step 1 framing, its lens, and the catalog path above (a freshly spawned agent can't resolve a path relative to this skill). Read-only analysis, not implementation: `Explore` for codebase-grounded lenses, `reviewer` otherwise.
 
 # Step 4 — Synthesize
 Reconcile: where lenses agree, where they conflict, which unknowns block a confident call. One factor can surface under several lenses (a risky migration is Risk + Feasibility + Cost) — name it once, under the lens that owns it. Close with a recommendation, the trade-offs it accepts, and concrete next steps; surface conflicts and critical unknowns rather than papering over them — a confident wrong call is the failure mode this guards against.
