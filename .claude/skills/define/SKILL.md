@@ -15,7 +15,7 @@ argument-hint: "[message]"
 2. **Investigate** — inline when the scope is small; for broad or independent surfaces spawn read-only agents in parallel: `Explore` for files and patterns, `reviewer` for a lensed read (architecture, schema, risk), `general-purpose` for external sources and estimation.
 
    Also view the request through the 3–5 relevant decision lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` (feasibility, risk, impact, alternatives, security, …) to surface requirement questions and NFR coverage — fold these into the investigation, don't spawn a separate lens fan-out.
-3. **Clarify** — score each candidate question by design-branching impact, irreversibility, investigation-impossibility, and effort (1–5 each); ask the highest-scoring first, and don't proceed without clear answers.
+3. **Clarify** — ask first the questions whose answers most change the design, are hardest to reverse, or cannot be settled by investigation; don't proceed without clear answers.
 4. **Verify** — validate the user's decisions against technical evidence.
 5. **Document** — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output dies with the context window; the file is what post-compaction agents, the /codex-work delegate (Codex via `codex-run work`), and human reviewers read. Create the directory if needed, as it is ignored globally in `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
 

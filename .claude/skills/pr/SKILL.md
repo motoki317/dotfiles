@@ -34,11 +34,6 @@ Gather context in parallel:
 - `git diff --stat $BASE..HEAD` — files changed summary
 - `git diff $BASE..HEAD` — full diff for understanding the changes
 
-Identify:
-- The primary change type (feat, fix, refactor, etc.)
-- Scope of changes (which modules/areas affected)
-- The "why" behind the changes (from commit messages and code)
-
 ### Step 3: Generate PR Metadata
 
 **Title**: Under 70 chars, Conventional Commits style (`feat(scope): description`)
@@ -79,7 +74,4 @@ Output the PR URL.
 # Rules
 - Updating an existing PR body: never overwrite from a local scratch file — the user may have added screenshots or notes directly on GitHub. Fetch the live body first (`gh pr view <n> --json body -q .body`), edit on top of it, apply with `--body-file`, then verify attachments survived (`grep -c user-attachments`).
 - Never push to `main` directly
-- Always use `--base` flag to specify target branch
 - If `gh pr create` fails due to existing PR, show the existing PR URL instead
-- Keep title concise — details go in the body
-- Derive content from commits, not speculation
