@@ -2,7 +2,6 @@
 name: commit
 description: Stage and commit in logical units with WHY-focused messages. Use when committing changes.
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git restore:*), Bash(git show:*)
-model: sonnet
 ---
 
 # Git Commit
