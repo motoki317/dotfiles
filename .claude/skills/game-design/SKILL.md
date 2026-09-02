@@ -5,6 +5,8 @@ description: Evaluate one game mechanic with the 5-component framework (Clarity,
 
 # Game Design Framework
 
+The sibling skills named in bold below (systems-design, game-feel, player-ux, and the rest of the Related Skills tables) are not installed here: read them as topic names, not as skills to load.
+
 **Purpose:** Central evaluation framework for game mechanics. Use this as the **first pass** on any feature — the 5-Component Filter identifies what's weak, then specialized skills provide deep guidance.
 
 **Core principle:** Mechanics are code. Gameplay is the player's *experience* of that code. The goal is not to implement features, but to implement **Relevance**.

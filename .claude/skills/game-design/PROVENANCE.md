@@ -8,7 +8,7 @@ This skill is a third-party work, vendored verbatim into this repository.
 | Source path | `plugins/game-dev/skills/game-design` |
 | Pinned commit | `44c68cb65de8c89f1c67b3701615d28ba9d86ccd` |
 | Retrieved | 2026-07-19 |
-| Method | Files copied unmodified via `gh api` (no `skillfish`, no code executed) |
+| Method | Files copied via `gh api` (no `skillfish`, no code executed); one local addition — the note under the `SKILL.md` title that the sibling skills are not installed |
 | Author | GitHub user `rbergman` |
 
 ## License
