@@ -3,7 +3,7 @@
   "permissions": {
     "defaultMode": "default"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-fable-5-1[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.nix-profile/bin/claude-statusline",
@@ -22,5 +22,10 @@
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
+  },
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "xhigh"
+    }
   }
 }
