@@ -30,7 +30,7 @@ allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git a
 ## Workflow
 
 1. **Analyze** — Review diffs; ensure tests pass and warnings are resolved
-2. **Group** — One commit per logical unit; separate structural (refactor) from behavioral (feat/fix) changes; use `git add -p` for partial staging
+2. **Group** — One commit per logical unit; separate structural (refactor) from behavioral (feat/fix) changes; to split one file across units, answer `git add -p` from a pipe (`printf 'y\nn\n' | git add -p <file>` after reading `git diff <file>`) — bare `git add -p` has no TTY here and stages nothing
 3. **Write** — Imperative description + WHY in body (code=HOW, tests=WHAT, commit=WHY, comments=WHY NOT)
 4. **Commit**
 
