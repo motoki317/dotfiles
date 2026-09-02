@@ -1,12 +1,13 @@
 # Prompting current frontier models — house findings
 
-Distilled 2026-07-17 from the vendor guides below plus an OpenAI Codex cross-review, during the house-asset optimization pass (see the dotfiles commits of that date). Read this before writing or trimming any skill or rule.
+Distilled 2026-07-17 from the vendor guides below plus an OpenAI Codex cross-review, during the house-asset optimization pass (see the dotfiles commits of that date); findings 12–13 added 2026-09-02 from the Claude Fable 5.1 guide. Read this before writing or trimming any skill or rule.
 
 ## Sources
 
 - Claude prompting best practices: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
 - Prompting Claude Fable 5: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5
-  (append `.md` to these two URLs for raw markdown fetchable with `ax --body`)
+- Prompting Claude Fable 5.1: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1
+  (append `.md` to these three URLs for raw markdown fetchable with `ax --body`)
 - Codex prompting guide: https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide
 - GPT-5.6 model guide: https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5.6
 - Codex reference starter prompt: https://github.com/openai/codex/blob/main/codex-rs/core/gpt-5.1-codex-max_prompt.md
@@ -26,6 +27,8 @@ Distilled 2026-07-17 from the vendor guides below plus an OpenAI Codex cross-rev
 9. **Vendor-endorsed keepers:** ground progress claims in tool results from the session; separate assessment from change ("report and stop" vs "implement and verify"); overengineering guardrails; one explicit parallel-tool-calls line (Codex harnesses still need it).
 10. **Optimize by loading level.** Description is charged to every session of every agent; SKILL.md body per invocation; references/ only when read. Trim in that order — file length alone is not context cost.
 11. **Change one group at a time** and compare fixed representative prompts before and after (`~/.claude/META.md` states the same principle; OpenAI's gains were measured this way).
+12. **Remove update suppressors and anti-formatting rules before adding anything.** Claude Fable 5.1 narrates less between tool calls and formats less than Fable 5, so "hold findings for the final response", "don't narrate", and "no bullets/headers/bold" now strip output the reader wanted. Delete them first; if more narration is still wanted, say *when* user-facing text is wanted, not how much.
+13. **A parallel-tool-calls line belongs next to the request, not in a standing file.** Fable 5.1 batches implied reads less than Fable 5, and one sentence appended per turn moves the rate far more than the same text in a rule or skill; the Claude Code harness already appends that sentence. Keep the one line in `rules/conventions.md` for Codex and add no copies to skills.
 
 ## Cross-agent notes (assets shared between Claude Code and Codex)
 
