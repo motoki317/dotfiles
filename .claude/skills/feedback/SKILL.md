@@ -12,7 +12,7 @@ Review recent work across the ISO/IEC 25010:2023 quality model: one agent per ch
 **Intent** (what the change was meant to do): from the conversation, PR/issue, or ask. Pass it to every agent — they start with no conversation history, and Functional Suitability and Interaction Capability are judged against intent, not the code alone.
 
 # Step 2 — Select viewpoints
-Run the three core viewpoints for almost any change; add each conditional one when the change matches its "include when". Record skips in the Coverage line so gaps are visible. When unsure, include it — a clean review is cheap, a missed dimension is not.
+Run the three core viewpoints for almost any change; add each conditional one when the change matches its "include when". Record skips in the Coverage line so gaps are visible.
 
 **Core (always):**
 - **Functional Suitability** — graded against the intent.
