@@ -14,6 +14,11 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "xhigh"
+    }
+  },
   "autoCompactWindow": 400000,
   "awaySummaryEnabled": false,
   "tui": "fullscreen",
@@ -23,9 +28,5 @@
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
   },
-  "modelSettings": {
-    "claude-fable-5-1": {
-      "effortLevel": "xhigh"
-    }
-  }
+  "switchModelsOnFlag": false
 }
