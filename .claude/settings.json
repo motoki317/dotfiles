@@ -3,7 +3,6 @@
   "permissions": {
     "defaultMode": "default"
   },
-  "model": "claude-fable-5-1[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.nix-profile/bin/claude-statusline",
@@ -24,9 +23,9 @@
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
+  "switchModelsOnFlag": false,
   "remoteControlAtStartup": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754031744917
-  },
-  "switchModelsOnFlag": false
+  }
 }
