@@ -17,6 +17,7 @@
 !/.claude/scripts/**
 !/.claude/skills
 !/.claude/skills/**
+/.claude/skills/synced/
 .claude/skills/unslop
 .claude/skills/blender
 !/.claude/rules
