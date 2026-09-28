@@ -1,4 +1,21 @@
 { config, pkgs, lib, username, homeDirectory, inputs, ... }:
+let
+  # gh keeps one active account per host, so it ignores the attmcojp/ URL split
+  # that url.insteadOf already applies to SSH keys. GH_TOKEN overrides per call.
+  # Sourced by both zsh and bash, so it sticks to syntax both accept.
+  ghAccountSwitch = ''
+    gh() {
+      [[ $1 == auth ]] && { command gh "$@"; return; }
+      local account
+      case "$(command git remote get-url origin 2>/dev/null)" in
+        *[:/]attmcojp/*) account=toki-attm ;;
+        *github*)        account=motoki317 ;;
+        *) command gh "$@"; return ;;
+      esac
+      GH_TOKEN=$(command gh auth token --user "$account") command gh "$@"
+    }
+  '';
+in
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     "1password-cli"
@@ -46,20 +63,11 @@
     source ${inputs.ha}/ha.sh
     compdef _ha ha
 
-    # gh keeps one active account per host, so it ignores the attmcojp/ URL split
-    # that url.insteadOf already applies to SSH keys. GH_TOKEN overrides per call.
-    gh() {
-      [[ $1 == auth ]] && { command gh "$@"; return }
-      local account
-      case "$(command git remote get-url origin 2>/dev/null)" in
-        *[:/]attmcojp/*) account=toki-attm ;;
-        *github*)        account=motoki317 ;;
-        *) command gh "$@"; return ;;
-      esac
-      GH_TOKEN=$(command gh auth token --user $account) command gh "$@"
-    }
+    ${ghAccountSwitch}
   '';
   programs.bash.initExtra = ''
     source ${inputs.ha}/ha.sh
+
+    ${ghAccountSwitch}
   '';
 }
