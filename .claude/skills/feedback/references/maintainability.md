@@ -10,8 +10,8 @@
 - **Testability** — Degree of effectiveness and efficiency with which test criteria can be established for a system, product or component and tests can be performed to determine whether those criteria have been met.
 
 ## What to look for (review guidance — not part of ISO/IEC 25010)
-- **Modularity** — tight coupling, leaky abstractions, edits that ripple across unrelated modules.
-- **Reusability** — duplicated logic, context-locked helpers that could be generalized.
-- **Analysability** — tangled control flow, unclear naming, missing logs/observability, hidden state.
-- **Modifiability** — fragile code, hidden side effects, missing tests around the changed behaviour.
-- **Testability** — hard-wired dependencies with no seams, non-deterministic behaviour, new behaviour without tests.
+- Modularity — tight coupling, leaky abstractions, edits that ripple across unrelated modules.
+- Reusability — duplicated logic, context-locked helpers that can be generalized.
+- Analysability — tangled control flow, unclear naming, missing logs/observability, hidden state.
+- Modifiability — fragile code, hidden side effects, missing tests around the changed behavior.
+- Testability — hard-wired dependencies with no seams, non-deterministic behavior, new behavior without tests.

@@ -1,6 +1,6 @@
 ---
 name: cold-read
-description: A context-free reviewer reads durable prose as its real audience; the writer applies surviving cuts. Use at task completion (Orchestrator Accept) whenever docs, README, comment blocks, or PR/issue bodies were written or revised.
+description: A context-free reviewer reads durable prose as its real audience. The writer applies the surviving cuts. Use at task completion (Orchestrator Accept) whenever docs, README, comment blocks, or PR/issue bodies were written or revised.
 ---
 
 # Cold read
@@ -9,27 +9,27 @@ The writer cannot measure its own prose, so a fresh reader measures it instead. 
 
 ## Procedure
 
-1. Collect the task's durable prose. A non-file artifact (a PR body, its diff) goes verbatim into a scratch file, one per artifact.
-2. Give the reviewer what the artifact's real reader will have — for docs and comments the working tree, never the diff or plan (a comment clear only next to the diff is the defect this test catches); for a PR body, the body plus its diff. Nothing from the session.
-3. Spawn one fresh `reviewer` agent with the template verbatim, filling only {paths} and the audience line — the artifact's real reader ("a Go developer new to this repo"; "the human reviewing this PR"). Anything more is context that reader will not have, and it blinds the test. A harness without fresh-context subagents instead lists the artifacts in its run report, and the Orchestrator runs this skill at Accept.
-4. Apply: cuts land unless one drops a reader decision, precondition, or warning — keeping a span requires naming that loss, and "adds nuance" is the writer's bias, not a loss. Re-anchor each confusion to a fact the reader can see; add prose only for a failed probe or a fact the reader can reach nowhere else. If most is cut, rewrite from the survivors. Style repairs: `$HOME/.claude/skills/tech-writing/SKILL.md`.
-5. Load-bearing docs (README, spec, onboarding) get three reviewers: a span all of them cut is dead weight; a confusion any of them raises needs an anchor.
+1. Collect the task's durable prose. Copy each non-file artifact (a PR body, its diff) verbatim into its own scratch file.
+2. Give the reviewer what the artifact's real reader will have. For docs and comments, give the working tree, never the diff or the plan. A comment that is clear only next to the diff is the defect that this test catches. For a PR body, give the body plus its diff. Give nothing from the session.
+3. Spawn one fresh `reviewer` agent with the template verbatim. Fill only {paths} and the audience line, which names the artifact's real reader ("a Go developer new to this repo", or "the human reviewing this PR"). Anything more is context that the real reader will not have, and the test cannot detect a gap that this context fills. If your harness has no fresh-context subagents, list the artifacts in your run report instead. The Orchestrator then runs this skill at Accept.
+4. Apply each cut that drops no reader decision, precondition, or warning. To keep a span, name the loss that its cut causes: "adds nuance" is the writer's bias, not a loss. Rewrite each confusing span so that it refers to a fact that the reader can see. Add prose only for a failed probe or for a fact that the reader can reach nowhere else. If you cut most of the text, rewrite it from the survivors. For style repairs, follow `$HOME/.claude/skills/tech-writing/SKILL.md`.
+5. For load-bearing docs (README, spec, onboarding), spawn three reviewers. A span that all of them cut is dead weight. Rewrite the span of each confusion that any of them raises, as step 4 describes.
 
 ## Reviewer template
 
-    You are reading this material for the first time. You know nothing about
-    recent changes or conversations. Audience to embody: {audience line}.
+    This material is new to you. You know nothing about recent changes or
+    conversations. Act as this audience: {audience line}.
 
-    Read: {paths}. You may read other repository files to verify claims, but
-    no git history and, unless a diff is listed above, no diffs.
+    Read: {paths}. You can read other repository files to verify claims. Do
+    not read git history or any diff that is not listed above.
 
     Report three lists with file:line spans:
-    1. Probe — what is each artifact for, and what would you do differently
+    1. Probe — what is each artifact for? What would you do differently
        because you read it? Cite only what you read.
     2. Confusions — every place you stopped, reread, guessed, or hit a
        referent you cannot resolve ("the above fix", "now").
-    3. Cuts — every span whose deletion loses nothing your audience would
-       miss; a span earns its place by changing what the reader does or
-       believes. Propose no additions; name gaps under Confusions.
+    3. Cuts — every span whose deletion loses nothing that your audience
+       needs. A span belongs in the text exactly when it changes what the
+       reader does or believes. Propose no additions. Name gaps under Confusions.
 
     Report to an editor, not a person: no praise, no hedging, no summary.

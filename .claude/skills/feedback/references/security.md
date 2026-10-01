@@ -11,9 +11,9 @@
 - **Resistance** — Degree to which the product or system sustains operations while under attack from a malicious actor.
 
 ## What to look for (review guidance — not part of ISO/IEC 25010)
-- **Confidentiality** — secrets in code/logs, data leaked via error messages, missing authorization checks, over-broad scopes.
-- **Integrity** — injection (SQL/command/path), missing input validation, mass-assignment, unverified writes, no integrity/checksum where it matters.
-- **Non-repudiation** — sensitive actions with no audit record.
-- **Accountability** — no actor identity in logs, shared/ambient credentials.
-- **Authenticity** — weak or missing authentication, unverified tokens/signatures, spoofable identity.
-- **Resistance** — no rate limiting, unbounded input enabling DoS, ReDoS, resource-exhaustion paths.
+- Confidentiality — secrets in code/logs, data leaked via error messages, missing authorization checks, over-broad scopes.
+- Integrity — injection (SQL/command/path), missing input validation, mass-assignment, unverified writes, no integrity/checksum where it matters.
+- Non-repudiation — sensitive actions with no audit record.
+- Accountability — no actor identity in logs, shared/ambient credentials.
+- Authenticity — weak or missing authentication, unverified tokens/signatures, spoofable identity.
+- Resistance — no rate limiting, unbounded input that enables DoS, ReDoS, resource-exhaustion paths.

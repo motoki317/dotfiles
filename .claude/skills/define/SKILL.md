@@ -1,26 +1,34 @@
 ---
 name: define
-description: Clarify constraints, then write a requirements spec and task breakdown to a gitignored plan file. Use at the Plan step; never implements.
+description: Clarify constraints, then write a requirements spec and task breakdown to a gitignored plan file. Use at the Plan step. This skill never implements.
 argument-hint: "[message]"
 ---
 
 # Rules
 - Never implement, and never touch project files — the requirements document (step 5) is the only file you write.
-- Flag technically impossible requests; prioritize technical validity over preference.
-- Ask about requirement and value decisions you can't infer; settle derivable details (naming, structure, style) yourself and record them. Present open questions before assuming.
-- Pose the questions you do ask through AskUserQuestion, always offering a (Recommended) option.
+- Flag technically impossible requests. Prioritize technical validity over preference.
+- Ask about requirement and value decisions that you cannot infer. Settle derivable details (naming, structure, style) yourself. Record them. Present open questions before you make assumptions.
+- Pose the questions that you do ask through AskUserQuestion. Always offer a (Recommended) option.
 
 # Workflow
-1. **Analyze** — parse the request, identify constraints, draft candidate questions.
-2. **Investigate** — inline when the scope is small; for broad or independent surfaces spawn read-only agents in parallel: `Explore` for files and patterns, `reviewer` for a lensed read (architecture, schema, risk), `general-purpose` for external sources and estimation.
+1. Analyze — parse the request. Identify constraints. Draft candidate questions.
+2. Investigate — if the scope is small, investigate inline. For broad or independent surfaces, spawn read-only agents in parallel:
+   - `Explore` for files and patterns
+   - `reviewer` for a lensed read (architecture, schema, risk)
+   - `general-purpose` for external sources and estimation
 
-   Also view the request through the 3–5 relevant decision lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` (feasibility, risk, impact, alternatives, security, …) to surface requirement questions and NFR coverage — fold these into the investigation, don't spawn a separate lens fan-out.
-3. **Clarify** — ask first the questions whose answers most change the design, are hardest to reverse, or cannot be settled by investigation; don't proceed without clear answers.
-4. **Verify** — validate the user's decisions against technical evidence.
-5. **Document** — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output dies with the context window; the file is what post-compaction agents, the /codex-work delegate (Codex via `codex-run work`), and human reviewers read. Create the directory if needed, as it is ignored globally in `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
+   Also view the request through the 3–5 relevant decision lenses in `$HOME/.claude/skills/decision-analysis/references/lens-catalog.md` (for example, feasibility, risk, impact, alternatives, security). Use them to surface requirement questions and NFR coverage. Apply the lenses within the investigation: do not spawn a separate lens fan-out.
+3. Clarify — ask these questions first:
+   - questions whose answers most change the design
+   - questions whose answers are hardest to reverse
+   - questions whose answers investigation cannot settle
+
+   Do not proceed without clear answers.
+4. Verify the user's decisions against technical evidence.
+5. Document — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output disappears with the context window. The file is what post-compaction agents, the /codex-work delegate (Codex via `codex-run work`), and human reviewers read. If the directory does not exist, create it: Git ignores it globally through `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
 
 # Output Format
-The structure of the plan file (the chat reply is just its path and a summary):
+The structure of the plan file:
 ```
 ## Requirements Document
 - Summary: One-sentence request, background, expected outcomes
