@@ -1,12 +1,12 @@
 # English surface rules
 
-Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (MIT, see `../LICENSE-SimpleEnglish`). Unofficial. Structural rules only — the official dictionary is not reproduced.
+Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (MIT, see `../LICENSE-SimpleEnglish`). Unofficial. Structural rules only — this file does not reproduce the official dictionary.
 
 ## Grammar
 
 - Simple tenses only: simple present, simple past, simple future. No perfect ("has been installed" → "was installed"), no progressive.
-- Active voice. Passive is allowed only in descriptive text where the agent is unknown.
-- Use a past participle only as an adjective ("the cached response").
+- Active voice. Use the passive only in descriptive text where the agent is unknown.
+- Use a past participle only as an adjective ("the cached response") or in a passive that the rule above allows.
 - Use an "-ing" form only inside a technical noun ("logging"). Never as a verb: ", making restarts unnecessary" → a new sentence with a real subject.
 - No contractions.
 - No semicolons — write two sentences. No "e.g." / "i.e." / "etc." — write "for example", "that is", or name the items.
@@ -18,8 +18,9 @@ Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (
 |---|---|
 | should (requirement) | must |
 | should (recommendation) | State it as fact with the reason, or write "recommended: X, because Y", or delete. |
-| may / might / could (capability, permission) | can |
-| may / might (epistemic uncertainty) | Keep the uncertainty — SKILL.md "Requirement vs uncertainty". |
+| may / might / could (present capability, permission) | can |
+| could (past capability: "could not connect") | Keep it. It is the simple past of "can". |
+| may / might / could (epistemic uncertainty) | Keep the uncertainty — SKILL.md "Requirement vs uncertainty". |
 | would (conditional) | Restructure: "If X occurs, Y occurs." |
 | would (counterfactual — contrary to fact) | Keep it. It carries epistemic content. |
 
@@ -33,7 +34,7 @@ Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (
 
 A row's replacement applies only when the word carries a fact. When it does not, delete the word.
 
-| Slop | Write |
+| You wrote | Write |
 |---|---|
 | leverage, utilize | use |
 | in order to / prior to / due to the fact that / in the event that / when it comes to | to / before / because / if / for |
@@ -65,7 +66,7 @@ A row's replacement applies only when the word carries a fact. When it does not,
 
 One term per concept (pick one):
 
-- check / verify / confirm / validate — "ensure" is banned by the filler table
+- check / verify / confirm / validate / make sure that — not "ensure" (filler table)
 - config / configuration / settings / options
 - delete / remove / drop / destroy — one per meaning
 - error / issue / problem / failure — one per meaning (a message reports an error, an operation fails)
@@ -74,7 +75,7 @@ One term per concept (pick one):
 
 ## Self-check (searchable)
 
-Search the draft. A hit outside code blocks and quoted text is a candidate — classify it against the rules above before you rewrite.
+Search the draft. A hit outside code blocks and quoted text is a candidate. Classify it against the rules above before you rewrite it.
 
 | Search | Violation → fix |
 |---|---|
@@ -87,10 +88,10 @@ Search the draft. A hit outside code blocks and quoted text is a candidate — c
 | ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move to the front, add a comma |
 | `not just` `not only` `isn't just` | negative parallelism → SKILL.md "Redundancy" |
 | `serves as` `stands as` `boasts` | copula avoidance → "is", "has" |
-| `- **` at the start of a line | inline-header list → a paragraph, if the items carry an argument |
+| `- **` at the start of a line | inline-header list whose items carry an argument → a paragraph |
 | `**` | bold other than a defined term, more than two spans in a section → SKILL.md "Format" |
 | emoji | delete |
 
-Then count words in the three longest sentences against the caps, and search for the rotation synonyms you did not pick.
+Then count words in the three longest sentences against the caps. Search for the rotation synonyms that you did not pick.
 
 `$HOME/.claude/skills/tech-writing/scripts/ste_lint.py` automates these counts for before/after measurement only. It reports aggregate totals without spans and exits 0 regardless — it is not the check-mode pass.
