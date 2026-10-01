@@ -40,7 +40,16 @@ A row's replacement applies only when the word carries a fact. When it does not,
 | ensure | make sure that |
 | it is worth noting that / it is important to / crucially | (delete — state the fact) |
 | simply, just, easily, seamlessly, effortlessly | (delete) |
-| robust, powerful, comprehensive, performant, blazingly fast | (delete, or give the measurable property) |
+| robust, powerful, comprehensive, performant, blazingly fast, crucial, pivotal, vital, key (adjective), vibrant | (delete, or give the measurable property) |
+| serves as, stands as, functions as, represents (meaning "is") | is |
+| boasts, features, offers (meaning "has") | has |
+| underscore, highlight, showcase (meaning "show") | show, or state the fact |
+| foster, garner, bolster, enhance, align with | (name the effect: "retries failed uploads three times") |
+| a testament to, tapestry, landscape (abstract), pivotal moment, indelible mark, deeply rooted | (delete — state the plain fact) |
+| deep dive, valuable insights, interplay, intricate, meticulous | (say what was examined or found) |
+| in today's fast-paced world, in an ever-evolving landscape | (delete) |
+| I hope this helps, let me know if, happy coding | (delete) |
+| Additionally, Furthermore, Moreover (sentence-initial) | (delete, unless it marks a real turn) |
 | enables you to, allows you to | you can |
 | is designed to, aims to | (say what it does) |
 | facilitate / streamline | help / make simpler |
@@ -76,6 +85,11 @@ Search the draft. A hit outside code blocks and quoted text is a candidate — c
 | `, making` `, allowing` `, enabling` `, ensuring` | "-ing" clause → new sentence |
 | `;` | semicolon → two sentences |
 | ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move to the front, add a comma |
+| `not just` `not only` `isn't just` | negative parallelism → SKILL.md "Redundancy" |
+| `serves as` `stands as` `boasts` | copula avoidance → "is", "has" |
+| `- **` at the start of a line | inline-header list → a paragraph, if the items carry an argument |
+| `**` | bold other than a defined term, more than two spans in a section → SKILL.md "Format" |
+| emoji | delete |
 
 Then count words in the three longest sentences against the caps, and search for the rotation synonyms you did not pick.
 
