@@ -2,7 +2,7 @@
 
 > Capability of a product under defined conditions to avoid a state in which human life, health, property, or the environment is endangered.
 
-(New characteristic in the 2023 edition. Most relevant when the change performs destructive, irreversible, or high-stakes operations.)
+(This characteristic is new in the 2023 edition. It is most relevant when the change performs destructive, irreversible, or high-stakes operations.)
 
 ## Official sub-characteristic definitions (ISO/IEC 25010:2023)
 - **Operational constraint** — Degree to which a product or system constrains its operation to within safe parameters or states when encountering operational hazard.
@@ -12,8 +12,8 @@
 - **Safe integration** — Degree to which a product can maintain safety during and after integration with one or more components.
 
 ## What to look for (review guidance — not part of ISO/IEC 25010)
-- **Operational constraint** — destructive or bulk operations with no bounds, guards, or safe-mode under risky conditions.
-- **Risk identification** — acting without first detecting the dangerous condition (e.g. deleting without checking what is matched).
-- **Fail safe** — a failure that leaves the system in a destructive or partially-applied state; no safe default on error.
-- **Hazard warning** — destructive actions with no confirmation, dry-run, or warning before the point of no return.
-- **Safe integration** — a new component that can trigger destructive paths in others; migrations without a tested rollback.
+- Operational constraint — destructive or bulk operations with no bounds, guards, or safe-mode under risky conditions.
+- Risk identification — an action that does not first detect the dangerous condition (for example, a delete that does not check what it matches).
+- Fail safe — a failure that leaves the system in a destructive or partially-applied state, no safe default on error.
+- Hazard warning — destructive actions with no confirmation, dry-run, or warning before the point of no return.
+- Safe integration — a new component that can trigger destructive paths in others, migrations without a tested rollback.

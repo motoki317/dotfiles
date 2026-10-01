@@ -9,6 +9,6 @@
 
 ## What to look for (review guidance — not part of ISO/IEC 25010)
 Judge against the supplied **intent**, not the code's own apparent purpose.
-- **Completeness** — cases in the intent the change omits; inputs, modes, or states the requirement implies but the code never handles.
-- **Correctness** — wrong formulas, off-by-one, boundary/empty/overflow cases, incorrect return or status values, rounding and unit errors.
-- **Appropriateness** — logic that technically works but adds awkward steps, solves the wrong shape of the problem, or doesn't fit how the task is actually performed.
+- Completeness — cases in the intent that the change omits, and inputs, modes, or states that the requirement implies but the code never handles.
+- Correctness — wrong formulas, off-by-one, boundary/empty/overflow cases, incorrect return or status values, rounding and unit errors.
+- Appropriateness — logic that technically works but adds awkward steps, solves the wrong shape of the problem, or does not fit how the task is performed in practice.

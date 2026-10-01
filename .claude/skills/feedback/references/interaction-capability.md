@@ -2,7 +2,7 @@
 
 > Degree to which a product or system can be interacted with by specified users to exchange information via the user interface to complete specific tasks in a variety of contexts of use.
 
-(Renamed from "Usability" in the 2011 edition; the 2011 "Accessibility" sub-characteristic was split into Inclusivity and User assistance. Applies beyond GUIs — to CLIs, public APIs, error messages, and logs.)
+(The 2011 edition calls this characteristic "Usability". The 2023 edition splits the 2011 "Accessibility" sub-characteristic into Inclusivity and User assistance. The characteristic applies beyond GUIs — to CLIs, public APIs, error messages, and logs.)
 
 ## Official sub-characteristic definitions (ISO/IEC 25010:2023)
 - **Appropriateness recognizability** — Degree to which users can recognize whether a product or system is appropriate for their needs.
@@ -15,11 +15,11 @@
 - **Self-descriptiveness** — Degree to which a product presents appropriate information, where needed by the user, to make its capabilities and use immediately obvious to the user without excessive interactions with a product or other resources (such as user documentation, help desks or other users).
 
 ## What to look for (review guidance — not part of ISO/IEC 25010)
-- **Appropriateness recognizability** — command/API names and signatures that obscure what they do.
-- **Learnability** — required steps that aren't discoverable, missing `--help`/usage, undocumented preconditions.
-- **Operability** — missing sane defaults, flags that are awkward to combine, behaviour that's hard to script.
-- **User error protection** — no input validation or confirmation, easy-to-misuse destructive defaults, no dry-run.
-- **User engagement** — terse or unhelpful feedback, no progress indication on long operations.
-- **Inclusivity** — locale/timezone assumptions, colour-only signals, output that breaks screen readers or non-UTF-8 terminals.
-- **User assistance** — error messages with no remediation, missing docs for new behaviour.
-- **Self-descriptiveness** — cryptic errors, unlabeled fields, magic numbers/strings surfaced to the user.
+- Appropriateness recognizability — command/API names and signatures that obscure what they do.
+- Learnability — required steps that are not discoverable, missing `--help`/usage, undocumented preconditions.
+- Operability — missing sane defaults, flags that are awkward to combine, behavior that is hard to script.
+- User error protection — no input validation or confirmation, easy-to-misuse destructive defaults, no dry-run.
+- User engagement — terse or unhelpful feedback, no progress indication on long operations.
+- Inclusivity — locale/timezone assumptions, color-only signals, output that breaks screen readers or non-UTF-8 terminals.
+- User assistance — error messages with no remediation, missing docs for new behavior.
+- Self-descriptiveness — cryptic errors, unlabeled fields, magic numbers/strings shown to the user.

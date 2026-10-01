@@ -1,15 +1,15 @@
-# P3 — 悪意ある操作者 (Malicious operator)
+# P3: Malicious operator (悪意ある操作者)
 
 > Boundary/invalid/out-of-permission values, double-submit — do validation and exclusion control hold?
 
-Assumes an adversary, or a user who does the forbidden thing. Leads new-feature mode with P4; pairs with the `/feedback` Security viewpoint, but exercised.
+P3 assumes an adversary, or a user who does the forbidden thing. P3 leads new-feature mode with P4. P3 is the exercised counterpart of the `/feedback` Security viewpoint.
 
 ## What to probe
-- **Boundary** — min−1, min, max, max+1, zero, empty, one over any limit.
-- **Invalid / malformed** — wrong type/encoding, control chars, oversized payload; injection probes (SQL/command/path/HTML) where input reaches a sink.
-- **Out-of-permission** — act as a denied role; reach another tenant's record by id; call the endpoint past the UI gate.
-- **Double-submit / replay** — same mutation twice (fast, back-then-resubmit, replayed request); idempotency / exclusion control, or a duplicate/partial write?
-- **Bypass client checks** — disable JS, edit the request, skip the prior step; does the server still enforce?
+- Boundary — min−1, min, max, max+1, zero, empty, one over any limit.
+- Invalid / malformed — wrong type/encoding, control chars, oversized payload. Where input reaches a sink, add injection probes (SQL/command/path/HTML).
+- Out-of-permission — act as a denied role. Reach another tenant's record by id. Call the endpoint past the UI gate.
+- Double-submit / replay — the same mutation twice (fast, back-then-resubmit, replayed request). Does idempotency or exclusion control hold, or is there a duplicate/partial write?
+- Bypass client checks — disable JS, edit the request, skip the prior step. Does the server still enforce the checks?
 
 ## Expected result
-Every invalid, over-privileged, or duplicated action is rejected server-side with no data change. Capture the rejection (status/message) as evidence.
+The server rejects every invalid, over-privileged, or duplicated action without a data change. Capture the rejection (status/message) as evidence.
