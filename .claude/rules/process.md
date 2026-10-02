@@ -17,7 +17,7 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
    - After the last task, if the change is high-risk or its behavior lacks test coverage, run `/feedback`, `/qa-review`, or both yourself.
 5. **Ship** — `/pr`, then `/address`. A push to a branch with an open PR is a follow-up, not a new Ship.
 
-Auto-advance every step except the two stops: plan approval (end of Plan) and Ship. Before you commit to a hard-to-reverse or still-uncertain approach, assumption, or "done", consult `/codex-advise`. Report its findings to the user at the advisor's severity, with your counter-evidence attached. Skip `/codex-advise` for mechanical work.
+Auto-advance every step except two stops: plan approval and Ship. Ask for plan approval again when a requirement or the scope changes. Before you commit to a hard-to-reverse or still-uncertain approach, assumption, or "done", consult `/codex-advise`. Report its findings to the user at the advisor's severity, with your counter-evidence attached. Skip `/codex-advise` for mechanical work.
 
 ## Implementer loop
 1. **Implement**.
