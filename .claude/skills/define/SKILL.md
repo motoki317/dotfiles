@@ -44,5 +44,5 @@ The structure of the plan file:
 
 ## Task Breakdown
 - Dependency graph between the tasks
-- Per task: an ID such as T1, the FR IDs it covers, the change it makes, files, and the check that proves it
+- Per task: an ID such as T1, the FR IDs it covers, the change it makes, files, the check that proves it, and a `Tidy base:` line that the Orchestrator fills at dispatch
 ```

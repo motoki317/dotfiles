@@ -1,63 +1,66 @@
 ---
 name: rebase-clean
-description: Regroup unshipped commits into reviewer-readable logical units and push where authorized. Use to tidy trial-and-error history — the Tidy step.
+description: Fold and regroup commits into reviewer-readable logical units, rebase them onto origin/main, and force-push to an open PR. The Implementer regroups only its current task's commits. Use to tidy trial-and-error history — the Tidy step.
 allowed-tools: [Bash, Read]
 ---
 
 # Rebase Clean
 
-## Target — the unshipped work
-Run `git fetch origin main` first. Then pick the base from the first case that applies:
-- If the Orchestrator named a Tidy base for this run, use it: `BASE=<that commit>`. That commit and the commits before it are already accepted. Skip step 5.
-- Feature branch: `BASE=$(git merge-base main HEAD)`. Never use `main` itself: if `main` advanced, the rebuild reverts its newer commits.
-- Default branch (`main`): `BASE=origin/main` — the unpushed commits are the unit. If `origin/main` has commits that you lack, run `git rebase origin/main` first (resolve conflicts as in step 5). If you skip this rebase, the rebuild from the worktree reverts those commits.
-
-## Preconditions
-- Commits exist in `$BASE..HEAD`.
-- The worktree is clean, apart from changes that you mean to fold in. After the soft reset, you rebuild every commit from the whole worktree, so the new commits include any stray edits. If unrelated edits remain, stop and report.
+Where a step writes `<base>` or `<orig>`, substitute its literal SHA. When a step says to stop and report, the tidy failed: report the failure and the step where it happened.
 
 ## How to group commits
-The unit is one **logical functional change**, named for what it does for a reader — not for which layer it touches.
+The unit is one **logical functional change**.
 
-- A feature ships with its tests in the same commit, and a bugfix with its regression test.
-- Absorb fix-up and trial-and-error commits into the parent they correct.
-- Generated or derived code goes with the source it comes from.
-- If it helps the reader, order commits so that a dependency lands before what builds on it.
-
-A split by technical layer (proto / domain / infra / UI) is a readability escape hatch, not the default. Use it only if one functional commit is too large to review or mixes unrelated concerns.
+- Fold each fix-up or trial-and-error commit into the commit that it corrects.
+- Put a feature and its tests in one commit. Put a bugfix and its regression test in one commit.
+- Put a refactor in its own commit.
+- Put generated or derived code in the commit of its source.
+- Order the commits so that each dependency lands before the code that uses it.
+- If one functional commit is too large to review, split it by technical layer (proto, domain, infra, UI).
 
 ## Steps
 
-### 1. Survey
+### 1. Choose the base
+Use the first case that applies:
+1. If you hold only the Implementer seat, `<base>` is your current task's Tidy base. Reread the task's entry in the plan file for it. If there is no plan file, take it from the brief. Skip steps 7 and 8. If neither names a Tidy base, do not tidy: stop and report.
+2. Otherwise (the Orchestrator, or a session that holds both seats), run `git fetch origin main`. If origin has no main branch, stop and report. `<base>` is the output of `git merge-base origin/main HEAD`.
+
+### 2. Check the preconditions
+- If `git log <base>..HEAD` lists no commits, end the skill.
+- If `git status --porcelain` prints anything, stop and report.
+
+### 3. Survey
+Record `<orig>`, the output of `git rev-parse HEAD`, and put it in your report.
 ```bash
-ORIG=$(git rev-parse HEAD)      # for the identity check in step 4
-git log --oneline $BASE..HEAD   # the unshipped commits
+git log --reverse --oneline <base>..HEAD
 ```
-Read every commit. Identify the fix-ups and the logical units to regroup into.
+Read every commit with `git show <sha>`. Plan the new commits by the rules in "How to group commits".
 
-### 2. Soft-reset to the base
+### 4. Reset to the base
 ```bash
-git reset --soft $BASE
-git reset HEAD
-```
-
-### 3. Recommit
-`git add` each logical unit and commit it in Conventional Commits form. Follow the `commit` skill for the message style. End new messages with your standard `Co-Authored-By` footer. For a commit that stays unchanged, keep its message and authorship with `git commit -C <sha>`.
-
-### 4. Verify
-```bash
-git log --oneline $BASE..HEAD
-git status       # working tree clean
-git diff $ORIG   # empty — same tree, only history changed
+git reset -N <base>
 ```
 
-### 5. Rebase onto latest main (feature branch only, if main advanced)
-```bash
-git rebase main
-```
-Resolve conflicts yourself from both sides' intent. If a build or test command is available, run it to verify the result. Stop and report only if the correct resolution is undeterminable and either choice discards real work.
+### 5. Recommit
+Make the planned commits in order:
+- Write each message in the format of the `commit` skill. Do not run the tests before each commit: the worktree holds the final tree, not the tree of that commit.
+- To split a file between commits, use the piped `git add -p` from the `commit` skill.
+- `git add -p` cannot split a file that the commits added: its whole content is one hunk. To commit a file as it was at an original commit, run `git restore --source=<sha> <path>`, then stage it and commit. Afterward, run `git restore --source=<orig> <path>`. It writes the final version back, and deletes the file if `<orig>` has none.
+- Carry over the `Co-Authored-By` trailers of the commits that each new commit replaces.
+- If a planned commit contains exactly the changes of one original commit, reuse its message and author: `git commit -C <sha>`.
 
-### 6. Push — only what is already published
-The Implementer skips this step: it never pushes.
-- Feature branch with an open PR (`gh pr view --json number,state`): `git push --force-with-lease`.
-- Otherwise — no PR, or on the default branch — stop after the rebuild: the first publish is Ship, and Ship is user-triggered.
+### 6. Verify
+```bash
+git status --porcelain
+git diff <orig>
+```
+If either command prints anything, run `git reset --hard <orig>`, then stop and report. Otherwise, put the output of `git log --oneline <base>..HEAD` in your report.
+
+### 7. Rebase onto origin/main
+```bash
+git rebase origin/main
+```
+If the rebase stops on a conflict, resolve it so that the result keeps the intent of both sides. If no resolution keeps both, run `git rebase --abort`, then stop and report. After the rebase completes, run the repo's checks. If they fail, do not push: leave the rebased branch in place, then stop and report.
+
+### 8. Push
+If `gh pr view --json state --jq .state` prints `OPEN`, run `git push --force-with-lease`. Otherwise, end the skill without a push.
