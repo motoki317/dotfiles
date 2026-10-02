@@ -655,9 +655,10 @@ func usage(w io.Writer) {
   codex-run advise [options] < brief.md                         # cold review; brief required, read from stdin
   cat brief.md <(git diff main) | codex-run advise [options]    # question + diff
   codex-run work -C <repo> [options] < task.md                  # implement a delegated task (-C and task required)
-  codex-run work --resume <id> -C <repo>                        # continue a session that died mid-turn (retry)
+  codex-run work --resume <id>                                  # continue a session that died mid-turn (retry)
   codex-run <mode> --last [options] [< followup.md]             # continue the most recent session for this repo
-  pkill -INT -f 'codex exec .*<repo>'; codex-run work --resume <id> < steer.md   # steer a run in flight
+  pkill -INT -f 'codex exec (resume <id>|.*-C <repo> --sandbox)'  # steer a run in flight: interrupt it,
+  codex-run work --resume <id> < steer.md                       # wait for it to exit, then resume
 
 The mode fixes Codex's role and default sandbox per call:
   advise  independent reviewer/advisor; read-only sandbox
@@ -674,7 +675,7 @@ The mode fixes Codex's role and default sandbox per call:
   -s, --sandbox <mode>  read-only | workspace-write | danger-full-access (default: per mode)
   -m, --model <model>   model override (default: your ~/.codex config)
   -l, --log <path>      log file for Codex's raw JSONL events (default: a temp file).
-                        Pick a path to tail progress while Codex runs.
+                        Pick a path to read when you diagnose a failed run.
   -v, --verbose         also tee Codex's output to stderr
   -x, --context         prepend the current session's transcript as context (runs
                         session-transcript; aborts if extraction fails). Under advise,
@@ -690,7 +691,6 @@ The mode fixes Codex's role and default sandbox per call:
   -h, --help            this help
 
 stdout = final answer only.   stderr = log path + session id + resume hints (at start); token usage (at end).
-The log is Codex's raw --json event stream, written live — tail it to watch progress.
 Each run prints its session id: retry a run that died with --resume/--last, or open it in the
 Codex TUI with "codex resume <id>" — but only after it exits (two writers on one session
 interleave its history). A failed work turn can leave partial edits — inspect git status first.
