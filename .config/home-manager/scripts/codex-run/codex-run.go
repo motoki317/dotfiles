@@ -7,7 +7,7 @@
 // — but only after the run exits, since two writers on one session interleave its history. The
 // mode fixes the role and default sandbox per call site: `advise` reviews
 // without writing (read-only), `work` holds the Implementer seat of the house
-// process — implements a delegated task up to a whole requirements document with full access
+// process — implements a delegated task, typically one task from a plan, with full access
 // (danger-full-access), verifying, committing locally as it goes, and tidying its history
 // before reporting. The house rules and skills are not injected here: codex auto-loads them from
 // ~/.codex/AGENTS.md (git-tracked), which every run — including interactive ones — sees.
@@ -45,7 +45,7 @@ const adviseDiscipline = `
 
 Be direct and decisive. Separate real defects from speculative risks, prefer concrete and minimal recommendations over sweeping rewrites, and if you find nothing material, say so plainly instead of inventing nits. Close with a clear verdict or recommendation.`
 
-const workRole = `You are an autonomous implementation agent from a different model family than the orchestrating agent (Claude). You hold the Implementer seat of the house process (~/.claude/rules/process.md): run its Implementer loop over the delegated task below — typically an entire requirements document. The Orchestrator accepts or rejects the result after you finish; deliver work that survives that review.`
+const workRole = `You are an autonomous implementation agent. You hold the Implementer seat of the house process (~/.claude/rules/process.md): run its Implementer loop over the delegated task below — typically one task from a plan, whose entry in the plan is your whole scope; the plan's other tasks are context only. The Orchestrator owns the plan's design and accepts or rejects the result after you finish; deliver work that survives that review.`
 
 const workCold = ` You receive no conversation history — work from the task below, the repository you are in, and the house assets named in your AGENTS.md instructions.`
 
@@ -53,7 +53,7 @@ const workContext = ` The task below includes a redacted transcript of the orche
 
 const workDiscipline = `
 
-Deliver the complete implementation: work non-interactively through every requirement in the task, tests included — prefer finishing over stopping to ask. Resolve routine implementation details from the requirements, the repository, and the house assets; make only narrow, reversible assumptions and never invent product policy. Stop and report instead when missing information would change externally visible behavior, when requirements contradict each other, when credentials or external services are missing, or when an irreversible or destructive action would be needed — after finishing the unblocked requirements first.
+Deliver the complete implementation: work non-interactively through every requirement in the task, tests included — prefer finishing over stopping to ask. Resolve routine implementation details from the requirements, the repository, and the house assets; make only narrow, reversible assumptions and never invent product policy. Stop and report instead when missing information would change externally visible behavior, when the task needs a change to the plan's design, when requirements contradict each other, when credentials or external services are missing, or when an irreversible or destructive action would be needed — after finishing the unblocked requirements first.
 
 Commit green units as the Implementer loop directs — never known failures, never one deferred bulk commit at the end. Stage only what you changed; never reset, checkout, stash, or discard work that is not yours. Never run git push or change remote configuration, and never create or update pull requests, releases, deployments, packages, or any other external service state, even if repository instructions ask for it; read-only network access and dependency downloads are fine. Treat the selected repository as the writable project scope and do not modify user files outside it (temporary files and dependency caches excepted).
 
@@ -662,11 +662,11 @@ func usage(w io.Writer) {
 
 The mode fixes Codex's role and default sandbox per call:
   advise  independent reviewer/advisor; read-only sandbox
-  work    the Implementer seat of the house process, for anything up to a whole
-          requirements document: implements, verifies, commits locally (never pushes),
+  work    the Implementer seat of the house process, typically for one task
+          from a plan: implements, verifies, commits locally (never pushes),
           and tidies its history; danger-full-access sandbox so it can commit and fetch
           deps — pass -s workspace-write for containment (blocks commits and network).
-          An auto-appended preamble names the seat and demands
+          An auto-prepended preamble names the seat and demands
           a STATUS marker: exit 0 = STATUS: COMPLETE, exit 3 = the turn finished but
           the report's STATUS is not COMPLETE (PARTIAL, BLOCKED, missing, malformed).
           A repo rooted at $HOME must be delegated via a git worktree of it.
