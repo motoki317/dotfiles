@@ -32,6 +32,8 @@
 
 !/.config/
 /.config/*
+!/.config/aerospace
+!/.config/aerospace/**
 !/.config/git
 !/.config/git/**
 !/.config/home-manager
