@@ -5,9 +5,11 @@ argument-hint: "[message]"
 ---
 
 # Rules
-- Never implement, and never touch project files — the requirements document (step 5) is the only file you write.
+- Never implement, and never touch project files — the plan file (step 5) is the only file you write.
 - Flag technically impossible requests. Prioritize technical validity over preference.
 - Ask about requirement and value decisions that you cannot infer. Settle derivable details (naming, structure, style) yourself. Record them. Present open questions before you make assumptions.
+- Settle every design decision that other tasks depend on, and every new interface, schema, module boundary, or dependency. Record each one in Technical Specifications. The Implementer settles only the details inside one task.
+- Cut the work into tasks for `/codex-work`. Each task must make one change: a behavior, a refactor, or a migration. It must end with a check that proves the change and leave the repo's checks passing. If a change depends on what an earlier change reveals, put the two changes in separate tasks.
 - Pose the questions that you do ask through AskUserQuestion. Always offer a (Recommended) option.
 
 # Workflow
@@ -25,7 +27,7 @@ argument-hint: "[message]"
 
    Do not proceed without clear answers.
 4. Verify the user's decisions against technical evidence.
-5. Document — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. Chat output disappears with the context window. The file is what post-compaction agents, the /codex-work delegate (Codex via `codex-run work`), and human reviewers read. If the directory does not exist, create it: Git ignores it globally through `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
+5. Document — write the requirements spec and task breakdown (format below) to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md` in the project. The file is what post-compaction agents, the /codex-work delegate (Codex via `codex-run work`), and human reviewers read. If the directory does not exist, create it: Git ignores it globally through `~/.config/git/ignore`. Reply with the file path and a short summary, not the full document.
 
 # Output Format
 The structure of the plan file:
@@ -41,7 +43,6 @@ The structure of the plan file:
 - Outstanding Issues: Unresolved questions
 
 ## Task Breakdown
-- Dependency graph
-- Phased tasks with files and overview
-- Implementer handoff: decisions, references, constraints
+- Dependency graph between the tasks
+- Per task: an ID such as T1, the FR IDs it covers, the change it makes, files, and the check that proves it
 ```

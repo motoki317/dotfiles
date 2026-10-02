@@ -6,10 +6,9 @@ allowed-tools: [Bash, Read]
 
 # Rebase Clean
 
-Rewrite the unshipped history so a reviewer reads a clean narrative, not your trial-and-error.
-
 ## Target — the unshipped work
-Run `git fetch origin main` first. Then pick the base for your current branch:
+Run `git fetch origin main` first. Then pick the base from the first case that applies:
+- If the Orchestrator named a Tidy base for this run, use it: `BASE=<that commit>`. That commit and the commits before it are already accepted. Skip step 5.
 - Feature branch: `BASE=$(git merge-base main HEAD)`. Never use `main` itself: if `main` advanced, the rebuild reverts its newer commits.
 - Default branch (`main`): `BASE=origin/main` — the unpushed commits are the unit. If `origin/main` has commits that you lack, run `git rebase origin/main` first (resolve conflicts as in step 5). If you skip this rebase, the rebuild from the worktree reverts those commits.
 
@@ -20,7 +19,7 @@ Run `git fetch origin main` first. Then pick the base for your current branch:
 ## How to group commits
 The unit is one **logical functional change**, named for what it does for a reader — not for which layer it touches.
 
-- A feature ships with its tests in the same commit, and a bugfix with its regression test. The reader then sees the behavior and its proof together.
+- A feature ships with its tests in the same commit, and a bugfix with its regression test.
 - Absorb fix-up and trial-and-error commits into the parent they correct.
 - Generated or derived code goes with the source it comes from.
 - If it helps the reader, order commits so that a dependency lands before what builds on it.
@@ -59,5 +58,6 @@ git rebase main
 Resolve conflicts yourself from both sides' intent. If a build or test command is available, run it to verify the result. Stop and report only if the correct resolution is undeterminable and either choice discards real work.
 
 ### 6. Push — only what is already published
-- Feature branch with an open PR (`gh pr view --json number,state`): `git push --force-with-lease` — `~/.claude/rules/process.md` authorizes autonomous force-pushes only as follow-ups to an already-open PR.
+The Implementer skips this step: it never pushes.
+- Feature branch with an open PR (`gh pr view --json number,state`): `git push --force-with-lease`.
 - Otherwise — no PR, or on the default branch — stop after the rebuild: the first publish is Ship, and Ship is user-triggered.
