@@ -68,7 +68,7 @@ For **each** actionable summary body and inline comment:
 Follow the **`commit`** skill to commit the CI and review fixes in logical units.
 
 ### Phase 5 — Clean up history & push
-Run **`/rebase-clean`**: it regroups commits, rebases onto the latest `main`, and pushes with `--force-with-lease`. On this push, an authorized follow-up to an open PR, it runs unattended and self-checks the open PR and the clean worktree. Defer to it: do not re-implement its checks here.
+Run **`/rebase-clean`**: it regroups commits, rebases onto `origin/main`, and pushes with `--force-with-lease`. On this push, an authorized follow-up to an open PR, it runs unattended and self-checks the open PR and the clean worktree. Defer to it: do not re-implement its checks here.
 
 ### Phase 6 — Summary
 

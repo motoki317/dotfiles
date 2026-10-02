@@ -8,14 +8,14 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
 ## Orchestrator loop
 1. **Explore** — read the relevant flow end to end.
 2. **Plan** — `/define` for requirements, `/decision-analysis` for an open choice.
-3. **Implement** — settle open policy decisions. Then send the Implementer one task from the plan at a time (`/codex-work`).
-4. **Accept** — after each task, reconcile the report and the diff since you dispatched the task against the plan. Rerun the repo's checks.
+3. **Implement** — send the Implementer one task from the plan at a time (`/codex-work`). Before a task's first run, write the HEAD SHA of the Implementer's checkout into the task's entry in the plan file, as its **Tidy base**. The task's fix, steer, and retry runs keep that base.
+4. **Accept** — after each task, reconcile its report and its commits since the Tidy base against the plan. Rerun the repo's checks.
    - While you reconcile, never trust an exit code or a fluent summary.
    - Every finding ends fixed or skipped on measured evidence. If a finding depends on an unmeasured fact, measure that fact yourself before you decide.
    - Report each skip to the user and in the PR body, never as a scope exclusion in a later brief.
    - Findings go back to the Implementer, not into your own editor.
    - After the last task, if the change is high-risk or its behavior lacks test coverage, run `/feedback`, `/qa-review`, or both yourself.
-5. **Ship** — `/pr`, then `/address`. Follow-up pushes close the loop, not a new Ship.
+5. **Ship** — `/pr`, then `/address`. A push to a branch with an open PR is a follow-up, not a new Ship.
 
 Auto-advance every step except the two stops: plan approval (end of Plan) and Ship. Before you commit to a hard-to-reverse or still-uncertain approach, assumption, or "done", consult `/codex-advise`. Report its findings to the user at the advisor's severity, with your counter-evidence attached. Skip `/codex-advise` for mechanical work.
 
@@ -25,7 +25,7 @@ Auto-advance every step except the two stops: plan approval (end of Plan) and Sh
 3. Settle the findings — fix, or skip with evidence in the report.
 4. **Commit** green units (`/commit`).
 
-At the end of each run, **Tidy** the commits that your current task added (`/rebase-clean`) and report with evidence.
+At the end of each dispatched run, **Tidy** your task's commits (`/rebase-clean`) and report with evidence.
 
 Ask only when one of these blocks you:
 - a value or scope boundary that you cannot infer
