@@ -137,7 +137,6 @@ with pkgs; [
   ax
   buf
   cachix
-  # claude-code
   (goBin "claude-statusline")
   (goBin "codex-run")
   (goBin "session-transcript")
