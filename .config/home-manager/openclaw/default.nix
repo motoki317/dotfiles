@@ -140,6 +140,8 @@ in
           path = secretsFile;
           mode = "json";
         };
+        # Embeddings for memory_search only; chat stays on the Claude subscription.
+        models.providers.openai.apiKey = secret "/openai/apiKey";
         gateway = {
           mode = "local";
           bind = "loopback";
