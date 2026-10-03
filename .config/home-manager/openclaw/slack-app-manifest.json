@@ -23,6 +23,7 @@
         "groups:history",
         "groups:read",
         "chat:write",
+        "files:read",
         "users:read",
         "usergroups:read",
         "im:history",
