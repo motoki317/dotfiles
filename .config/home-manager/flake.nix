@@ -12,6 +12,14 @@
       url = "github:kawarimidoll/ha";
       flake = false;
     };
+    # Declarative OpenClaw (first-party): package overlay + Home Manager module. WSL host only.
+    # Pinned so a blanket `nix flake update` cannot move the gateway away from the
+    # imperatively installed Slack plugin; upgrade per openclaw/README.md.
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw/f62d33f760bcbdbc6a52ac589eae22bf99201f90";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
   };
 
   outputs =
@@ -23,6 +31,7 @@
         modules = [
           ./hosts/wsl.nix
           ./hosts/common.nix
+          ./openclaw
         ];
         extraSpecialArgs = {
           inherit inputs;
