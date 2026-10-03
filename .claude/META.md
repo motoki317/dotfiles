@@ -78,11 +78,18 @@ Delete this recurring fat on sight:
     - A repo spelling convention wins over American spelling.
   - k16shikano's Japanese writing norms (https://gist.github.com/k16shikano/fd287c3133457c4fd8f5601d34aa817d, formerly `skills/japanese-tech-writing`):
     - Its argument rigor and redundancy devices went language-neutral into the core.
-    - We excerpted and regrouped its 整形 and LLM口調 lists into `references/japanese.md`.
+    - Its 整形 and LLM口調 lists lived in `references/japanese.md` until 2026-10-03. That day the user chose to rebuild japanese.md from yomiyasu alone, which dropped the rules that only k16shikano held: one sentence per line, no 中黒 for lists, 「**用語**：説明」 glossaries, its LLM口調 words that yomiyasu lacks (正面から系, 空虚な形容, 空虚な動詞, 〜において), and the Japanese forms of the argument devices.
     - `references/manuscript.md` stayed unchanged until the 2026-10-01 yomiyasu integration, which removed its Japanese–Latin spaces and two lines that the core now holds.
     - We dropped its permission to soften a grounded claim for tone (「語調を整えるための意図的な緩和は許す」), because it contradicts the core hedge rule (2026-10-01).
-- `skills/tech-writing` integrates nanaism/yomiyasu (MIT, commit 30ee6041c328ce21d38a7963f667e079a93d7a12, 2026-10-01): https://github.com/nanaism/yomiyasu — a Japanese rewrite skill against machine-sounding prose. Its syntax principles and genre guides went language-neutral into the core, with English counterparts from https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing (read 2026-10-01). Japanese surface rules and the vocabulary catalog went to `references/japanese.md`. `scripts/yomiyasu_lint.py` is vendored byte-identical. Dropped: the 20% kanji-ratio target (unsourced, unmeasured) and the suggestion to vary sentence endings with 体言止め (conflicts with `references/manuscript.md`). Not generalized: the em-dash ban (native English punctuation that the house style uses) and the trailing-colon ban (English lead-in colons are native). Local changes:
-  - We removed the tech/business/essay modes and turned their rules into devices.
-  - We pruned the rewrite examples to one anchor per device per language and kept every catalog word.
-  - We replaced three suggested rewrites in the catalog that used words from our own lists (崩れる, 掘り下げる, 不可欠).
-  - We do not use the linter's 0–100 score (Goodhart).
+- `skills/tech-writing` integrates nanaism/yomiyasu (MIT): https://github.com/nanaism/yomiyasu — a Japanese rewrite skill against machine-sounding prose. The first integration pinned commit 30ee6041c328ce21d38a7963f667e079a93d7a12 (2026-10-01). The current pin is commit 8d5abeebe2dd20c2db005deaddcc50be43c59c0a (2026-10-03):
+  - Its principle 1 (「誰が・何を・どうした」が1文で完結する, `references/gemini-syntax.md`) is the core's Complete check. Its 意味の保持, 情報の不増補, and セルフラベリングと否定対比の整理 (`SKILL.md`) are the core's rules for revising another writer's text. The English counterparts of its devices come from https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing (read 2026-10-01).
+  - `references/japanese.md` comes from its `SKILL.md`, `references/gemini-syntax.md`, `references/slop-catalog.md`, `references/domains/`, and the linter's word list alone. Each section cites its source headings. yomiyasu targets revision, so japanese.md marks its revision-only rules with 「書き直すときは」.
+  - `scripts/yomiyasu_lint.py` and `scripts/yomiyasu_diff.py` are vendored byte-identical.
+  - Dropped: the tech/business/essay modes (their unique rules went into the shared sections), the 20% kanji-ratio target (unsourced, unmeasured), the 15% list cap and the bold-per-1,000-characters cap (the core's list and bold rules govern), the output format, the academic citations, and the linter's 0–100 score (Goodhart).
+  - Not generalized: the em-dash ban (native English punctuation that the house style uses) and the trailing-colon ban (English lead-in colons are native).
+  - Local changes:
+    - We merged the rules that its files repeat and shortened the examples, so that SKILL.md plus japanese.md stay within 24,316 bytes, their size before the rebuild. openclaw loads both once per session.
+    - We replaced suggested rewrites that our own rules flag: 掘り下げる for 踏み込む, and 不可欠な and 根幹となる for load-bearing.
+    - The core's grounded-claim rule asserts a hedge that evidence grounds. A revision keeps the source's strength instead (意味の保持).
+    - We replaced its connective example 「設定を変更した後は」, which drops the fact that someone changed the setting, with 「そのため」.
+    - We stated two conventions that its own text follows but leaves unstated: enumeration 読点 do not count toward the limit of two, and code spans are exempt from the Japanese–Latin spacing rule.
