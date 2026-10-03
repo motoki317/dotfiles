@@ -24,6 +24,8 @@
         "groups:read",
         "chat:write",
         "files:read",
+        "reactions:read",
+        "reactions:write",
         "users:read",
         "usergroups:read",
         "im:history",
@@ -39,7 +41,9 @@
         "app_mention",
         "message.channels",
         "message.groups",
-        "message.im"
+        "message.im",
+        "reaction_added",
+        "reaction_removed"
       ]
     }
   }
