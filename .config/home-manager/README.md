@@ -3,6 +3,7 @@
 Standalone [home-manager](https://github.com/nix-community/home-manager) flake for toki's machines — deliberately **not** integrated into nix-darwin.
 
 - Hosts: `toki` (macOS, `hosts/macos.nix` + `hosts/common.nix`) and `moto` (WSL, `hosts/wsl.nix`).
+- OpenClaw Slack agents (`moto` only): `openclaw/`, runbook in `openclaw/README.md`.
 - Apply: `home-manager switch --flake ~/.config/home-manager#toki`.
 - nix-darwin lives separately at `/etc/nix-darwin` (config attr `darwinConfigurations."toki"`; Nix via the open-source DetSys installer): it owns `/etc/zsh*`, Nix itself, and the Linux builder, and does not reference home-manager.
 
