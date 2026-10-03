@@ -87,8 +87,6 @@ let
         enabled = true;
         requireMention = false;
         ignoreOtherMentions = false;
-        # ClickUp runs on toki's login; keep it out of channels other members drive.
-        tools.deny = [ "clickup__*" ];
         replyToMode = "all";
         inherit users;
         systemPrompt = builtins.readFile ./slack-channel-prompt.md;
@@ -145,19 +143,11 @@ in
         # Embeddings for memory_search only; chat stays on the Claude subscription.
         models.providers.openai.apiKey = secret "/openai/apiKey";
         # One shared ClickUp login (toki's): `openclaw mcp login clickup`.
+        # Every allowed Slack member reads and writes ClickUp as toki, by toki's choice.
         mcp.servers.clickup = {
           url = "https://mcp.clickup.com/mcp";
           transport = "streamable-http";
           auth = "oauth";
-          # Read-only: everyone who can reach these tools acts as toki in ClickUp.
-          toolFilter.include = [
-            "clickup_get_*"
-            "clickup_filter_*"
-            "clickup_find_*"
-            "clickup_search*"
-            "clickup_list_*"
-            "clickup_download_*"
-          ];
         };
         gateway = {
           mode = "local";
