@@ -20,7 +20,7 @@ Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (
 | should (recommendation) | State it as fact with the reason, or write "recommended: X, because Y", or delete. |
 | may / might / could (present capability, permission) | can |
 | could (past capability: "could not connect") | Keep it. It is the simple past of "can". |
-| may / might / could (epistemic uncertainty) | Keep the uncertainty — SKILL.md "Requirement vs uncertainty". |
+| may / might / could (epistemic uncertainty) | Keep the uncertainty — SKILL.md "Complete". |
 | would (conditional) | Restructure: "If X occurs, Y occurs." |
 | would (counterfactual — contrary to fact) | Keep it. It carries epistemic content. |
 
@@ -86,10 +86,10 @@ Search the draft. A hit outside code blocks and quoted text is a candidate. Clas
 | `, making` `, allowing` `, enabling` `, ensuring` | "-ing" clause → new sentence |
 | `;` | semicolon → two sentences |
 | ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move to the front, add a comma |
-| `not just` `not only` `isn't just` | negative parallelism → SKILL.md "Redundancy" |
+| `not just` `not only` `isn't just` | negative parallelism → SKILL.md "Necessary" |
 | `serves as` `stands as` `boasts` | copula avoidance → "is", "has" |
 | `- **` at the start of a line | inline-header list whose items carry an argument → a paragraph |
-| `**` | bold other than a defined term, more than two spans in a section → SKILL.md "Format" |
+| `**` | bold other than a defined term, more than two spans in a section → SKILL.md "Length and format" |
 | emoji | delete |
 
 Then count words in the three longest sentences against the caps. Search for the rotation synonyms that you did not pick.
