@@ -197,6 +197,13 @@ in
         };
         messages = {
           ackReactionScope = "off";
+          # A Slack follow-up aborts the running turn and starts on the new message: the
+          # default `steer` cannot reach a claude-cli turn and waits for it to end
+          # (openclaw/openclaw#124731). Once a release ships the fix
+          # (openclaw/openclaw#159816), upgrade and delete this line to steer instead.
+          # Room events never interrupt, so slack-channel-prompt.md has the agent post
+          # in the thread first.
+          queue.byChannel.slack = "interrupt";
           groupChat = {
             unmentionedInbound = "room_event";
             visibleReplies = "message_tool";
