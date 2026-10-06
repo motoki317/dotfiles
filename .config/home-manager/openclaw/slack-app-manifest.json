@@ -24,6 +24,7 @@
         "groups:read",
         "chat:write",
         "files:read",
+        "emoji:read",
         "reactions:read",
         "reactions:write",
         "users:read",
