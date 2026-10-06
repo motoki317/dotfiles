@@ -8,16 +8,16 @@ Tested with nix-openclaw `f62d33f` (OpenClaw 2026.9.5). Agents run your native, 
 
 | Path | Owner | Contents |
 |---|---|---|
-| `~/.config/home-manager/openclaw/` | git | Nix module, agent list, workspace instruction files, Slack manifest, this runbook |
+| `~/.config/home-manager/openclaw/` | git | Nix module, agent list, Slack manifest, this runbook |
 | `~/.openclaw/openclaw.json` | Nix | Read-only symlink into the Nix store |
 | `~/.openclaw/` (everything else) | OpenClaw | Sessions, SQLite state, the Slack plugin, `logs/` |
 | `~/.claude/projects/-home-moto-projects-openclaw-<agent>/` | Claude Code | The agent's Claude conversations: prompts, tool calls, replies, token usage |
 | `~/projects/openclaw/<agent>/` | agent | Working directory: `MEMORY.md`, `memory/`, scratch files |
 | `~/.secrets/openclaw/secrets.json` | you, not in git | Gateway and Slack tokens. Mode 600, a regular file with a single hard link: OpenClaw rejects symlinks, so sops-nix or agenix cannot provide it. |
 | `~/.secrets/openclaw/agents.nix` | you, not in git | Each agent's Slack channel and member IDs, merged into `openclaw/agents.nix` at evaluation. Reading files in `~/.secrets/openclaw` is why every switch needs `--impure`. |
-| `~/.secrets/openclaw/workspace/USER.md`, `~/.secrets/openclaw/agents/<agent>/IDENTITY.md` | you, not in git | Who you are, and each agent's name and character |
+| `~/.secrets/openclaw/workspace/`, `~/.secrets/openclaw/agents/<agent>/` | you, not in git | Workspace instruction files: operating rules, tone, tool notes, who you are, and each agent's name and character |
 
-Every switch copies `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md` into each workspace. Each comes from the first of these that has it: `~/.secrets/openclaw/agents/<id>/`, `~/.secrets/openclaw/workspace/`, `openclaw/workspace/`. Edit them there; edits in the workspace are overwritten.
+Every switch copies `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md` into each workspace. Each comes from the first of these that has it: `~/.secrets/openclaw/agents/<id>/`, `~/.secrets/openclaw/workspace/`. Edit them there; edits in the workspace are overwritten.
 
 ## Before you start
 
@@ -36,6 +36,9 @@ WSL already runs systemd (`/etc/wsl.conf` has `systemd=true`).
    ```bash
    install -d -m700 ~/.secrets/openclaw/workspace ~/.secrets/openclaw/agents/main
    ```
+   - `workspace/AGENTS.md`: operating rules for every agent.
+   - `workspace/SOUL.md`: tone and writing style.
+   - `workspace/TOOLS.md`: notes on the host and tools.
    - `workspace/USER.md`: who you are, for example your name, timezone, and languages.
    - `agents/main/IDENTITY.md`: the agent's name and character.
    - `agents.nix`: each agent's Slack IDs.
