@@ -32,7 +32,7 @@ let
   };
 
   # OpenClaw refuses workspace files that symlink outside the workspace, so
-  # each is copied from the first that exists. Private files are read at
+  # each is copied from the first that exists. The files are read at
   # activation and never enter the Nix store.
   workspaceFileNames = [
     "AGENTS.md"
@@ -48,7 +48,6 @@ let
       [
         "${privateDir}/agents/${id}/${name}"
         "${privateDir}/workspace/${name}"
-        (./workspace + "/${name}")
       ];
 
   gateway = config.programs.openclaw.instances.default.package;
