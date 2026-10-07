@@ -1,97 +1,81 @@
 # English surface rules
 
-Adapted from ASD-STE100 Simplified Technical English via AminBlg/SimpleEnglish (MIT, see `../LICENSE-SimpleEnglish`). Unofficial. Structural rules only — this file does not reproduce the official dictionary.
-
 ## Grammar
 
-- Simple tenses only: simple present, simple past, simple future. No perfect ("has been installed" → "was installed"), no progressive.
-- Active voice. Use the passive only in descriptive text where the agent is unknown.
-- Use a past participle only as an adjective ("the cached response") or in a passive that the rule above allows.
-- Use an "-ing" form only inside a technical noun ("logging"). Never as a verb: ", making restarts unnecessary" → a new sentence with a real subject.
-- No contractions.
-- No semicolons — write two sentences. No "e.g." / "i.e." / "etc." — write "for example", "that is", or name the items.
-- American spelling. An established repo convention wins.
+- Use simple tenses only: simple present, simple past, simple future. "has failed" → "failed". Exception: a counterfactual keeps "would have": "Without the cap, the job would have run forever."
+- Use the active voice. Use the passive only in descriptive text where the agent is unknown.
+- Do not use a participle clause: ", making restarts unnecessary" → a new sentence with a real subject. A participle or gerund that acts as an adjective or a noun is correct: "cached response", "existing users", "logging".
+- No contractions. No semicolons: write two sentences.
+- Write "for example", "that is", or the items in place of "e.g.", "i.e.", and "etc."
 
 ## Modals
 
 | You wrote | Write |
 |---|---|
 | should (requirement) | must |
-| should (recommendation) | State it as fact with the reason, or write "recommended: X, because Y", or delete. |
+| should (recommendation) | SKILL.md "Complete": recommendation |
 | may / might / could (present capability, permission) | can |
-| could (past capability: "could not connect") | Keep it. It is the simple past of "can". |
-| may / might / could (epistemic uncertainty) | Keep the uncertainty — SKILL.md "Complete". |
+| could (past capability: "could not connect") | Keep it. |
+| may / might / could (epistemic uncertainty) | Keep it. |
 | would (conditional) | Restructure: "If X occurs, Y occurs." |
-| would (counterfactual — contrary to fact) | Keep it. It carries epistemic content. |
+| would (counterfactual) | Keep it. |
 
 ## Word caps
 
-- Procedural sentence: 20 words. Descriptive sentence, and a note inside a procedure: 25. Paragraph: 6 sentences.
+- Procedural sentence: 20 words. Descriptive sentence, and a note inside a procedure: 25.
 - Count as one word each: `code spans`, numbers with units, identifiers, quoted text, proper names.
 - Break noun chains over three words with prepositions: "the connection pool timeout configuration value" → "the timeout value for the connection pool".
 
 ## Filler table
 
-A row's replacement applies only when the word carries a fact. When it does not, delete the word.
+Keep a word in a sense that its row does not cover: "the job just finished".
 
 | You wrote | Write |
 |---|---|
 | leverage, utilize | use |
 | in order to / prior to / due to the fact that / in the event that / when it comes to | to / before / because / if / for |
-| ensure | make sure that |
-| it is worth noting that / it is important to / crucially | (delete — state the fact) |
+| ensure | make sure that (a person), or say what the thing does |
+| it is worth noting that / it is important to / crucially | (delete) |
 | simply, just, easily, seamlessly, effortlessly | (delete) |
-| robust, powerful, comprehensive, performant, blazingly fast, crucial, pivotal, vital, key (adjective), vibrant | (delete, or give the measurable property) |
+| robust, powerful, comprehensive, performant, crucial, pivotal, vital, key (adjective) | (delete, or give the measurable property) |
 | serves as, stands as, functions as, represents (meaning "is") | is |
-| boasts, features, offers (meaning "has") | has |
+| features, offers (meaning "has") | has |
 | underscore, highlight, showcase (meaning "show") | show, or state the fact |
-| foster, garner, bolster, enhance, align with | (name the effect: "retries failed uploads three times") |
-| a testament to, tapestry, landscape (abstract), pivotal moment, indelible mark, deeply rooted | (delete — state the plain fact) |
-| deep dive, valuable insights, interplay, intricate, meticulous | (say what was examined or found) |
-| in today's fast-paced world, in an ever-evolving landscape | (delete) |
+| foster, garner, bolster, enhance, align with | (name the effect) |
+| deep dive, dive into, delve into, valuable insights, interplay, intricate, meticulous | (say what you examined or found) |
 | I hope this helps, let me know if, happy coding | (delete) |
-| Additionally, Furthermore, Moreover (sentence-initial) | (delete, unless it marks a real turn) |
+| Additionally, Furthermore, Moreover (sentence-initial) | (delete) |
 | enables you to, allows you to | you can |
-| is designed to, aims to | (say what it does) |
+| is designed to, aims to, gracefully handles | (say what it does) |
 | facilitate / streamline | help / make simpler |
-| delve into, dive into | read, examine |
-| as needed, as necessary | (state the condition) |
 | and/or | "X, or Y, or both" |
-| gracefully handles | (say what it does: "retries three times, then stops") |
-| out of the box / under the hood | by default / internally |
-| plethora, myriad | many |
-| functionality | function, feature |
 
-## Rotations to collapse
+## One term per set
 
-One term per concept (pick one):
-
-- check / verify / confirm / validate / make sure that — not "ensure" (filler table)
+- check / verify / confirm / validate
 - config / configuration / settings / options
-- delete / remove / drop / destroy — one per meaning
-- error / issue / problem / failure — one per meaning (a message reports an error, an operation fails)
+- delete / remove / drop / destroy, one per meaning
+- error / issue / problem / failure, one per meaning: a message reports an error, and an operation fails
 - run / execute / invoke / launch
 - show / display / render / present
 
-## Self-check (searchable)
+## Self-check
 
-Search the draft. A hit outside code blocks and quoted text is a candidate. Classify it against the rules above before you rewrite it.
+Search the draft outside code blocks and quoted text.
 
 | Search | Violation → fix |
 |---|---|
-| `'ll` `'re` `'ve` `n't` `it's` | contraction → expand |
+| `'ll` `'re` `'ve` `'d` `n't` `it's` `that's` `there's` `let's` | contraction → expand |
 | `has been` `have been` `had been`, has/have + participle | perfect tense → simple past or present |
-| `should` `would` `may` `might` `could` | modal → the Modals table above |
+| `should` `would` `may` `might` `could` | modal → "Modals" |
 | `is being` `are being` | progressive passive → active, simple tense |
-| `, making` `, allowing` `, enabling` `, ensuring` | "-ing" clause → new sentence |
+| `, making` `, allowing` `, enabling` `, ensuring` | participle clause → new sentence |
 | `;` | semicolon → two sentences |
-| ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move to the front, add a comma |
-| `not just` `not only` `isn't just` | negative parallelism → SKILL.md "Necessary" |
-| `serves as` `stands as` `boasts` | copula avoidance → "is", "has" |
-| `- **` at the start of a line | inline-header list whose items carry an argument → a paragraph |
-| `**` | bold other than a defined term, more than two spans in a section → SKILL.md "Length and format" |
-| emoji | delete |
+| `e.g.` `i.e.` `etc.` | abbreviation → "Grammar" |
+| ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move it to the front |
+| `not just` `not only` | uninvited negation → SKILL.md "Necessary" |
+| each word in "Filler table" | filler → "Filler table" |
+| `- **` at the start of a line | bold-label list of reasoning → paragraphs (SKILL.md "Length and format") |
+| `**` | bold beyond SKILL.md "Length and format" |
 
-Then count words in the three longest sentences against the caps. Search for the rotation synonyms that you did not pick.
-
-`$HOME/.claude/skills/tech-writing/scripts/ste_lint.py` automates these counts for before/after measurement only. It reports aggregate totals without spans and exits 0 regardless — it is not the check-mode pass.
+Then count the words of the three longest procedural sentences and the three longest descriptive sentences against "Word caps". Search for the words of each "One term per set" set that you did not pick.
