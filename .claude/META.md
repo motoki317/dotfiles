@@ -75,21 +75,33 @@ Delete this recurring fat on sight:
     - We dropped strict mode and the dictionary apparatus.
     - We scoped the modal ladder so that epistemic uncertainty and counterfactuals survive (the global ban would erase them).
     - We scoped condition-first to procedural text.
-    - A repo spelling convention wins over American spelling.
+    - A participle or gerund that acts as an adjective or a noun is correct, and a counterfactual keeps "would have".
+    - We dropped the spelling rule and the paragraph cap (2026-10-07).
   - k16shikano's Japanese writing norms (https://gist.github.com/k16shikano/fd287c3133457c4fd8f5601d34aa817d, formerly `skills/japanese-tech-writing`):
     - Its argument rigor and redundancy devices went language-neutral into the core.
     - Its 整形 and LLM口調 lists lived in `references/japanese.md` until 2026-10-03. That day the user chose to rebuild japanese.md from yomiyasu alone, which dropped the rules that only k16shikano held: one sentence per line, no 中黒 for lists, 「**用語**：説明」 glossaries, its LLM口調 words that yomiyasu lacks (正面から系, 空虚な形容, 空虚な動詞, 〜において), and the Japanese forms of the argument devices.
     - `references/manuscript.md` stayed unchanged until the 2026-10-01 yomiyasu integration, which removed its Japanese–Latin spaces and two lines that the core now holds.
     - We dropped its permission to soften a grounded claim for tone (「語調を整えるための意図的な緩和は許す」), because it contradicts the core hedge rule (2026-10-01).
-- `skills/tech-writing` integrates nanaism/yomiyasu (MIT): https://github.com/nanaism/yomiyasu — a Japanese rewrite skill against machine-sounding prose. The first integration pinned commit 30ee6041c328ce21d38a7963f667e079a93d7a12 (2026-10-01). The current pin is commit 8d5abeebe2dd20c2db005deaddcc50be43c59c0a (2026-10-03):
+    - On 2026-10-07 we cut manuscript.md to the rules that change a draft. We merged its unused-detail rules into one line, dropped its rules that the core holds, and dropped the person-name exception for historical figures.
+- `skills/tech-writing` integrates nanaism/yomiyasu (MIT, and `LICENSE-yomiyasu-Unicode` for the Unicode-derived data in its linter): https://github.com/nanaism/yomiyasu — a Japanese rewrite skill against machine-sounding prose. Its author explains the design in https://zenn.dev/algoartis/articles/0b1c731881b25c (read 2026-10-07). The first integration pinned commit 30ee6041c328ce21d38a7963f667e079a93d7a12 (2026-10-01). The current pin is commit 8f77b7aa8f19c3f718b511e71a3eee5d06eb3013 (v1.0.8, 2026-10-07):
   - Its principle 1 (「誰が・何を・どうした」が1文で完結する, `references/gemini-syntax.md`) is the core's Complete check. Its 意味の保持, 情報の不増補, and セルフラベリングと否定対比の整理 (`SKILL.md`) are the core's rules for revising another writer's text. The English counterparts of its devices come from https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing (read 2026-10-01).
-  - `references/japanese.md` comes from its `SKILL.md`, `references/gemini-syntax.md`, `references/slop-catalog.md`, `references/domains/`, and the linter's word list alone. Each section cites its source headings. yomiyasu targets revision, so japanese.md marks its revision-only rules with 「書き直すときは」.
-  - `scripts/yomiyasu_lint.py` and `scripts/yomiyasu_diff.py` are vendored byte-identical.
-  - Dropped: the tech/business/essay modes (their unique rules went into the shared sections), the 20% kanji-ratio target (unsourced, unmeasured), the 15% list cap and the bold-per-1,000-characters cap (the core's list and bold rules govern), the output format, the academic citations, and the linter's 0–100 score (Goodhart).
+  - `references/japanese.md` comes from its `SKILL.md` (本体), `references/gemini-syntax.md` (構文), `references/slop-catalog.md` (語彙), `references/domains/`, and the linter's word list alone. yomiyasu targets revision, so japanese.md marks its revision-only rules with 「書き直すときは」. Section sources, by the headings of commit 8d5abeeb:
+    - 文書の立場と文末: 本体「文書の立場と文末」, 構文 原則2, domains/tech §3.
+    - 誰が何をどうしたか: 本体「主語と目的語の明確化」「擬人化の解消」, 構文 原則1, 3, 13. v1.0.8 added コピー調.
+    - 比喩動詞と英語直訳調: 本体「比喩動詞の具体化」, 構文 原則4, 語彙 §1–2.
+    - 置き換える語: 語彙 §3–5, domains/essay §1–2, the linter's SLOP_WORDS. v1.0.8 added the role-inflating nouns.
+    - 削る前置きと結び: 本体「セルフラベリングと否定対比の整理」, 構文 原則5–6, 語彙 §6.
+    - 文の長さと読点: 本体「文長と読点の調整」, 構文 原則7–8.
+    - 記号と空白: 本体「装飾記号と不要な空白の排除」, 構文 原則9, 11–12, 14.
+    - 点検: 本体「2. 実行手順」Step 3–4.
+  - The core's tense rule for a finished change, current behavior, and a plan comes from v1.0.8 (本体「文の働き」).
+  - `scripts/yomiyasu_lint.py`, `scripts/yomiyasu_diff.py`, and `scripts/markdown_visibility.py` (the linter imports it) are vendored byte-identical. The 8d5abeeb linter got 26 of upstream's 34 counted bold-rendering fixtures wrong. The 8f77b7aa linter gets all 34 right.
+  - Dropped: the tech/business/essay modes (their unique rules went into the shared sections), the 20% kanji-ratio target (unsourced, unmeasured), the 15% list cap and the bold-per-1,000-characters cap (the core's list and bold rules govern), the output format, the academic citations, and the linter's 0–100 score (Goodhart). On 2026-10-07 we also dropped the 勧め default for an undecidable stance, the replacement words for the flagged nouns, the 30–45-character average sentence length (no script measures it), and the essay words 結末 and 結晶.
+  - Not adopted from v1.0.8: keep the source's Japanese–Latin spacing. We keep the no-space rule.
   - Not generalized: the em-dash ban (native English punctuation that the house style uses) and the trailing-colon ban (English lead-in colons are native).
   - Local changes:
     - We merged the rules that its files repeat and shortened the examples, so that SKILL.md plus japanese.md stay within 24,316 bytes, their size before the rebuild. openclaw loads both once per session.
-    - We replaced suggested rewrites that our own rules flag: 掘り下げる for 踏み込む, and 不可欠な and 根幹となる for load-bearing.
+    - We replaced suggested rewrites that our own rules flag, for example 掘り下げる for 踏み込む.
+    - The idiom exemption covers only idioms with a body part (「骨が折れる」). A dictionary lists the figurative senses of 踏み込む and 深掘り, so a dictionary test keeps what the table rewrites.
     - The core's grounded-claim rule asserts a hedge that evidence grounds. A revision keeps the source's strength instead (意味の保持).
-    - We replaced its connective example 「設定を変更した後は」, which drops the fact that someone changed the setting, with 「そのため」.
-    - We stated two conventions that its own text follows but leaves unstated: enumeration 読点 do not count toward the limit of two, and code spans are exempt from the Japanese–Latin spacing rule.
+    - Enumeration 読点 do not count toward the limit of two. The Japanese–Latin spacing rule also covers code spans.

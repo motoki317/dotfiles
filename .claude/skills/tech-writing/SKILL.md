@@ -5,91 +5,74 @@ description: Writing norms for human-facing prose in any language — sentence m
 
 # Technical writing
 
-Your reader has none of your context and cannot ask you a question. Every sentence must pass two checks:
+Every sentence must pass two checks:
 
-1. **Complete**: on one read, a reader can tell who does what, under which condition, and how sure the writer is.
-2. **Necessary**: the sentence adds information that the reader does not have yet.
+1. **Complete**: on one read, a reader can tell who does what and when, under which condition, and how sure the writer is.
+2. **Necessary**: deleting the sentence, or any word in it, costs the reader information.
 
-When the checks conflict, cut whole points, and keep the grammar, actor, and condition of the points that remain. If no rule below covers a case, apply the two checks directly.
-
-Before you write, read the reference for the text's language. For another language, apply this file alone.
+Read the reference for the text's language before you write. Where a reference differs from this file, the reference wins. For another language, apply this file alone.
 
 - English: `$HOME/.claude/skills/tech-writing/references/english.md`
 - Japanese: `$HOME/.claude/skills/tech-writing/references/japanese.md`
-- Japanese book chapters and long articles: also `$HOME/.claude/skills/tech-writing/references/manuscript.md`, which relaxes some bans of this file for such text. `$HOME/.claude/skills/cognitive-rhythm-writing/SKILL.md` sets where a short sentence can be a deliberate beat.
+- Japanese book chapters and published articles (a blog, Zenn): also `$HOME/.claude/skills/tech-writing/references/manuscript.md`. It wins over japanese.md.
+
+The mechanical pass is english.md "Self-check" or japanese.md「点検」. Run it before you deliver a doc, a report file, a code comment, or a PR or issue body. A report sent as a chat message is exempt. Before the pass, write a draft that has no file to a scratch file. Each match is a hit. If the sentence of a hit breaks a rule, fix the sentence. Otherwise, leave it.
 
 ## Complete
 
-- Classify each passage (a section or a paragraph), and do not mix the two kinds in one passage. Procedural text tells the reader what to do: imperative mood, one instruction per sentence, and the exact command, code, or setting. Descriptive text explains what a thing is or does, with no imperative. In Japanese, the document's stance sets the endings of both kinds: japanese.md「文書の立場と文末」.
-- If a sentence carries two instructions or two separate points, split it.
-- Put the condition before the command: "If the build fails, read the log." Write the condition and its result in place of "as needed": "If the server returns 404, retry up to three times."
-- Name the actor, and describe the action with a literal verb.
-  - For a decision, name who decided: "It was decided" → "The team decided".
-  - Use a verb, not a nominalization: "compress", not "perform compression".
-  - Give a verb of intent or feeling only to a person. "The server rejects the request" and "The results show" stay.
-  - Replace a figurative verb with the operation or state change that a reader can observe: "The cache fosters faster page loads" → "The cache makes pages load faster".
-- Make every reference resolvable. A pronoun, a demonstrative, or a connective must point to something that the reader can identify. Replace "the other one" with its noun, and make "however" match the actual relation. Use one name per concept, and do not rotate synonyms (check/verify/confirm). Define a term before its first use. Keep its definition, and any categories that you sort things into, fixed across the document.
-- State each claim at the strength of its evidence.
-  - A requirement is "must". A capability is "can". Do not write "should" in instructions. State a recommendation as fact with its reason ("X avoids Y"), or mark it "recommended" if the choice stays with the reader.
-  - Keep a hedge that carries epistemic content: an unverified fact, an inference from logs, a reader's likely doubt, a counterfactual, or the writer's impression in a personal account. If evidence in the text grounds a claim, assert it without a timid predicate such as "one option is".
-  - Do not promise detection, guarantee, or resolution absolutely. State the condition under which it holds. Narrow every claim to what its example supports.
-- Keep the parts of an argument distinct.
-  - Do not lump distinct decisions, causes, or problems under one label. Name each one, then state how they relate. Before you group concepts under one umbrella term, state in one sentence why they reduce to the same thing.
-  - Map each cause of a multi-cause event to the part that it explains.
-  - When you claim causality, give the mechanism in one sentence: not "splitting by step makes changes ripple", but "each step shares the hand-off format, so a format change affects every step".
-  - Resolve each deferred point ("covered in the next section") in its target section. After a concession ("however"), return to the main claim. Do not end on the concession.
-- Warnings: the command or condition first, then the risk. Error messages: what happened (past tense), the cause if known, then the fix as an imperative.
+- Write procedural text (what the reader does) in the imperative, one instruction per sentence. Give the exact command, code, or setting.
+- Write descriptive text (what a thing is or does) without the imperative.
+- Put the condition before the command. In a warning, put the condition before the risk. Replace "as needed" with the condition and its result: "If the server returns 404, retry up to three times."
+- Name the actor: "It was decided" → "The team decided". Write the action as a verb: "perform compression" → "compress".
+- Replace a figurative verb with the operation or state change that a reader can observe: "The cache fosters faster page loads" → "The cache makes pages load faster". A verb of intent or feeling given to a thing is figurative: "The function wants a string" → "The function takes a string". "The server rejects the request" and "The results show" are correct.
+- Mark a finished change, current behavior, and a plan by tense: "removed", "retries", "will remove". In a change report, give the old and the new state: "Retries stop after three attempts (previously unlimited)", not "Updated the retry policy."
+- Make every pronoun, demonstrative, and connective point to something that the reader can identify. "However" must match the actual relation.
+- Define a term before its first use. Use one name per concept: do not rotate check/verify/confirm.
+- State each claim at the strength of its evidence:
+  - Assert a claim that you verified or that evidence in the text grounds.
+  - Keep a hedge only on an unverified fact, an inference, a counterfactual, or a personal impression.
+  - Write a recommendation as the fact that supports it: "X avoids Y", not "You should use X". When you offer options for the reader to choose from, recommend one with its reason: "I recommend X because Y."
+  - State the condition under which a guarantee holds.
+- Name each decision, cause, or problem separately: "A combination of problems caused the outage" → name each problem. Map each cause to the part of the event that it explains.
+- For a causal claim, give the mechanism in one sentence: "each step shares the hand-off format, so a format change affects every step".
 
 ## Necessary
 
-A sentence fails this check when its deletion costs the reader no information. Delete such a sentence or word. Do not swap it for a synonym.
+Delete each sentence or word that fails this check. Do not swap it for a synonym.
 
-- Delete words that add stance but no information: announcements and self-labels, wrap-ups that only restate, unearned endings (a payoff, lesson, or call to action that the text does not support), generic openers, empty intensifiers, grandiose abstractions, words that only sound concrete or insightful, undefined coinages, empty verbs, and connectives that mark no real turn. The language references list examples. If an intensifier stands for a measurable property, write the property: "robust" → "retries three times, then stops".
-- State one claim once. Do not restate it in other words or in parentheses: "raw output (the unmodified output)". A parenthesis that identifies a referent stays.
-- Do not summarize what you just showed (an example, a log, a scene). Add only the one sentence that gives it meaning.
-- Merge parallel facts that share one logical role into one sentence: together they make one point. Skip the steps that a reader can infer from the text.
-- Do not stage a dialogue with an imagined reader, frame the text meta-textually ("a natural continuation of this is…"), add author's disclaimers, or add a punchline sentence for emphasis ("Order is everything."). A question that readers actually ask can stay a question.
-- Negate only a misreading that the reader is likely to make, and give the reason in one sentence. "It is not just a cache, it is a contract" → "It is a contract".
-- When you shorten a text, keep the grammar and the context that a reader needs. Keep articles and "that" in English, and particles in Japanese: "Ensure file exists before running" → "Make sure that the file exists before you run the command." Keep scope, comparison axis, and open questions.
+- To shorten a text, cut whole points. Keep the grammar words of the points that remain: "Check config before deploy" → "Check the config before you deploy."
+- Delete a label that announces a point ("Key takeaway:") and an opener about the subject area ("In today's fast-paced world"). Also delete a lesson or call to action that no fact in the text supports.
+- If an intensifier stands for a measurable property, write the property: "robust" → "retries three times, then stops". Otherwise, delete the intensifier.
+- State one claim once. Do not retell an example or a log after you show it. Do not restate a claim in parentheses: "raw output (the unmodified output)". A parenthesis that identifies a referent stays.
+- Do not stage a dialogue with an imagined reader: "You may wonder why. The reason is simple." Do not end on a punchline: "Order is everything."
+- If the text before it invites a wrong reading, negate that reading. Then say why the reading is wrong. Otherwise, state the positive claim alone: "This is not just a refactor, it is a bug fix" → "This is a bug fix".
 
 ## Length and format
 
-- Keep each sentence within the length rule of its language: english.md "Word caps", japanese.md「文の長さと読点」. To meet it, split at a clause boundary where a connective at the start of the second sentence keeps the relation (reason, means, order, contrast). Do not split a purpose clause from the conclusion that it governs.
-- Write reasoning as paragraphs, one topic per paragraph. Use a list only for parallel items: parameters, options, steps, a mapping. If the items of a "**Label**: text" list carry an argument, write a paragraph.
-- Bold a term where you define it. Bold at most one or two other spans per section, each at a logical pivot: a negation that prevents a misreading, or the section's conclusion. Do not bold a list label that is not a defined term.
-- Do not use emoji. Use the punctuation and spacing of the text's language: japanese.md「記号と空白」.
+- Split a sentence that exceeds the length limit of its language reference. Split it at a clause boundary where a connective can start the second sentence: reason, means, order, or contrast. Do not split a purpose clause from the conclusion that it governs.
+- Write reasoning as paragraphs, one topic each. Use a list only for parallel items: parameters, options, steps, or a mapping.
+- Use bold only for a term where you define it and for at most two other spans under each heading. Without headings, the whole text counts as one heading's span.
 
 ## Revising another writer's text
 
-Leave exact: code, identifiers, commands, flags, file paths, quoted errors and logs, product and proper names, and boilerplate that you must reproduce. Exception: a quoted message is editable when that text itself is the artifact that you were asked to revise.
+This section and the revision rules of a reference win over every other rule. Your own earlier draft is not another writer's text.
 
-Keep four properties of each sentence. The rules in this section win over "Complete" and "Necessary".
+Leave exact: code, identifiers, commands, paths, quoted errors and logs, and names. Exception: a quoted message that is itself the text to revise.
+
+Keep four properties of each sentence that you keep:
 
 1. Claim: the point and its logical relations.
-2. Weight: what the sentence puts first, and what it negates or plays down. Do not turn a negated item into an addition ("A as well as B"), and do not rank items that the source does not rank.
-3. Strength: an assertion stays an assertion, and a hedge stays a hedge, even where evidence grounds the claim.
-4. Function: evaluation, explanation, request, plan, or impression.
+2. Weight: what the sentence puts first or plays down. Keep a negation that the text before it invites. Do not turn a negated item into an addition ("A as well as B"). Do not rank items that the source does not rank.
+3. Strength: an assertion stays an assertion, and a hedge stays a hedge.
+4. Function and time: evaluation, explanation, request, or impression, and a finished change, current behavior, or a plan.
 
-Add no actor, object, referent, number, setting, cause, effect, example, or term that the source does not state, and do not narrow a vague word to a specific fact. If the surrounding text names an omitted actor or referent, you can restore it. If a rewrite needs a missing fact, keep the statement as broad as the source and ask the writer.
+Add no fact that the source does not state, such as an actor, a number, or a cause. Do not narrow a vague word to a specific fact. You can restore an actor or referent that the nearby text names. If a rewrite needs a missing fact, keep the statement as broad as the source. Then ask the writer.
 
-Delete a label or intensifier that only decorates. If it carries the sentence's evaluation, move the evaluation into the predicate: "The key point is speed" → "Speed is the key point". Keep a negation that corrects a likely misreading, and add no reason that the source lacks. When you replace a figurative word, keep the attitude that it carried, such as regret or understatement.
+If a label or intensifier carries the sentence's evaluation, move it into the predicate: "What matters most is speed" → "Speed matters most". Otherwise, delete it. When you replace a figurative word, keep its attitude, such as regret or understatement.
 
-## Check mode
+## Check and revise
 
-If the task is to check text rather than write it:
-
-1. Run the language's mechanical pass: english.md "Self-check", japanese.md「点検」. Classify each hit before you rewrite it: the patterns also match rule-following text, for example epistemic hedges.
-2. Check "Complete", "Necessary", and "Length and format".
-3. Write each rewrite from the sentence's actor, action, and object. Do not swap the flagged word for a synonym: "robust" → "solid" keeps the defect. For another writer's text, follow "Revising another writer's text".
-4. Report each violation as: device name — offending span (file:line) — compliant rewrite. The device name is the heading of the section that states the rule, plus a few words of the rule: "Necessary: empty intensifiers".
-5. Report to an editor: no praise, no hedge without epistemic content, no summary.
-
-If the task is to revise rather than report, apply the rewrites. Then run the mechanical pass again on the result. Stop after two reruns. Do not change a sentence only to clear a hit. Output the revised text, then one line for each device that you applied, then your questions for the writer.
-
-After you finish a durable text, have a reader with no session context read it as its real audience: `$HOME/.claude/skills/cold-read/SKILL.md`.
-
-## Sources
-
-- AminBlg/SimpleEnglish (MIT): the sentence mechanics and `references/english.md`. <https://github.com/AminBlg/SimpleEnglish>
-- k16shikano's Japanese writing norms: the argument and redundancy devices, and `references/manuscript.md`. <https://gist.github.com/k16shikano/fd287c3133457c4fd8f5601d34aa817d>
-- nanaism/yomiyasu (MIT, commit 8d5abeeb): the Complete check (`gemini-syntax.md` 原則1), the revision rules (`SKILL.md`「意味の保持」「情報の不増補」「セルフラベリングと否定対比の整理」), and `references/japanese.md`. <https://github.com/nanaism/yomiyasu>
+1. Run the mechanical pass. Then test each sentence against the rules of this file and its language reference.
+2. To check: report each violation with its rule, span, and rewrite. The span is file:line, or a quote of the text. Name the rule by its section and a few words: "Necessary: restated claim". Write no praise and no summary.
+3. To revise: save the original to a scratch file. Fix each violation. Then run the mechanical pass again. Stop after two reruns.
+4. If the text is in a file, edit the file. Otherwise, output the revised text. Then output one line per rule that you applied. Add your questions for the writer, including each hit that still breaks a rule.
