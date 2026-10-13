@@ -1,6 +1,6 @@
 ---
 name: tech-writing
-description: Writing norms for human-facing prose in any language — sentence mechanics, argument rigor, redundancy, filler, plus a check mode. Load before you write or revise reports, PR/issue text, docs, or comments. Also load it for any request to make text read less machine-written. 日本語の技術文書、記事、書籍原稿の執筆と推敲、「AIっぽさを消して」「読みやすくして」という依頼にも使用する。
+description: Writing norms and a check mode for human-facing prose in any language. Load before you write or revise docs, code comments, PR/issue text, or reports. Also load it for any request to make text read less machine-written. 日本語の技術文書、記事、書籍原稿の執筆と推敲、「AIっぽさを消して」「読みやすくして」という依頼にも使用する。
 ---
 
 # Technical writing
