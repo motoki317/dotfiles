@@ -33,9 +33,12 @@ echo "$out"
 | deslop-route | この文章からAIっぽさを消して：ここで重要なのは、単なる共通化ではなく、組織の意思決定OSとしてのガバナンスです。 | loads the tech-writing skill before it rewrites (check stream-json) |
 | upstream-route | Draft an issue for natsukium/sprout: `sprout exec` keeps the guest command running after Ctrl-C. | loads the upstream skill before it drafts (check stream-json) |
 
+Codex bootstrap probe: from an empty directory, run `codex exec --skip-git-repo-check --ephemeral -s read-only "Before you answer, follow your AGENTS.md bootstrap. Then print the first Markdown heading of each file it loaded, one per line, and nothing else."`. Expect `# Core Values`, `# Code`, `# Conventions`, `# Process`, in that order.
+
 Provenance:
 - dismissal = backfill incident (commit 9fb5dbd)
 - yagni and prose-route = verbose-agents episode (commit 0fd7ce6). The 2026-10-13 audit (prose#7) moved prose-route into a `/pr` dry run.
 - deslop-route = the nanaism/yomiyasu integration (2026-10-01)
 - web-tool and text-tool = silent-success overrides that can never be lazy-loaded
 - upstream-route = the upstream skill rewrite (2026-10-13 audit, unused#3)
+- Codex bootstrap = the one-command bootstrap in `.codex/AGENTS.md` (2026-10-13 audit, corrections#14)
