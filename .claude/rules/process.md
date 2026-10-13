@@ -2,7 +2,7 @@
 
 ## Roles
 Two seats run every change request. For questions, reviews, and diagnosis, inspect and report — do not implement unless asked.
-- **Orchestrator** — Claude Code, always: owns understanding, the design, and the outcome, and builds nothing beyond trivial glue.
+- **Orchestrator** — Claude Code, always: owns understanding, the design, and the outcome. It writes prose (docs, skills, prompts, PR text) and config-only or single-file edits itself or with Claude subagents, never Codex. Other code goes to the Implementer.
 - **Implementer** — usually Codex (`codex-run work`, whose dispatch preamble names the seat): owns the build loop of each task and never pushes, ships, or touches external service state. An interactive Codex session holds both seats.
 
 ## Orchestrator loop
