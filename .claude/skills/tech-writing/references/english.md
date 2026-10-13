@@ -61,21 +61,17 @@ Keep a word in a sense that its row does not cover: "the job just finished".
 
 ## Self-check
 
-Search the draft outside code blocks and quoted text.
+Run this command on the file. It prints each hit outside code as `line: match`. A hit in quoted text is not a violation.
 
-| Search | Violation → fix |
-|---|---|
-| `'ll` `'re` `'ve` `'d` `n't` `it's` `that's` `there's` `let's` | contraction → expand |
-| `has been` `have been` `had been`, has/have + participle | perfect tense → simple past or present |
-| `should` `would` `may` `might` `could` | modal → "Modals" |
-| `is being` `are being` | progressive passive → active, simple tense |
-| `, making` `, allowing` `, enabling` `, ensuring` | participle clause → new sentence |
-| `;` | semicolon → two sentences |
-| `e.g.` `i.e.` `etc.` | abbreviation → "Grammar" |
-| ` if ` / ` when ` mid-sentence, in procedural text | trailing condition → move it to the front |
-| `not just` `not only` | uninvited negation → SKILL.md "Necessary" |
-| each word in "Filler table" | filler → "Filler table" |
-| `- **` at the start of a line | bold-label list of reasoning → paragraphs (SKILL.md "Length and format") |
-| `**` | bold beyond SKILL.md "Length and format" |
+```sh
+perl -CSD -Mutf8 -ne 'if(/^\s*```/){$c=!$c;next} next if $c; s/`[^`]*`//g; print "$.: $&\n" while /\b\w+(?:n[\x27’]t|[\x27’](?:ll|re|ve|d))\b|\b(?:it|that|there|let)[\x27’]s\b|\b(?:has|have|had) \w+(?:ed|en)\b|\b(?:should|would|may|might|could)\b|\b(?:is|are) being\b|, (?:making|allowing|enabling|ensuring)\b|;|\b(?:e\.g|i\.e|etc)\.|\bnot (?:just|only)\b|^\s*- \*\*|\*\*/gi' FILE
+```
 
-Then count the words of the three longest procedural sentences and the three longest descriptive sentences against "Word caps". Search for the words of each "One term per set" set that you did not pick.
+For a `not just` or `not only` hit, see SKILL.md "Necessary". For a `**` hit, see SKILL.md "Length and format".
+
+Then check these by hand:
+
+- each word in "Filler table"
+- the words that you did not pick in each "One term per set" set
+- a trailing ` if ` or ` when ` in procedural text
+- the three longest procedural and the three longest descriptive sentences, against "Word caps"

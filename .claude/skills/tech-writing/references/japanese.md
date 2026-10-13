@@ -68,8 +68,13 @@
 
 ## 点検
 
-`python3 $HOME/.claude/skills/tech-writing/scripts/yomiyasu_lint.py <ファイル>`で行単位の候補を出す。
+`python3 $HOME/.claude/skills/tech-writing/scripts/yomiyasu_lint.py <Markdownファイル>`で行単位の候補を出す。
 文末の立場の混ざりは、`python3 $HOME/.claude/skills/tech-writing/scripts/yomiyasu_diff.py --endings <ファイル> [--stance=<勧め|決まり|説明>]`で候補を出す。
+文の長さと読点は次のコマンドで候補を出す。列挙の読点も数えるので、候補を一文ずつ確かめる。
+
+```sh
+perl -CSD -Mutf8 -ne 'if(/^\s*```/){$c=!$c;next} next if $c; chomp; s/`[^`]*`/X/g; for my $s (split /(?<=[。！？])/){ my $n=()=$s=~/、/g; my $l=length($s=~s/\s//gr); print "$.: len=$l 読点=$n: $s\n" if $l>60||$n>2 }' <ファイル>
+```
 
 - このファイルの規則は、リンターの結果にかかわらず、コードブロックの外で一文ずつ手で確かめる。
 - 0〜100のスコア、太字頻度、箇条書き比率は使わない。
