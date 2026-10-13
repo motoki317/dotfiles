@@ -69,7 +69,7 @@ Delete this recurring fat on sight:
 
 ## Credits
 
-- `rules/code.md` adapts the "ponytail" skill by Dietrich Gebert (MIT): https://github.com/DietrichGebert/ponytail — the ladder, no-unrequested-abstractions, output contract, and never-simplify-away guardrails come from there. Local changes: a proven-library rung (we prefer mature libraries over hand-rolled code), root-cause fixes phrased as "the layer that owns the violated invariant", and idiom-not-verbosity repo matching.
+- `rules/code.md` adapts the "ponytail" skill by Dietrich Gebert (MIT): https://github.com/DietrichGebert/ponytail — the ladder, no-unrequested-abstractions, and never-simplify-away guardrails come from there. Local changes: a proven-library rung (we prefer mature libraries over hand-rolled code), root-cause fixes phrased as "the layer that owns the violated invariant", and idiom-not-verbosity repo matching. No-unrequested-abstractions and idiom-not-verbosity now live in `skills/quality-review/rubric.md` (Simplicity).
 - `skills/tech-writing` merges two sources into one language-neutral core plus language references (2026-08-03):
   - AminBlg/SimpleEnglish (MIT, commit 379728b51981b6d2ee1de0f201164483a9648972): https://github.com/AminBlg/SimpleEnglish — the ASD-STE100-derived sentence mechanics, `references/english.md`, and `scripts/ste_lint.py`. The linter is for before/after measurement only — aggregate counts, exits 0 regardless, not a proofreading tool. Local changes:
     - We dropped strict mode and the dictionary apparatus.

@@ -15,5 +15,3 @@ Stop at the first rung that holds:
 - In comments and commit messages, write only WHY and WHY-NOT. Rewrite code that needs narration. History ("previously", "no longer") goes in the commit message, not in comments or docs.
 - Boring over clever. Two same-size options → the one correct on edge cases.
 - Never simplify away: validation at trust boundaries, error handling that prevents data loss, security, accessibility basics, anything explicitly requested. For a behavior change, add the smallest regression coverage that the repo's conventions call for.
-
-Output: code first, then one line on what you skipped — `skipped: X, add when Y`. Elaborations (anti-patterns, comment doctrine, diff shape): when you review code, load `~/.claude/refs/code-detail.md`.
