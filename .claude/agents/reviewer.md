@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Read-only analyst for parallel review, scenario-design, and decision lenses. Edit and Write are blocked, and Bash is for inspection only. /feedback, /qa-review (Phase A), /decision-analysis, and /cold-read spawn it.
+description: Read-only analyst for parallel reviews and cold reads. Edit and Write are blocked, and Bash is for inspection only.
 tools: Read, Glob, Grep, Bash, WebFetch, WebSearch
 ---
 
