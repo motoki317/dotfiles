@@ -70,13 +70,15 @@ Delete this recurring fat on sight:
 ## Credits
 
 - `rules/code.md` adapts the "ponytail" skill by Dietrich Gebert (MIT): https://github.com/DietrichGebert/ponytail — the ladder, no-unrequested-abstractions, and never-simplify-away guardrails come from there. Local changes: a proven-library rung (we prefer mature libraries over hand-rolled code), root-cause fixes phrased as "the layer that owns the violated invariant", and idiom-not-verbosity repo matching. No-unrequested-abstractions and idiom-not-verbosity now live in `skills/quality-review/rubric.md` (Simplicity).
+- `skills/quality-review` (2026-10-13) merges the former `feedback`, which reviewed against the ISO/IEC 25010:2023 quality model, and `qa-review`, whose scenario angles adapt Nexta's "7 QA personas": https://zenn.dev/nexta_/articles/be13a2395a5d2a
 - `skills/tech-writing` merges two sources into one language-neutral core plus language references (2026-08-03):
-  - AminBlg/SimpleEnglish (MIT, commit 379728b51981b6d2ee1de0f201164483a9648972): https://github.com/AminBlg/SimpleEnglish — the ASD-STE100-derived sentence mechanics, `references/english.md`, and `scripts/ste_lint.py`. The linter is for before/after measurement only — aggregate counts, exits 0 regardless, not a proofreading tool. Local changes:
+  - AminBlg/SimpleEnglish (MIT, commit 379728b51981b6d2ee1de0f201164483a9648972): https://github.com/AminBlg/SimpleEnglish — the ASD-STE100-derived sentence mechanics and `references/english.md`. Local changes:
     - We dropped strict mode and the dictionary apparatus.
     - We scoped the modal ladder so that epistemic uncertainty and counterfactuals survive (the global ban would erase them).
     - We scoped condition-first to procedural text.
     - A participle or gerund that acts as an adjective or a noun is correct, and a counterfactual keeps "would have".
     - We dropped the spelling rule and the paragraph cap (2026-10-07).
+    - We dropped `scripts/ste_lint.py` (2026-10-13): no instruction referenced it.
   - k16shikano's Japanese writing norms (https://gist.github.com/k16shikano/fd287c3133457c4fd8f5601d34aa817d, formerly `skills/japanese-tech-writing`):
     - Its argument rigor and redundancy devices went language-neutral into the core.
     - Its 整形 and LLM口調 lists lived in `references/japanese.md` until 2026-10-03. That day the user chose to rebuild japanese.md from yomiyasu alone, which dropped the rules that only k16shikano held: one sentence per line, no 中黒 for lists, 「**用語**：説明」 glossaries, its LLM口調 words that yomiyasu lacks (正面から系, 空虚な形容, 空虚な動詞, 〜において), and the Japanese forms of the argument devices.
