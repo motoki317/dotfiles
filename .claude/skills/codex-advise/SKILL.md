@@ -1,26 +1,17 @@
 ---
 name: codex-advise
-description: Cross-model second opinion from OpenAI Codex. Use at Orchestrator consult gates or when asked for a codex or second opinion.
+description: Cross-model second opinion from OpenAI Codex. Use at Orchestrator consult gates, on an open design choice, or when asked for a codex or second opinion.
 ---
 
 # Codex advisor
 
-Get a cross-model outside view from OpenAI Codex. `codex-run` reads the prompt from stdin. Flags: `codex-run --help`.
+`codex-run` reads the brief from stdin, and stdout is the verdict. Flags: `codex-run --help`.
 
 ```bash
-codex-run advise --context                                    # review this session, no brief
-codex-run advise --context < brief.md                         # session + a specific question
-codex-run advise -C <repo> --log /tmp/codex.jsonl < brief.md  # cold review of a repo, no session
-codex-run advise --resume <id> < followup.md                  # continue a review (id in the banner; only after it exits)
+codex-run advise -C <repo> --log <scratchpad>/advise-<slug>.jsonl < brief.md
+codex-run advise --resume <id> < followup.md   # only after the run exits (its banner shows <id>)
 ```
 
-- Gate occasions (Orchestrator loop):
-  - when you lock in an approach or interpretation
-  - when you build on a load-bearing assumption
-  - when you declare non-trivial work done
-  - when you are stuck or change approach
+Codex sees only the brief and the repo. In the brief, name the files to read first and the decision, and state your load-bearing reasoning. Ask numbered questions, and request findings by severity, each with file:line evidence.
 
-  Hard-to-reverse or still uncertain decisions make the consult mandatory. Each call costs minutes, tokens, and egress to OpenAI. Skip the consult for mechanical or low-stakes work.
-- `--context` sends the session transcript to OpenAI. Codex sees your actions, not your thinking. Put load-bearing reasoning and the file names in the brief.
-- Run a gate call (`~/.claude/rules/process.md`) in the foreground. Run only a non-gating opinion in the background.
-- Codex runs read-only unless asked. `-s workspace-write` lets Codex run tests. stdout is the verdict.
+Act on the gated decision only after you read the verdict.
