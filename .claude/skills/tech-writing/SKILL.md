@@ -27,7 +27,7 @@ The mechanical pass is english.md "Self-check" or japanese.md「点検」. Run i
 - Replace a figurative verb with the operation or state change that a reader can observe: "The cache fosters faster page loads" → "The cache makes pages load faster". A verb of intent or feeling given to a thing is figurative: "The function wants a string" → "The function takes a string". "The server rejects the request" and "The results show" are correct.
 - Mark a finished change, current behavior, and a plan by tense: "removed", "retries", "will remove". In a change report, give the old and the new state: "Retries stop after three attempts (previously unlimited)", not "Updated the retry policy."
 - Make every pronoun, demonstrative, and connective point to something that the reader can identify. "However" must match the actual relation.
-- Define a term before its first use. Use one name per concept: do not rotate check/verify/confirm.
+- Use the name that the code, the UI, or the reader already uses. If no such name exists, coin a term or a translation. Define it before its first use. Use one name per concept: do not rotate check/verify/confirm.
 - State each claim at the strength of its evidence:
   - Assert a claim that you verified or that evidence in the text grounds.
   - Keep a hedge only on an unverified fact, an inference, a counterfactual, or a personal impression.
@@ -40,7 +40,7 @@ The mechanical pass is english.md "Self-check" or japanese.md「点検」. Run i
 
 Delete each sentence or word that fails this check. Do not swap it for a synonym.
 
-- To shorten a text, cut whole points. Keep the grammar words of the points that remain: "Check config before deploy" → "Check the config before you deploy."
+- Before you draft, list the points that the reader must act on or believe. Cut every other point whole, including a point that the reader can derive from another point or from the code. If the reader owns the fix, state the problem and the expected outcome, not a fix plan. Keep the grammar words of the points that remain: "Check config before deploy" → "Check the config before you deploy."
 - Delete a label that announces a point ("Key takeaway:") and an opener about the subject area ("In today's fast-paced world"). Also delete a lesson or call to action that no fact in the text supports.
 - If an intensifier stands for a measurable property, write the property: "robust" → "retries three times, then stops". Otherwise, delete the intensifier.
 - State one claim once. Do not retell an example or a log after you show it. Do not restate a claim in parentheses: "raw output (the unmodified output)". A parenthesis that identifies a referent stays.
