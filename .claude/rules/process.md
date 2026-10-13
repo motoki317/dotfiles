@@ -6,7 +6,7 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
 - **Implementer** — usually Codex (`codex-run work`, whose dispatch preamble names the seat): owns the build loop of each task and never pushes, ships, or touches external service state. An interactive Codex session holds both seats.
 
 ## Orchestrator loop
-1. **Explore** — read the relevant flow end to end.
+1. **Explore**.
 2. **Plan** — `/define` for requirements, `/decision-analysis` for an open choice.
 3. **Implement** — send the Implementer one task from the plan at a time (`/codex-work`). Before a task's first run, write the HEAD SHA of the Implementer's checkout into the task's entry in the plan file, as its **Tidy base**. The task's fix, steer, and retry runs keep that base.
 4. **Accept** — after each task, reconcile its report and its commits since the Tidy base against the plan. Rerun the repo's checks.
