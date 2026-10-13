@@ -23,7 +23,7 @@ Auto-advance every step except two stops: plan approval and Ship. Ask for plan a
 1. **Implement**.
 2. **Verify** — the repo's checks, then `/quality-review`.
 3. Settle the findings — fix, or skip with evidence in the report.
-4. **Commit** green units (`/commit`).
+4. **Commit** green units (`/commit`). Commit a fix to an earlier commit as `git commit --fixup=<sha>`.
 
 At the end of each dispatched run, **Tidy** your task's commits (`/rebase-clean`) and report with evidence.
 
