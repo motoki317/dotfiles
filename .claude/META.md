@@ -60,6 +60,7 @@ Delete this recurring fat on sight:
 - A real directory owns a skill. A symlink only exposes that skill to another agent. Never mirror a symlink or replace another owner's real directory.
 - After you add, delete, or rename a top-level skill under `~/.claude/skills`, run `sync-claude-skills`. Include its link changes in the same commit.
 - Before you finish an edit under `~/.claude/skills` or `~/.agents/skills`, run `sync-claude-skills --check`.
+- `~/.agents/skills/agent-browser` is a local rewrite (2026-10-13) of the upstream vercel-labs stub. `npx skills update` can overwrite it.
 
 ## Context-loading mechanics (verified 2026-07-11)
 
