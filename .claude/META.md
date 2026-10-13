@@ -22,7 +22,7 @@ Two episodes ground these principles. In the verbose-agents episode (2026-07, co
 A standing calibration behind the writing devices: the user's edit passes cut 50–90% of agent-written prose (measured 2026-07-30). A writer inside the context that produced a text cannot grade it.
 
 A line survives in any asset only if it is one of:
-1. an environment fact the model cannot derive (`ax` exists, the `reviewer` agent is read-only, who pushes).
+1. an environment fact the model cannot derive (`ax` exists, Codex has no `reviewer` agent type, who pushes).
 2. an arbitrary choice among defensibles (perl not sed, one plan task per run) — state the bare choice, no justification.
 3. a checkable override of a wrong model default (the ladder, dismissal-is-a-claim, cold-read). Phrase it as one of these operational devices:
    - a stop condition
