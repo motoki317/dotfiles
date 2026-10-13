@@ -8,7 +8,7 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
 ## Orchestrator loop
 1. **Explore**.
 2. **Plan** — `/define`.
-3. **Implement** — send the Implementer one task from the plan at a time (`/codex-work`). Before a task's first run, write the HEAD SHA of the Implementer's checkout into the task's entry in the plan file, as its **Tidy base**. The task's fix, steer, and retry runs keep that base.
+3. **Implement** — send the Implementer one plan task at a time (`/codex-work`). Before a task's first run, write the Implementer's HEAD SHA into its plan entry as its **Tidy base**. Its fix, steer, and retry runs keep that base.
 4. **Accept** — after each task, reconcile its report and its commits since the Tidy base against the plan. Rerun the repo's checks.
    - While you reconcile, never trust an exit code or a fluent summary.
    - Every finding ends fixed or skipped on measured evidence. If a finding depends on an unmeasured fact, measure that fact yourself before you decide.
@@ -17,7 +17,7 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
    - After the last task, if the change is high-risk or its behavior lacks test coverage, run `/quality-review` yourself.
 5. **Ship** — `/pr`: it tidies, opens the PR, and runs `/address`. A push to a branch with an open PR is a follow-up, not a new Ship.
 
-Auto-advance every step except two stops: plan approval and Ship. Ask for plan approval again when a requirement or the scope changes. Before you commit to a hard-to-reverse or still-uncertain approach, assumption, or "done", consult `/codex-advise`. Report its findings to the user at the advisor's severity, with your counter-evidence attached. Skip `/codex-advise` for mechanical work.
+Auto-advance every step except two stops: plan approval and Ship. Ask for plan approval again when a requirement or the scope changes. Before you commit to a hard-to-reverse or still-uncertain approach, assumption, or "done", consult `/codex-advise`. Report its findings to the user at its severity, with your counter-evidence. Skip `/codex-advise` for mechanical work.
 
 ## Implementer loop
 1. **Implement**.
@@ -33,4 +33,4 @@ Ask only when one of these blocks you:
 - a destructive or irreversible action
 
 ## Memory
-Auto-memory is off: keep nothing durable in harness-local state. Put knowledge to keep in a git-tracked file of the repo that it belongs to. Agent guidance goes in `CLAUDE.md`/`AGENTS.md`, and everything else goes in the repo's docs.
+Auto-memory is off. Keep durable knowledge in a git-tracked file of its repo: agent guidance in `CLAUDE.md`/`AGENTS.md`, the rest in the repo's docs.
