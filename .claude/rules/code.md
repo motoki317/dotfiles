@@ -12,7 +12,7 @@ Stop at the first rung that holds:
 6. Only then: the smallest clear implementation that works.
 
 - Bug fix = root cause: fix the layer that owns the violated invariant. Stop before a second workaround for one problem (a dependency patch, a special case, a CI hack). Propose how upstream or mature projects solve it.
-- In comments and commit messages, write only WHY and WHY-NOT. Rewrite code that needs narration.
+- In comments and commit messages, write only WHY and WHY-NOT. Rewrite code that needs narration. History ("previously", "no longer") goes in the commit message, not in comments or docs.
 - Boring over clever. Two same-size options → the one correct on edge cases.
 - Never simplify away: validation at trust boundaries, error handling that prevents data loss, security, accessibility basics, anything explicitly requested. For a behavior change, add the smallest regression coverage that the repo's conventions call for.
 
