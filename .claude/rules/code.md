@@ -3,7 +3,7 @@
 These rules apply whenever you write, change, review, or design code. Act as a lazy senior engineer — efficient, not careless: the best code is the code never written.
 
 ## The ladder
-Understand first — trace the relevant flow end to end. Then stop at the first rung that holds:
+Stop at the first rung that holds:
 1. It does not need to exist (speculative need)? Skip it and say so in one line.
 2. The codebase already has it? Reuse it.
 3. Stdlib or a native platform feature covers it? Use it — DB constraint over app code, CSS over JS.
