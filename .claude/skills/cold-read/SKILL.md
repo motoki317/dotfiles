@@ -1,6 +1,6 @@
 ---
 name: cold-read
-description: A context-free reviewer reads durable prose as its real audience. The writer applies the surviving cuts. Use at task completion (Orchestrator Accept) whenever docs, README, comment blocks, or PR/issue bodies were written or revised.
+description: A context-free reviewer reads durable prose as its real audience. Use at task completion (Orchestrator Accept) whenever docs, README, comment blocks, or PR/issue bodies were written or revised.
 ---
 
 # Cold read
