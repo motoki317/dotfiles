@@ -71,6 +71,23 @@ let
     systemctl --user start openclaw-gateway
   '';
 
+  # A new OpenClaw can refuse to start until `doctor --fix` migrates its state
+  # databases, and doctor refuses Nix mode. Its config edits go to a throwaway
+  # copy. Outside Nix mode it also rewrites and starts the managed gateway unit
+  # (docs/cli/doctor/recovery.md), so it gets a throwaway HOME and no user bus.
+  migrateState = pkgs.writeShellScriptBin "openclaw-migrate-state" ''
+    set -eu
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    install -m600 ${lib.escapeShellArg "${stateDir}/openclaw.json"} "$tmp/openclaw.json"
+    systemctl --user stop openclaw-gateway
+    env -u DBUS_SESSION_BUS_ADDRESS -u XDG_RUNTIME_DIR HOME="$tmp" \
+      OPENCLAW_NIX_MODE=0 OPENCLAW_CONFIG_PATH="$tmp/openclaw.json" \
+      OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDir} OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=0 \
+      ${gateway}/bin/openclaw doctor --fix --non-interactive
+    systemctl --user start openclaw-gateway
+  '';
+
   slackAccount =
     id: agent:
     let
@@ -224,15 +241,18 @@ in
   systemd.user.services.openclaw-gateway = {
     # nix-openclaw's unit has no [Install] section, so it would not start at boot.
     Install.WantedBy = [ "default.target" ];
-    # The claude-cli runtime finds `claude` here, and Claude Code's native Bash
-    # inherits it (tools.exec.pathPrepend does not reach it). Same order as the
-    # login shell; systemd's default lacks the Nix and ~/.local/bin tools.
+    # The claude-cli runtime finds `claude` here, and agent commands inherit it
+    # through OpenClaw's exec tool. Same order as the login shell; systemd's
+    # default lacks the Nix and ~/.local/bin tools.
     Service.Environment = [
       "PATH=${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:${home}/.local/bin:/usr/local/bin:/usr/bin:/bin"
     ];
   };
 
-  home.packages = [ installSlackPlugin ];
+  home.packages = [
+    installSlackPlugin
+    migrateState
+  ];
   # Interactive `openclaw` sees the service's plugin registry (the wrapper defaults to hiding it).
   home.sessionVariables.OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY = "0";
 
