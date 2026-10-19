@@ -10,6 +10,7 @@ argument-hint: "[message]"
 - If the request or a user decision conflicts with the technical evidence, show the conflict and ask again.
 - Some problems only the user can fix: missing access, or a broken system outside the repo. If you find one, report it and end your turn. Do not work around it.
 - Settle every design decision that more than one task depends on, and every new interface, schema, module boundary, or dependency. Record each one in Technical Specifications, with the standard approach or upstream prior art that you found, or "none found". Leave the details inside one task, such as its local names, to the Implementer.
+- Before you settle a new interface, schema, or module boundary, read `$HOME/.claude/refs/single-source-of-truth.md`.
 - Cut the work into tasks for the Implementer. Each task must make one change: a behavior, a refactor, or a migration. It must end with a check that proves the change and leave the repo's checks passing.
 
 # Output

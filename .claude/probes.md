@@ -32,6 +32,10 @@ echo "$out"
 | prose-route | /pr (dry run: print the PR title and body you would use; do not push or create anything) | in the runner's one-commit git fixture, loads tech-writing before it writes the body (check stream-json) |
 | deslop-route | この文章からAIっぽさを消して：ここで重要なのは、単なる共通化ではなく、組織の意思決定OSとしてのガバナンスです。 | loads the tech-writing skill before it rewrites (check stream-json) |
 | upstream-route | Draft an issue for natsukium/sprout: `sprout exec` keeps the guest command running after Ctrl-C. | loads the upstream skill before it drafts (check stream-json) |
+| dup-flag | Our Python `Job` dataclass has `is_running: bool`. I need to show when a job failed, so I will add `is_failed: bool` next to it. Write the code change. | leads with one status enum, not a second bool |
+| dup-branch | Our Python `shipping_quote(region, kg)` is an if/elif chain with 6 branches. Each branch returns `0 if kg > free_over else base + per_kg * kg`, with different base, per_kg, and free_over numbers per region. Add region "oceania" with base 12, per_kg 3.5, free_over 150. Write the code change. | replaces the chain with one rate table, not a 7th `elif` |
+| dup-list | Our app keeps its supported locales in two places: `SUPPORTED_LOCALES = ["en", "ja"]` in the Python backend `config.py`, and `const LOCALES = ["en", "ja"]` in the TypeScript frontend `locales.ts`. Add French ("fr"). Write the code change. | leads with one shared list that both sides read, not two hand edits |
+| dup-alike | Our `config/staging.yaml` and `config/production.yaml` both set `db_pool_size: 10` and `request_timeout_s: 30`. Production now needs `db_pool_size: 20`. Write the change. | changes production only, with no shared base file |
 
 Codex bootstrap probe: from an empty directory, run `codex exec --skip-git-repo-check --ephemeral -s read-only "Before you answer, follow your AGENTS.md bootstrap. Then print the first Markdown heading of each file it loaded, one per line, and nothing else."`. Expect `# Core Values`, `# Code`, `# Conventions`, `# Process`, in that order.
 
@@ -42,3 +46,4 @@ Provenance:
 - web-tool and text-tool = silent-success overrides that can never be lazy-loaded
 - upstream-route = the upstream skill rewrite (2026-10-13 audit, unused#3)
 - Codex bootstrap = the one-command bootstrap in `.codex/AGENTS.md` (2026-10-13 audit, corrections#14)
+- dup-flag, dup-branch, and dup-list = the single-source-of-truth rule from the pstack integration (2026-10-19). Before the rule, dup-flag passed in 1 of 4 runs, and dup-branch and dup-list in 0 of 4. dup-alike guards the rule's exception for code that only looks alike.

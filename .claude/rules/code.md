@@ -11,6 +11,7 @@ Stop at the first rung that holds:
 5. A mature, maintained library is better than code that you write and maintain? Depend on it.
 6. Only then: the smallest clear implementation that works.
 
+- Keep one source of truth for each fact or domain rule. A duplicate is a second place that must change each time the first one changes. If your edit adds a duplicate or updates both places of an existing one, first refactor to one source. Typical duplicates are a flag that must agree with another field and branches that differ only in their data. Leave code that looks alike but can change on its own. Before you refactor, read `~/.claude/refs/single-source-of-truth.md`.
 - Bug fix = root cause: fix the layer that owns the violated invariant. Stop before a second workaround for one problem (a dependency patch, a special case, a CI hack). Propose how upstream or mature projects solve it.
 - In comments and commit messages, write only WHY and WHY-NOT. Rewrite code that needs narration. History ("previously", "no longer") goes in the commit message, not in comments or docs.
 - Boring over clever. Two same-size options → the one correct on edge cases.

@@ -71,6 +71,9 @@ Delete this recurring fat on sight:
 ## Credits
 
 - `rules/code.md` adapts the "ponytail" skill by Dietrich Gebert (MIT): https://github.com/DietrichGebert/ponytail — the ladder, no-unrequested-abstractions, and never-simplify-away guardrails come from there. Local changes: a proven-library rung (we prefer mature libraries over hand-rolled code), root-cause fixes phrased as "the layer that owns the violated invariant", and idiom-not-verbosity repo matching. No-unrequested-abstractions and idiom-not-verbosity now live in `skills/quality-review/rubric.md` (Simplicity).
+- The single-source-of-truth rule in `rules/code.md` and `refs/single-source-of-truth.md` adapts pstack by poteto (MIT, commit 6b78e9f4e46c75d1697d837e51f07c2692e60b24): https://github.com/cursor/plugins/tree/main/pstack
+  - Sources: its Model the Domain principle (enum, table, dispatch point, state machine), "derive instead of sync" from Minimize Reader Load, and the "Hand-synced list" red flag of its architect skill.
+  - Not adopted: Migrate Callers Then Delete Legacy APIs, the guard test of Fix Root Causes, and Attack the Premise. On 2026-10-19, one-off probes that `probes.md` does not keep showed that Claude and Codex already followed each one in 4 of 4 runs without a new rule.
 - `skills/quality-review` (2026-10-13) merges the former `feedback`, which reviewed against the ISO/IEC 25010:2023 quality model, and `qa-review`, whose scenario angles adapt Nexta's "7 QA personas": https://zenn.dev/nexta_/articles/be13a2395a5d2a
 - `skills/tech-writing` merges two sources into one language-neutral core plus language references (2026-08-03):
   - AminBlg/SimpleEnglish (MIT, commit 379728b51981b6d2ee1de0f201164483a9648972): https://github.com/AminBlg/SimpleEnglish — the ASD-STE100-derived sentence mechanics and `references/english.md`. Local changes:

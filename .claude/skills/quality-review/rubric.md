@@ -8,7 +8,7 @@ Judge against the intent, not the code's apparent purpose. Look for:
 
 # Simplicity
 
-Judge each addition by the ladder in `$HOME/.claude/rules/code.md`. Look for:
+Judge each addition by the ladder and the single-source-of-truth rule in `$HOME/.claude/rules/code.md`. Look for:
 - an abstraction with one implementation or one caller
 - configurable code used one way, and a parameter with the same value at every call site
 - logic that an existing helper covers (name the helper), and a forwarding wrapper
