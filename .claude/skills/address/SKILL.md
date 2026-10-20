@@ -9,17 +9,23 @@ Run rounds. When a round with a push ends, start the next round on the new head.
 
 ## 1. Wait
 
-Read the head SHA, the draft state, and the base: `gh pr view <pr> --json headRefOid,isDraft,baseRefName`. Run each wait in the background:
+Read the head SHA, the draft state, and the base: `gh pr view <pr> --json headRefOid,isDraft,baseRefName`. Codex reviews only when the PR opens or leaves draft, or on an `@codex review` comment. If you pushed to the PR after it opened, comment `@codex review`.
+
+Run two waits in the background:
 
 - CI: `gh pr checks <pr> --watch --fail-fast --interval 30`.
-- Codex: poll its latest status line.
+- Reviews: this loop stops when a comment or review on the PR is added or edited, or after 15 minutes.
   ```bash
-  gh api repos/{owner}/{repo}/issues/<pr>/comments --paginate --jq '.[] | select(.user.login == "chatgpt-codex-connector[bot]") | .updated_at + " " + (.body | match(".*(Code Review\\*\\*|usage limits).*").string)' | sort | tail -1
+  sig() { for ep in issues/<pr>/comments pulls/<pr>/comments pulls/<pr>/reviews; do gh api "repos/{owner}/{repo}/$ep" --paginate --jq '.[] | "\(.id) \(.updated_at // .submitted_at)"'; done | sort; }
+  start=$(sig); for i in $(seq 1 30); do sleep 30; [ "$(sig)" != "$start" ] && break; done
   ```
-  Codex is done when the line shows `Completed` or `Failed` with the first 7 characters of the head SHA. Codex is also done on a usage-limit line whose leading `updated_at` is later than the push of the head. If the line shows `Failed`, or does not show the head's SHA within 5 minutes, comment `@codex review` once per head. Then wait for that run.
-- Copilot (inline comments as `Copilot`) is done when `gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate --jq '.[] | select(.user.login == "copilot-pull-request-reviewer[bot]") | .commit_id'` prints the head SHA. Read its review rule with `gh api repos/{owner}/{repo}/rules/branches/<base> --jq '.[] | select(.type == "copilot_code_review") | .parameters'`. No output means no automatic review. Otherwise Copilot reviews when the PR opens or leaves draft. It reviews a draft only with `review_draft_pull_requests`, and a new push only with `review_on_push`. If Copilot will not review the head, do not wait for it. If it skips a draft, tell the user that marking the PR ready starts Copilot and needs another `/address`.
 
-Go to step 2 only after all waits end.
+Each time the review loop stops, read the comments with the commands in step 2. Then decide which bots are done:
+
+- Codex (`chatgpt-codex-connector[bot]`) edits one "Codex Review Summary" comment in place. Codex is done when that comment shows `Completed` for the head SHA, or when Codex posts a usage-limit notice. On the first `Failed` for a head, comment `@codex review` again. On a second `Failed`, Codex is done.
+- Copilot (inline comments as `Copilot`) is done when `gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate --jq '.[] | select(.user.login == "copilot-pull-request-reviewer[bot]") | .commit_id'` prints the head SHA. It reviews only if `gh api repos/{owner}/{repo}/rules/branches/<base> --jq '.[] | select(.type == "copilot_code_review") | .parameters'` prints a rule. With a rule, it reviews when the PR opens or leaves draft. It reviews a draft only with `review_draft_pull_requests`, and a new push only with `review_on_push`. If it skips a draft, tell the user that marking the PR ready starts Copilot and needs another `/address`.
+
+If a bot that reviews the head is not done, run the review loop again. If the loop ran the full 15 minutes, stop waiting for that bot and name it in the step 4 report. Go to step 2 after CI ends and each bot is done or reported.
 
 ## 2. Read
 
