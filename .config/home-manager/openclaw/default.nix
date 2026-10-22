@@ -122,7 +122,8 @@ let
       channels = lib.mapAttrs (
         channelId: users:
         let
-          botChannel = lib.elem channelId (agent.slack.botChannels or [ ]);
+          alertSenders = agent.slack.botChannels.${channelId} or null;
+          botChannel = alertSenders != null;
         in
         {
           enabled = true;
@@ -131,7 +132,8 @@ let
           replyToMode = "all";
           # Overrides channels.slack.allowBots = false for alert channels only.
           allowBots = botChannel;
-          inherit users;
+          # The member allowlist gates bot senders too, so alert bots must be listed.
+          users = users ++ lib.optionals botChannel alertSenders;
           systemPrompt =
             builtins.readFile ./slack-channel-prompt.md
             + lib.optionalString botChannel (builtins.readFile ./slack-alert-prompt.md);
