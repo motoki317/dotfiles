@@ -165,6 +165,13 @@ in
           transport = "streamable-http";
           auth = "oauth";
         };
+        # Same model for Slite: one shared login (toki's) with read and write,
+        # by toki's choice. `openclaw mcp login slite`.
+        mcp.servers.slite = {
+          url = "https://api.slite.com/mcp";
+          transport = "streamable-http";
+          auth = "oauth";
+        };
         gateway = {
           mode = "local";
           bind = "loopback";
