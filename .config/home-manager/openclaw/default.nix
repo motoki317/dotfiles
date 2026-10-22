@@ -184,11 +184,34 @@ in
             # Workspace files come from git; OpenClaw must not seed its templates.
             skipBootstrap = true;
             sandbox.mode = "off";
-            heartbeat = {
-              # No periodic turns; explicit ownership still needs a named owner.
-              every = "0m";
-              agentId = owner;
-            };
+            heartbeat =
+              let
+                reportChannel = agents.${owner}.slack.heartbeatChannel or null;
+              in
+              {
+                # Explicit ownership needs a named owner even with periodic turns off.
+                agentId = owner;
+              }
+              // (
+                if reportChannel == null then
+                  { every = "0m"; }
+                else
+                  {
+                    # Each turn draws on the Claude subscription, so hourly and daytime only.
+                    every = "1h";
+                    activeHours = {
+                      start = "09:00";
+                      end = "24:00";
+                      timezone = "Asia/Tokyo";
+                    };
+                    # The checklist lives in memory/todo.md, so prior chat history only costs tokens.
+                    isolatedSession = true;
+                    target = "slack";
+                    accountId = owner;
+                    to = "channel:${reportChannel}";
+                    prompt = builtins.readFile ./heartbeat-prompt.md;
+                  }
+              );
             systemAgent.agentId = owner;
             authInheritance.agentId = owner;
             model.primary = "anthropic/claude-opus-5-5";
