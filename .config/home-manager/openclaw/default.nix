@@ -99,14 +99,24 @@ let
       allowFrom = dmUsers;
       appToken = secret "/slack/${id}/appToken";
       botToken = secret "/slack/${id}/botToken";
-      channels = lib.mapAttrs (_: users: {
-        enabled = true;
-        requireMention = false;
-        ignoreOtherMentions = false;
-        replyToMode = "all";
-        inherit users;
-        systemPrompt = builtins.readFile ./slack-channel-prompt.md;
-      }) (agent.slack.channels or { });
+      channels = lib.mapAttrs (
+        channelId: users:
+        let
+          botChannel = lib.elem channelId (agent.slack.botChannels or [ ]);
+        in
+        {
+          enabled = true;
+          requireMention = false;
+          ignoreOtherMentions = false;
+          replyToMode = "all";
+          # Overrides channels.slack.allowBots = false for alert channels only.
+          allowBots = botChannel;
+          inherit users;
+          systemPrompt =
+            builtins.readFile ./slack-channel-prompt.md
+            + lib.optionalString botChannel (builtins.readFile ./slack-alert-prompt.md);
+        }
+      ) (agent.slack.channels or { });
     };
 in
 {
