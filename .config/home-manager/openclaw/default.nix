@@ -30,6 +30,26 @@ let
     provider = "local";
     id = pointer;
   };
+  # Read-only Grafana per arrove cluster; its data sources (VictoriaMetrics,
+  # VictoriaLogs, Tempo) are queried through it. Bearer requests skip SSO at the
+  # ingress (the private manifest repo), so a Viewer
+  # service-account token works without an AWS session. A server stays off
+  # until its token file exists; rebuild after placing it.
+  grafanaServer =
+    cluster: url:
+    let
+      tokenFile = "${privateDir}/grafana/${cluster}.token";
+    in
+    {
+      enabled = builtins.pathExists tokenFile;
+      transport = "stdio";
+      command = "${pkgs.mcp-grafana}/bin/mcp-grafana";
+      args = [ "--disable-write" ];
+      env = {
+        GRAFANA_URL = url;
+        GRAFANA_SERVICE_ACCOUNT_TOKEN_FILE = tokenFile;
+      };
+    };
 
   # OpenClaw refuses workspace files that symlink outside the workspace, so
   # each is copied from the first that exists. The files are read at
@@ -188,6 +208,8 @@ in
           transport = "streamable-http";
           auth = "oauth";
         };
+        mcp.servers.grafana-prod = grafanaServer "prod" "https://grafana.example.com";
+        mcp.servers.grafana-staging = grafanaServer "staging" "https://grafana.staging.example.com";
         gateway = {
           mode = "local";
           bind = "loopback";
