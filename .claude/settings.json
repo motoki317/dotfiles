@@ -8,9 +8,6 @@
     "command": "~/.nix-profile/bin/claude-statusline",
     "refreshInterval": 60
   },
-  "enabledPlugins": {
-    "context7@claude-plugins-official": true
-  },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "modelSettings": {
