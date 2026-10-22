@@ -182,6 +182,12 @@ in
           transport = "streamable-http";
           auth = "oauth";
         };
+        # Same model for Sentry, for alert investigation. `openclaw mcp login sentry`.
+        mcp.servers.sentry = {
+          url = "https://mcp.sentry.dev/mcp";
+          transport = "streamable-http";
+          auth = "oauth";
+        };
         gateway = {
           mode = "local";
           bind = "loopback";
