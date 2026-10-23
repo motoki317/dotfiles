@@ -30,53 +30,8 @@ let
     provider = "local";
     id = pointer;
   };
-  # Read-only Grafana per arrove cluster; its data sources (VictoriaMetrics,
-  # VictoriaLogs, Tempo) are queried through it. Bearer requests skip SSO at the
-  # ingress (the private manifest repo), so a Viewer
-  # service-account token works without an AWS session.
-  # Not mcp-grafana: it sends queries in the URL or a form body, where the
-  # WAF answers 403 to SQL-like text such as `sum(` or `count(`.
-  # A JSON body to /api/ds/query passes the WAF.
-  grafanaApi = pkgs.writeShellApplication {
-    name = "grafana-api";
-    runtimeInputs = [ pkgs.curl ];
-    text = ''
-      usage() {
-        cat <<'EOF'
-      Usage: grafana-api <production|staging> <path> [curl args...]
-      Calls the cluster's Grafana HTTP API with its read-only token and prints the body.
-
-      Data sources (uid): VictoriaMetrics (PromQL), victorialogs (LogsQL), tempo (TraceQL).
-      Send queries as JSON to /api/ds/query. The WAF returns 403 when
-      a URL or form body contains SQL-like text such as `sum(` or `count(`.
-
-        grafana-api production /api/datasources
-        grafana-api production /api/ds/query -d @- <<'Q'
-        {"from":"now-1h","to":"now","queries":[
-          {"refId":"m","datasource":{"uid":"VictoriaMetrics"},"expr":"sum by (namespace) (rate(container_cpu_usage_seconds_total[5m]))","instant":true},
-          {"refId":"l","datasource":{"uid":"victorialogs"},"expr":"error | stats count() c","queryType":"instant"},
-          {"refId":"l2","datasource":{"uid":"victorialogs"},"expr":"error","maxLines":20},
-          {"refId":"t","datasource":{"uid":"tempo"},"queryType":"traceql","query":"{ status = error }","limit":20}]}
-      Q
-        grafana-api production /api/datasources/proxy/uid/tempo/api/traces/<traceID>
-      EOF
-      }
-      if [ $# -lt 2 ]; then usage >&2; exit 2; fi
-      case $1 in
-        production) url=https://grafana.example.com ;;
-        staging) url=https://grafana.staging.example.com ;;
-        *) usage >&2; exit 2 ;;
-      esac
-      token_file=${privateDir}/grafana/$1.token
-      path=$2
-      shift 2
-      # The token goes in a header file, not argv, so `ps` cannot show it.
-      exec curl -sS --fail-with-body \
-        -H @<(printf 'Authorization: Bearer %s\n' "$(<"$token_file")") \
-        -H 'Content-Type: application/json' \
-        "$@" "$url$path"
-    '';
-  };
+  # Internal hosts and query notes stay out of this public repo.
+  grafanaApi = import "${privateDir}/grafana-api.nix" { inherit pkgs privateDir; };
 
   # OpenClaw refuses workspace files that symlink outside the workspace, so
   # each is copied from the first that exists. The files are read at
@@ -163,7 +118,7 @@ let
           users = users ++ lib.optionals botChannel alertSenders;
           systemPrompt =
             builtins.readFile ./slack-channel-prompt.md
-            + lib.optionalString botChannel (builtins.readFile ./slack-alert-prompt.md);
+            + lib.optionalString botChannel (builtins.readFile "${privateDir}/slack-alert-prompt.md");
         }
       ) (agent.slack.channels or { });
     };
@@ -262,13 +217,9 @@ in
                   { every = "0m"; }
                 else
                   {
-                    # Each turn draws on the Claude subscription, so hourly and daytime only.
+                    # Each turn draws on the Claude subscription, so hourly. Around the
+                    # clock: an urgent item must not wait for morning.
                     every = "1h";
-                    activeHours = {
-                      start = "09:00";
-                      end = "24:00";
-                      timezone = "Asia/Tokyo";
-                    };
                     # The checklist lives in memory/todo.md, so prior chat history only costs tokens.
                     isolatedSession = true;
                     target = "slack";

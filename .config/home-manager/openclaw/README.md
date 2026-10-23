@@ -13,6 +13,9 @@ A Slack assistant that runs as the `moto` Linux user, with that user's tools and
 | `~/.secrets/openclaw/secrets.json` | you, not in git | Gateway and Slack tokens, and the OpenAI API key for `memory_search` embeddings. Mode 600 and a regular file: OpenClaw rejects symlinks and hard links, so sops-nix and agenix cannot provide it. |
 | `~/.secrets/openclaw/agents.nix` | you, not in git | Each agent's Slack channel and member IDs |
 | `~/.secrets/openclaw/workspace/`, `~/.secrets/openclaw/agents/<id>/` | you, not in git | Workspace instruction files |
+| `~/.secrets/openclaw/slack-alert-prompt.md`, `~/.secrets/openclaw/grafana-api.nix`, `~/.secrets/openclaw/grafana/` | you, not in git | Alert-channel prompt, the `grafana-api` client and its tokens |
+
+This repo is public. Keep workplace details out of it: channel names, alert definitions and handling, internal hosts and URLs. Put them under `~/.secrets/openclaw/`.
 
 Every switch copies `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, and `USER.md` into each agent's working directory. Each file comes from `~/.secrets/openclaw/agents/<id>/` if it exists there, else from `~/.secrets/openclaw/workspace/`. `IDENTITY.md` must exist in the agent's own directory. Edit the files under `~/.secrets/openclaw/`: a switch overwrites edits in the working directory.
 
