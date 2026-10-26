@@ -199,6 +199,10 @@ in
           transport = "streamable-http";
           auth = "oauth";
         };
+        # Every Slack thread and heartbeat run is its own session, and by default its
+        # MCP runtime lives until the gateway stops. After a week they hit the
+        # gateway's 256-runtime cap and new turns failed (2026-10-26).
+        mcp.sessionIdleTtlMs = 3600000;
         gateway = {
           mode = "local";
           bind = "loopback";
