@@ -101,6 +101,13 @@ let
       allowFrom = dmUsers;
       appToken = secret "/slack/${id}/appToken";
       botToken = secret "/slack/${id}/botToken";
+    }
+    # Reads go through the user token, so the agent reads channels the bot has not
+    # joined; posts stay on the bot token (userTokenReadOnly defaults to true).
+    // lib.optionalAttrs (agent.slack.userToken or false) {
+      userToken = secret "/slack/${id}/userToken";
+    }
+    // {
       channels = lib.mapAttrs (
         channelId: users:
         let
