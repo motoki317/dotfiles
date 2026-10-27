@@ -12,9 +12,10 @@
       url = "github:kawarimidoll/ha";
       flake = false;
     };
-    # Declarative OpenClaw, from a fork while upstream nix-openclaw stays on 2026.9.5.
-    # Pinned so a blanket `nix flake update` cannot move the gateway away from the
-    # imperatively installed Slack plugin; upgrade per openclaw/README.md.
+    # Declarative OpenClaw, from a fork until upstream builds with this nixpkgs
+    # (openclaw/README.md, "OpenClaw 2026.10.7 does not build here"). The URL names a
+    # commit, so `nix flake update` leaves OpenClaw alone: a new release can need
+    # the one-way state migration in that README.
     nix-openclaw = {
       url = "github:motoki317/nix-openclaw/16ae435a1bc4c46765598db288944c4c9f05352c";
       inputs.nixpkgs.follows = "nixpkgs";

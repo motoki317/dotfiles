@@ -7,7 +7,7 @@ A Slack assistant that runs as the `moto` Linux user, with that user's tools and
 | Path | Owner | Contents |
 |---|---|---|
 | `~/.openclaw/openclaw.json` | Nix | Read-only symlink into the Nix store |
-| `~/.openclaw/` (everything else) | OpenClaw | Sessions, SQLite state, the Slack plugin, `logs/` |
+| `~/.openclaw/` (everything else) | OpenClaw | Sessions, SQLite state, `logs/` |
 | `~/.claude/projects/-home-moto-projects-openclaw-<id>/` | Claude Code | The agent's Claude conversations: prompts, tool calls, replies, token usage |
 | `~/projects/openclaw/<id>/` | agent | Working directory: `MEMORY.md`, `memory/`, scratch files |
 | `~/.secrets/openclaw/secrets.json` | you, not in git | Gateway and Slack tokens, and the OpenAI API key for `memory_search` embeddings. Mode 600 and a regular file: OpenClaw rejects symlinks and hard links, so sops-nix and agenix cannot provide it. |
@@ -38,11 +38,11 @@ After you edit `secrets.json`, restart. After you edit this directory, the priva
 home-manager switch --flake ~/.config/home-manager#moto --impure && systemctl --user restart openclaw-gateway
 ```
 
-Nix ignores untracked files, so `git add` each new file in this directory first. `openclaw config set`, `onboard`, `doctor --fix`, and `plugins install` refuse to run in Nix mode. `openclaw-migrate-state` and `openclaw-install-slack` run the last two outside Nix mode, on a throwaway copy of the config.
+Nix ignores untracked files, so `git add` each new file in this directory first. `openclaw config set`, `onboard`, `doctor --fix`, and `plugins install` refuse to run in Nix mode. `openclaw-migrate-state` runs `doctor --fix` outside Nix mode, on a throwaway copy of the config. Add a plugin to `runtimePlugins` in `default.nix`.
 
 ### Upgrade OpenClaw
 
-`flake.nix` pins a commit of the fork [motoki317/nix-openclaw](https://github.com/motoki317/nix-openclaw) ([nix-openclaw stuck on 2026.9.5](#nix-openclaw-stuck-on-202695)). Each repo pins its OpenClaw version in `nix/sources/openclaw-source.nix`. If upstream nix-openclaw pins the release you want, set `github:openclaw/nix-openclaw/<commit>` in `flake.nix` and go to the switch below.
+`flake.nix` pins a commit of the fork [motoki317/nix-openclaw](https://github.com/motoki317/nix-openclaw). Each repo pins its OpenClaw version in `nix/sources/openclaw-source.nix`. Neither repo can run 2026.10.7 here yet, as [OpenClaw 2026.10.7 does not build here](#openclaw-2026107-does-not-build-here) explains. If upstream nix-openclaw pins the release you want and that section no longer applies, set `github:openclaw/nix-openclaw/<commit>` in `flake.nix` and go to the backup and switch below.
 
 Otherwise, pin the newest stable release in the fork's clone:
 
@@ -57,16 +57,26 @@ Without `GITHUB_ACTIONS=true`, the script refuses to run outside GitHub Actions.
 
 If the gateway build fails with `expected exactly one …` or `contract is unsupported or already patched`, the release changed code that `nix/scripts/patch-openclaw-npm-dist.mjs` matches exactly. Add the new form to the patcher and to its `.fixtures.mjs` and `.test.mjs`, as commit `7f57218` does for 2026.10. Commit that change on its own, then run the script again.
 
-Commit the generated files and push them to the fork's `main`. Set that commit in `flake.nix`. `openclaw-migrate-state` below migrates state one way, so stop the gateway and copy `~/.openclaw` before you switch. Then run:
+Commit the generated files and push them to the fork's `main`. Set that commit in `flake.nix`.
+
+On either path, `openclaw-migrate-state` migrates state one way, so copy `~/.openclaw` before you switch. The build runs before the stop, so a failed build leaves the gateway running:
 
 ```bash
 cd ~/.config/home-manager && nix flake lock
-home-manager switch --flake .#moto --impure && openclaw-install-slack && openclaw-migrate-state
+home-manager build --flake .#moto --impure
+systemctl --user stop openclaw-gateway
+cp -a ~/.openclaw ~/.openclaw.bak-$(date +%F)
+home-manager switch --flake .#moto --impure && openclaw-migrate-state
 ```
 
-`openclaw-install-slack` stops the gateway, installs the Slack plugin for the gateway's version, and starts the gateway again. `openclaw-migrate-state` does the same around `openclaw doctor --fix`, which migrates the state databases. Until it runs, a newer gateway can exit with status 78 and log `uses schema version …; … run openclaw doctor --fix`. Doctor also merges each agent's `TOOLS.md` into its `AGENTS.md`, and the next switch reverts that merge.
+`openclaw-migrate-state` stops the gateway, runs `openclaw doctor --fix` to migrate the state databases, and starts the gateway again. Until it runs, a newer gateway can exit with status 78 and log `uses schema version …; … run openclaw doctor --fix`. Doctor also merges each agent's `TOOLS.md` into its `AGENTS.md`, and the next switch reverts that merge.
 
-To roll back, activate the previous home-manager generation, stop the gateway, replace `~/.openclaw` with the copy, and run `openclaw-install-slack`.
+To roll back, stop the gateway and replace `~/.openclaw` with the copy. Restore `flake.nix` and `flake.lock` from git to their state before the upgrade. Then switch and start the gateway:
+
+```bash
+home-manager switch --flake ~/.config/home-manager#moto --impure
+systemctl --user start openclaw-gateway
+```
 
 ### Change the Claude model
 
@@ -117,15 +127,21 @@ Linger is on for `moto`, so the gateway starts whenever WSL starts. The `\Start 
 
 ## Known limitations
 
-### Slack plugin outside Nix
+### Slack loads as an unverified plugin
 
-nix-openclaw's `runtimePlugins = [ "slack" ]` fails OpenClaw 2026.9.5's trust gate: `openChannelIngressQueue is only available for trusted plugins … reason=record-missing`. [nix-openclaw#158](https://github.com/openclaw/nix-openclaw/issues/158) reports the same gate failure for Discord. `openclaw-install-slack` installs the official npm package instead.
+Every gateway start logs `OpenClaw can't verify where this plugin came from … reason=record-missing` for `slack`. Nix builds the plugin, so the state database holds no install record that proves it is the official package. In OpenClaw 2026.10.3, an unverified channel plugin cannot run hook agent turns (`dispatchHookAgentTurn`). Its senders get owner authority only from `commands.ownerAllowFrom`, which this config leaves unset. Owner authority unlocks owner-only chat commands and tools, such as `terminal` and `screen`. The Slack plugin does not use hook agent turns.
 
-Once `runtimePlugins` passes the gate, move Slack back into Nix. Add `runtimePlugins = [ "slack" ]` to `default.nix`. Delete `installSlackPlugin`, its `home.packages` entry, and the `environment` and `home.sessionVariables` entries that set `OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY`.
+After an OpenClaw upgrade, check that the gateway log has no `only available for trusted plugins` or `cannot admit authenticated owner` line. Either line means that the release blocks Slack on verification.
 
-### nix-openclaw stuck on 2026.9.5
+Do not reinstall Slack from npm, as the message suggests. An npm install points at the exact gateway build that it was installed for. Any later gateway rebuild, even one from a nixpkgs update, then stops Slack until you reinstall it.
 
-Upstream nix-openclaw's update failed on every run from 2026-10-02 on, so its newest OpenClaw is 2026.9.5. The fork's `source-patches` check fails because `nix/patches/allow-nix-store-plugin-ownership.patch` no longer applies to the OpenClaw source. Only a gateway built from source uses that patch, and this setup installs the gateway's npm build.
+### OpenClaw 2026.10.7 does not build here
+
+As of 2026-10-27, upstream nix-openclaw pins OpenClaw 2026.10.7, whose `package.json` requires `node >=24.22.1 <25 || >=26.12.1`. The `nixos-unstable` nixpkgs has Node 24.21.0, so upstream falls back to the official Node binary and patches it with `autoPatchelfHook`. The patchelf 0.19.2 in nixpkgs corrupts that binary ([NixOS/patchelf#674](https://github.com/NixOS/patchelf/issues/674)), and the build fails when the patched `node` segfaults in its install check. The fork has no such fallback: if it pins 2026.10.7, the gateway runs on a Node that the release does not support. This setup stays on the fork's 2026.10.3, which runs on the Node from nixpkgs.
+
+Move to upstream after one of these reaches `nixos-unstable`: Node 24.22.1, or a patchelf release with [NixOS/patchelf#672](https://github.com/NixOS/patchelf/pull/672). To check, set the upstream commit in `flake.nix` and run `home-manager build --flake ~/.config/home-manager#moto --impure`. The build does not touch the running gateway. If it fails, restore `flake.nix` and `flake.lock` from git.
+
+### acpx warning at startup
 
 From 2026.10.3, the gateway logs `Bundled plugin acpx identity unavailable: plugin runtime artifact contains unsupported symlink entry`. The agents here run on claude-cli, not ACP, so they do not use that plugin.
 

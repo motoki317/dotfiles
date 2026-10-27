@@ -54,38 +54,30 @@ let
 
   gateway = config.programs.openclaw.instances.default.package;
 
-  # nix-openclaw's load-path plugins fail OpenClaw's trust gate for channel
-  # ingress (nix-openclaw#158), so Slack comes from the official npm package,
-  # whose install record in the state dir is trusted. The installer writes config
-  # migrations, so it gets a throwaway copy of the Nix config. A running gateway
-  # would take over the install and refuse it in Nix mode, so it is stopped first.
-  installSlackPlugin = pkgs.writeShellScriptBin "openclaw-install-slack" ''
-    set -eu
-    # `plugins install` shells out to npm.
-    export PATH=${lib.makeBinPath [ pkgs.nodejs_24 ]}:$PATH
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    install -m600 ${lib.escapeShellArg "${stateDir}/openclaw.json"} "$tmp/openclaw.json"
-    systemctl --user stop openclaw-gateway
-    OPENCLAW_NIX_MODE=0 OPENCLAW_CONFIG_PATH="$tmp/openclaw.json" \
-      OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDir} OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=0 \
-      ${gateway}/bin/openclaw plugins install "@openclaw/slack@${gateway.version}" --force
-    systemctl --user start openclaw-gateway
-  '';
-
   # A new OpenClaw can refuse to start until `doctor --fix` migrates its state
   # databases, and doctor refuses Nix mode. Its config edits go to a throwaway
   # copy. Outside Nix mode it also rewrites and starts the managed gateway unit
   # (docs/cli/doctor/recovery.md), so it gets a throwaway HOME and no user bus.
+  # Outside Nix mode, OpenClaw also rejects the hardlinks that store optimisation
+  # leaves in Nix-built plugins, and doctor then reinstalls each one from npm.
+  # So the throwaway config loads plain copies of the plugins.
   migrateState = pkgs.writeShellScriptBin "openclaw-migrate-state" ''
-    set -eu
+    set -euo pipefail
+    jq=${lib.getExe pkgs.jq}
+    config=${lib.escapeShellArg "${stateDir}/openclaw.json"}
     tmp=$(mktemp -d)
     trap 'rm -rf "$tmp"' EXIT
-    install -m600 ${lib.escapeShellArg "${stateDir}/openclaw.json"} "$tmp/openclaw.json"
+    mkdir "$tmp/plugins"
+    "$jq" -r '.plugins.load.paths // [] | .[]' "$config" | while read -r plugin; do
+      cp -r --no-preserve=mode "$plugin" "$tmp/plugins/"
+    done
+    (umask 077 && "$jq" --arg dir "$tmp/plugins" \
+      'if .plugins.load.paths then .plugins.load.paths |= map("\($dir)/\(split("/") | last)") else . end' \
+      "$config" > "$tmp/openclaw.json")
     systemctl --user stop openclaw-gateway
     env -u DBUS_SESSION_BUS_ADDRESS -u XDG_RUNTIME_DIR HOME="$tmp" \
       OPENCLAW_NIX_MODE=0 OPENCLAW_CONFIG_PATH="$tmp/openclaw.json" \
-      OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDir} OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY=0 \
+      OPENCLAW_STATE_DIR=${lib.escapeShellArg stateDir} \
       ${gateway}/bin/openclaw doctor --fix --non-interactive
     systemctl --user start openclaw-gateway
   '';
@@ -160,18 +152,16 @@ in
     instances.default = {
       inherit stateDir;
       workspaceDir = workspaceRoot;
+      # nix-openclaw builds these against its overlay's gateway, which this instance
+      # runs while `package` keeps its default. A gateway rebuild rebuilds them too.
+      runtimePlugins = [ "slack" ];
       # The default under /tmp is emptied at boot, and only activation recreates it.
       logPath = "${stateDir}/logs/openclaw-gateway.log";
       # Agents share this user's ~/.claude (login, settings, instructions). No
       # CLAUDE_CONFIG_DIR: OpenClaw 2026.9.5 resumes a conversation only if it
       # finds the transcript under ~/.claude, so a separate directory makes the
       # agent forget once its Claude process idles (openclaw/openclaw#145309).
-      environment = {
-        # The package wrapper defaults this to 1, which hides the trusted Slack install record.
-        OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY = "0";
-      };
       config = {
-        plugins.entries.slack.enabled = true;
         secrets.providers.local = {
           source = "file";
           path = secretsFile;
@@ -307,12 +297,9 @@ in
   };
 
   home.packages = [
-    installSlackPlugin
     migrateState
     grafanaApi
   ];
-  # Interactive `openclaw` sees the service's plugin registry (the wrapper defaults to hiding it).
-  home.sessionVariables.OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY = "0";
 
   home.activation.openclawAgentWorkspaces = lib.hm.dag.entryAfter [ "writeBoundary" ] (
     lib.concatStrings (
