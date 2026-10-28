@@ -113,16 +113,13 @@ let
           # With "all", every top-level message starts its own thread session, so a quick
           # exchange split into one session per message. "off" keeps top-level messages
           # in one channel session; the agent still threads by passing threadId.
-          # Alert channels keep one session per alert.
-          replyToMode = if botChannel then "all" else "off";
+          replyToMode = "off";
           # Overrides channels.slack.allowBots = false for alert channels only.
           allowBots = botChannel;
           # The member allowlist gates bot senders too, so alert bots must be listed.
           users = users ++ lib.optionals botChannel alertSenders;
           systemPrompt =
-            builtins.readFile ./slack-channel-prompt.md
-            + lib.optionalString (!botChannel) (builtins.readFile ./slack-channel-toplevel-prompt.md)
-            + lib.optionalString botChannel (builtins.readFile "${privateDir}/slack-alert-prompt.md");
+            builtins.readFile ./slack-channel-prompt.md            + lib.optionalString botChannel (builtins.readFile "${privateDir}/slack-alert-prompt.md");
         }
       ) (agent.slack.channels or { });
     };
