@@ -1,0 +1,18 @@
+#!/bin/sh
+# Launch Claude Code against the local Strata server (Qwen3.8-Flash-Next IQ3_S, abliterated).
+# The Anthropic env is exported ONLY for this process, so your normal `claude` is untouched.
+# Start the model first:  ~/projects/Strata/run-iq3_s.sh   (serves on 127.0.0.1:8099)
+# On PATH: ln -s ~/.claude/scripts/claude-strata ~/.local/bin/
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8099"
+export ANTHROPIC_AUTH_TOKEN="strata-local"      # Strata accepts any key (apiKey "none")
+export ANTHROPIC_MODEL="sonnet"                 # a name Claude Code accepts; Strata ignores it
+export ANTHROPIC_SMALL_FAST_MODEL="haiku"       # background/title model -> also Strata
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="haiku"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="sonnet"
+# Stop Claude Code's background/"flavor-text" model calls: on one shared local slot they
+# carry a different prompt, never reuse the prefix cache, and can evict the main conversation.
+export DISABLE_NON_ESSENTIAL_MODEL_CALLS="1"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"
+# Skip all tool-permission prompts by default (requested). The local model can run any
+# command/edit without asking; a passed flag still overrides since it comes after.
+exec claude --dangerously-skip-permissions "$@"
