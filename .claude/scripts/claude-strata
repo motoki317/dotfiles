@@ -1,14 +1,28 @@
 #!/bin/sh
-# Launch Claude Code against the local Strata server (Qwen3.8-Flash-Next IQ3_S, abliterated).
+# Keep the main model on Strata and send other models upstream to preserve its prompt cache.
 # The Anthropic env is exported ONLY for this process, so your normal `claude` is untouched.
 # Start the model first:  ~/projects/Strata/run-iq3_s.sh   (serves on 127.0.0.1:8099)
 # On PATH: ln -s ~/.claude/scripts/claude-strata ~/.local/bin/
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8099"
-export ANTHROPIC_AUTH_TOKEN="strata-local"      # Strata accepts any key (apiKey "none")
-export ANTHROPIC_MODEL="sonnet"                 # a name Claude Code accepts; Strata ignores it
-export ANTHROPIC_SMALL_FAST_MODEL="haiku"       # background/title model -> also Strata
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="haiku"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="sonnet"
+model=strata-local
+router_port=8098
+engine_url=http://127.0.0.1:8099
+
+# Resolve the installed symlink so worktree launches use the same worktree's router.
+script=$(realpath "$0") || exit 1
+script_dir=$(dirname "$script")
+/usr/bin/python3 "$script_dir/strata-router" --ensure \
+    --port "$router_port" --model "$model" --engine-url "$engine_url" \
+    --log-file "$HOME/Library/Logs/strata-router.log" || exit 1
+
+# Nested launches must use the subscription login instead of inherited local credentials.
+unset ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_SMALL_FAST_MODEL
+unset ANTHROPIC_DEFAULT_HAIKU_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL
+export ANTHROPIC_BASE_URL="http://127.0.0.1:$router_port"
+export ANTHROPIC_MODEL="$model"
+export CLAUDE_CODE_SUBAGENT_MODEL=opus
+export CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1
+export CLAUDE_CODE_FORK_SUBAGENT=0
+export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=0
 # Stop Claude Code's background/"flavor-text" model calls: on one shared local slot they
 # carry a different prompt, never reuse the prefix cache, and can evict the main conversation.
 export DISABLE_NON_ESSENTIAL_MODEL_CALLS="1"
