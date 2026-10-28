@@ -1,0 +1,69 @@
+#!/bin/sh
+# One-shot upstream Claude (Max subscription) from inside a Strata session.
+# On PATH: ln -s ~/.claude/scripts/claude-upstream ~/.local/bin/
+#
+# claude-strata points ANTHROPIC_BASE_URL at the local engine, and that engine answers
+# EVERY model id as Qwen with HTTP 200 rather than rejecting it. So a missed unset here
+# would hand back Qwen output under an "opus" label with no error anywhere. The provider
+# check at the end is what turns that silent substitution into a hard failure.
+set -eu
+
+unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL
+unset ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL
+unset CLAUDE_CODE_SESSION_ID CLAUDE_CODE_MESSAGING_SOCKET CLAUDE_CODE_MESSAGING_TOKEN
+unset CLAUDE_CODE_CHILD_SESSION
+
+# An argument never reads stdin: callers here are agents and scripts, whose stdin is a
+# pipe with nothing on it, so reading it would block forever. Pipe the prompt instead.
+if [ $# -ge 1 ]; then
+  prompt=$1
+elif [ -t 0 ]; then
+  echo 'usage: claude-upstream "<prompt>"   or   <cmd> | claude-upstream' >&2
+  echo 'env:   OPUS_MODEL (default opus)  OPUS_TOOLS (default Read,Grep,Glob)' >&2
+  exit 2
+else
+  prompt=$(cat)
+fi
+[ -n "$prompt" ] || { echo "claude-upstream: empty prompt" >&2; exit 2; }
+
+out=$(claude -p "$prompt" \
+  --model "${OPUS_MODEL:-opus}" \
+  --output-format json \
+  --allowedTools "${OPUS_TOOLS:-Read,Grep,Glob}")
+
+printf '%s' "$out" | python3 -c '
+import json, sys
+
+raw = sys.stdin.read()
+try:
+    d = json.loads(raw)
+except ValueError:
+    sys.stderr.write("claude-upstream: not JSON from claude -p:\n" + raw[:2000] + "\n")
+    raise SystemExit(4)
+
+usage = d.get("modelUsage") or {}
+local = [m for m, u in usage.items()
+         if not str(u.get("canonicalModel") or m).startswith("claude-")
+         or u.get("provider") != "firstParty"]
+if local:
+    sys.stderr.write(
+        "claude-upstream: REFUSED - asked for %s, answered by %s (provider %s), not upstream Claude.\n"
+        "A Strata env var is still set; check the unset list.\n"
+        % (", ".join(local),
+           ", ".join(str((usage[m] or {}).get("canonicalModel") or m) for m in local),
+           ", ".join({str((usage[m] or {}).get("provider")) for m in local})))
+    raise SystemExit(3)
+
+if d.get("is_error"):
+    sys.stderr.write("claude-upstream: claude -p reported an error:\n" + str(d.get("result"))[:2000] + "\n")
+    raise SystemExit(5)
+
+print(d.get("result", ""))
+
+for m, u in usage.items():
+    sys.stderr.write(
+        "claude-upstream: %s via %s - in %d, out %d, cache write %d, notional $%.3f\n"
+        % (u.get("canonicalModel") or m, u.get("provider"), u.get("inputTokens") or 0,
+           u.get("outputTokens") or 0, u.get("cacheCreationInputTokens") or 0,
+           u.get("costUSD") or 0.0))
+'
