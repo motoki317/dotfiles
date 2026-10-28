@@ -22,10 +22,7 @@ Auto-advance every step except two stops: plan approval and Ship. Ask for plan a
 ## Advisors
 Two advisors sit outside the loop: Codex (`/codex-advise`) and Claude. Consult one before you commit to a hard-to-reverse or uncertain approach, assumption, or "done", and at any design choice the code cannot settle. Consult both when the question spans build and design, or before you skip a finding one of them raised. Skip them for mechanical work. Report findings to the user at their severity, with your counter-evidence.
 
-To reach the Claude advisor, run `env | grep '^ANTHROPIC_BASE_URL='`:
-
-- Set to a local server: every subagent here is that engine, whatever its model label. Call `claude-upstream` once per gate; never fan out.
-- Unset: use a subagent with `model: "opus"`, not `claude-upstream`.
+To reach the Claude advisor, use a `reviewer` subagent with `model: "opus"`.
 
 ## Implementer loop
 1. **Implement**.
