@@ -1,0 +1,84 @@
+#!/usr/bin/python3
+import json
+import os
+from pathlib import Path
+import shlex
+import sys
+
+
+EDIT_PATHS = {"Edit": "file_path", "Write": "file_path", "NotebookEdit": "notebook_path"}
+DENY_REASON = (
+    "Send this edit to a Claude subagent. "
+    "Include the goal, the files, the constraints, and the check in its brief. "
+    "Write scratch and tool-input files in the scratchpad directory."
+)
+
+
+def settings():
+    command = shlex.join(["/usr/bin/python3", str(Path(__file__).resolve())])
+    return {"hooks": {
+        "PreToolUse": [{"matcher": "|".join(EDIT_PATHS), "hooks": [
+            {"type": "command", "command": command},
+        ]}],
+        "UserPromptSubmit": [{"hooks": [{"type": "command", "command": command}]}],
+    }}
+
+
+def allowed_path(event):
+    tool_input = event.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return False
+    value = tool_input.get(EDIT_PATHS[event["tool_name"]])
+    if not isinstance(value, str) or not value:
+        return False
+    try:
+        path = Path(value).expanduser()
+        if not path.is_absolute():
+            path = Path(event.get("cwd", os.getcwd())) / path
+        path = path.resolve()
+        scratchpad = Path("/private/tmp/claude-" + str(os.getuid())).resolve()
+        config = Path(os.environ.get("CLAUDE_CONFIG_DIR") or "~/.claude").expanduser()
+        plans = (config / "plans").resolve()
+        if any(directory in path.parents for directory in (scratchpad, plans)):
+            return True
+        parents = path.parent.parts
+        return any(pair == ("docs", "plans") for pair in zip(parents, parents[1:]))
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return False
+
+
+def hook_output(event):
+    name = event.get("hook_event_name")
+    if name == "UserPromptSubmit":
+        prompt = Path(__file__).resolve().with_name("claude-strata.prompt.md").read_text(encoding="utf-8")
+        return {"hookSpecificOutput": {"hookEventName": name, "additionalContext": prompt}}
+    tool = event.get("tool_name")
+    if name == "PreToolUse" and isinstance(tool, str) and tool in EDIT_PATHS:
+        agent_id = event.get("agent_id")
+        if not (isinstance(agent_id, str) and agent_id) and not allowed_path(event):
+            return {"hookSpecificOutput": {
+                "hookEventName": name, "permissionDecision": "deny",
+                "permissionDecisionReason": DENY_REASON,
+            }}
+    return None
+
+
+def main():
+    if sys.argv[1:] == ["--settings"]:
+        print(json.dumps(settings()))
+        return 0
+    try:
+        event = json.load(sys.stdin)
+    except (ValueError, UnicodeError):
+        event = None
+    if not isinstance(event, dict):
+        print("strata-main-guard: expected a hook JSON object", file=sys.stderr)
+        return 2
+    output = hook_output(event)
+    if output is not None:
+        print(json.dumps(output))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

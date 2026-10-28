@@ -433,6 +433,8 @@ class LauncherTests(unittest.TestCase):
         scripts = self.temp / "scripts"
         scripts.mkdir()
         (scripts / "strata-router").symlink_to(ROUTER)
+        (scripts / "strata-main-guard").symlink_to(SCRIPTS / "strata-main-guard")
+        (scripts / "claude-strata.prompt.md").symlink_to(SCRIPTS / "claude-strata.prompt.md")
         launcher = LAUNCHER.read_text().replace("router_port=8098", "router_port=" + str(self.port))
         launcher = launcher.replace("engine_url=http://127.0.0.1:8099", "engine_url=" + self.engine.url)
         self.upstream_option = "--test-upstream-url " + shlex.quote(self.upstream.url) + " "
@@ -518,7 +520,15 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
                         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"}
             for name, value in expected.items():
                 self.assertEqual(output["env"][name], value)
-            self.assertEqual(output["args"], ["--dangerously-skip-permissions", "-p", "probe"])
+            args = output["args"]
+            self.assertEqual(args[:2], ["--dangerously-skip-permissions", "--settings"])
+            hooks = json.loads(args[2])["hooks"]
+            self.assertEqual(hooks["PreToolUse"][0]["matcher"], "Edit|Write|NotebookEdit")
+            for name in ["PreToolUse", "UserPromptSubmit"]:
+                self.assertEqual(shlex.split(hooks[name][0]["hooks"][0]["command"]),
+                                 ["/usr/bin/python3", str(SCRIPTS / "strata-main-guard")])
+            self.assertEqual(args[3:], ["--append-system-prompt-file",
+                                       str(self.temp.resolve() / "scripts/claude-strata.prompt.md"), "-p", "probe"])
             received = self.upstream.requests.get(timeout=1)
             self.assertFalse(any(name.lower() in {"authorization", "x-api-key"}
                                  for name, _ in received["headers"]))

@@ -26,6 +26,9 @@ export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=0
 # The engine holds 262,144 KV cells: a 200K window plus Claude Code's 32K output default fits.
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS=200000
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"
-# Skip all tool-permission prompts by default (requested). The local model can run any
-# command/edit without asking; a passed flag still overrides since it comes after.
-exec claude --dangerously-skip-permissions "$@"
+# Skip permission prompts by default (requested). strata-main-guard still denies main-thread edits.
+# A passed flag still overrides the permission mode since it comes after.
+# The appended prompt reaches the main session only: subagents build their own system prompt.
+exec claude --dangerously-skip-permissions \
+    --settings "$(/usr/bin/python3 "$script_dir/strata-main-guard" --settings)" \
+    --append-system-prompt-file "$script_dir/claude-strata.prompt.md" "$@"
