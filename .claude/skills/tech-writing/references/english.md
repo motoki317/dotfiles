@@ -23,6 +23,7 @@
 ## Word caps
 
 - Procedural sentence: 20 words. Descriptive sentence, and a note inside a procedure: 25.
+- Split a sentence over its cap at a clause boundary: reason, means, order, or contrast. Keep a purpose clause with the conclusion that it governs.
 - Count as one word each: `code spans`, numbers with units, identifiers, quoted text, proper names.
 - Break noun chains over three words with prepositions: "the connection pool timeout configuration value" → "the timeout value for the connection pool".
 

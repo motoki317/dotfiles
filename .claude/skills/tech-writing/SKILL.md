@@ -53,7 +53,6 @@ Do not swap these for a synonym.
 
 ## Length and format
 
-- Split a sentence over the length limit of its language reference at a clause boundary: reason, means, order, or contrast. Keep a purpose clause with the conclusion that it governs.
 - Write reasoning as paragraphs, one topic each. Use a list only for parallel items: parameters, options, steps, or a mapping.
 - Use bold only for a term where you define it, and for at most two other spans under each heading.
 
