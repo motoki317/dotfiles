@@ -13,7 +13,7 @@
 | You wrote | Write |
 |---|---|
 | should (requirement) | must |
-| should (recommendation) | SKILL.md "Complete": recommendation |
+| should (recommendation) | SKILL.md "Write the event, not a label": recommendation |
 | may / might / could (present capability, permission) | can |
 | could (past capability: "could not connect") | Keep it. |
 | may / might / could (epistemic uncertainty) | Keep it. |
@@ -67,7 +67,7 @@ Run this command on the file. It prints each hit outside code as `line: match`. 
 perl -CSD -Mutf8 -ne 'if(/^\s*```/){$c=!$c;next} next if $c; s/`[^`]*`//g; print "$.: $&\n" while /\b\w+(?:n[\x27’]t|[\x27’](?:ll|re|ve|d))\b|\b(?:it|that|there|let)[\x27’]s\b|\b(?:has|have|had) \w+(?:ed|en)\b|\b(?:should|would|may|might|could)\b|\b(?:is|are) being\b|, (?:making|allowing|enabling|ensuring)\b|;|\b(?:e\.g|i\.e|etc)\.|\bnot (?:just|only)\b|^\s*- \*\*|\*\*/gi' FILE
 ```
 
-For a `not just` or `not only` hit, see SKILL.md "Necessary". For a `**` hit, see SKILL.md "Length and format".
+For a `not just` or `not only` hit, see SKILL.md "Delete on sight": negation. For a `**` hit, see SKILL.md "Length and format".
 
 Then check these by hand:
 
