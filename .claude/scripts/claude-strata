@@ -23,9 +23,8 @@ export CLAUDE_CODE_SUBAGENT_MODEL=opus
 export CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1
 export CLAUDE_CODE_FORK_SUBAGENT=0
 export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=0
-# Stop Claude Code's background/"flavor-text" model calls: on one shared local slot they
-# carry a different prompt, never reuse the prefix cache, and can evict the main conversation.
-export DISABLE_NON_ESSENTIAL_MODEL_CALLS="1"
+# The engine holds 262,144 KV cells: a 200K window plus Claude Code's 32K output default fits.
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS=200000
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"
 # Skip all tool-permission prompts by default (requested). The local model can run any
 # command/edit without asking; a passed flag still overrides since it comes after.

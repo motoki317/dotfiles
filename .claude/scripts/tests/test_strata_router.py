@@ -514,6 +514,7 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
                         "ANTHROPIC_MODEL": "strata-local", "CLAUDE_CODE_SUBAGENT_MODEL": "opus",
                         "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1", "CLAUDE_CODE_FORK_SUBAGENT": "0",
                         "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "0",
+                        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "200000",
                         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"}
             for name, value in expected.items():
                 self.assertEqual(output["env"][name], value)
