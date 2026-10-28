@@ -110,13 +110,18 @@ let
           enabled = true;
           requireMention = false;
           ignoreOtherMentions = false;
-          replyToMode = "all";
+          # With "all", every top-level message starts its own thread session, so a quick
+          # exchange split into one session per message. "off" keeps top-level messages
+          # in one channel session; the agent still threads by passing threadId.
+          # Alert channels keep one session per alert.
+          replyToMode = if botChannel then "all" else "off";
           # Overrides channels.slack.allowBots = false for alert channels only.
           allowBots = botChannel;
           # The member allowlist gates bot senders too, so alert bots must be listed.
           users = users ++ lib.optionals botChannel alertSenders;
           systemPrompt =
             builtins.readFile ./slack-channel-prompt.md
+            + lib.optionalString (!botChannel) (builtins.readFile ./slack-channel-toplevel-prompt.md)
             + lib.optionalString botChannel (builtins.readFile "${privateDir}/slack-alert-prompt.md");
         }
       ) (agent.slack.channels or { });
@@ -193,6 +198,11 @@ in
         # MCP runtime lives until the gateway stops. After a week they hit the
         # gateway's 256-runtime cap and new turns failed (2026-10-26).
         mcp.sessionIdleTtlMs = 3600000;
+        # A channel's shared top-level session starts fresh after an hour of quiet.
+        session.resetByType.group = {
+          mode = "idle";
+          idleMinutes = 60;
+        };
         gateway = {
           mode = "local";
           bind = "loopback";
@@ -279,6 +289,8 @@ in
           groupPolicy = "allowlist";
           allowBots = false;
           joinIntro = false;
+          # A thread opened from the channel session starts with its transcript.
+          thread.inheritParent = true;
           accounts = lib.mapAttrs slackAccount agents;
         };
       };
