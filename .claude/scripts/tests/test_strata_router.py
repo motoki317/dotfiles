@@ -644,6 +644,7 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
                    "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL"]
         self.env.update({name: "inherited-secret" for name in cleared})
         self.env["PROBE_REQUEST"] = "1"
+        self.env["ENABLE_TOOL_SEARCH"] = "true"
         for inherited_haiku in [None, "inherited-model"]:
             if inherited_haiku is not None:
                 self.env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = inherited_haiku
@@ -658,7 +659,7 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
                         "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1", "CLAUDE_CODE_FORK_SUBAGENT": "0",
                         "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "0",
                         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "200000",
-                        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"}
+                        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1", "ENABLE_TOOL_SEARCH": "false"}
             for name, value in expected.items():
                 self.assertEqual(output["env"][name], value)
             args = output["args"]
@@ -669,7 +670,8 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
                 self.assertEqual(shlex.split(hooks[name][0]["hooks"][0]["command"]),
                                  ["/usr/bin/python3", str(SCRIPTS / "strata-main-guard")])
             self.assertEqual(args[3:], ["--append-system-prompt-file",
-                                       str(self.temp.resolve() / "scripts/claude-strata.prompt.md"), "-p", "probe"])
+                                       str(self.temp.resolve() / "scripts/claude-strata.prompt.md"),
+                                       "--strict-mcp-config", "-p", "probe"])
             received = self.upstream.requests.get(timeout=1)
             self.assertFalse(any(name.lower() in {"authorization", "x-api-key"}
                                  for name, _ in received["headers"]))

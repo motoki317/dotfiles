@@ -29,9 +29,14 @@ export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=0
 # The engine holds 262,144 KV cells: a 200K window plus Claude Code's 32K output default fits.
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS=200000
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"
+# Strata writes the whole tool list at the start of the prompt, so each tool added mid-session makes
+# the engine re-read the whole prompt. With tool search off, every built-in tool is sent from the
+# first request. --strict-mcp-config on the exec line keeps out all MCP servers, including claude.ai
+# connectors, which connect in the background and can arrive mid-session.
+export ENABLE_TOOL_SEARCH=false
 # Skip permission prompts by default (requested). strata-main-guard still denies main-thread edits.
 # A passed flag still overrides the permission mode since it comes after.
 # The appended prompt reaches the main session only: subagents build their own system prompt.
 exec claude --dangerously-skip-permissions \
     --settings "$(/usr/bin/python3 "$script_dir/strata-main-guard" --settings)" \
-    --append-system-prompt-file "$script_dir/claude-strata.prompt.md" "$@"
+    --append-system-prompt-file "$script_dir/claude-strata.prompt.md" --strict-mcp-config "$@"
