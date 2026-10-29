@@ -33,6 +33,11 @@
         "im:history",
         "im:read",
         "im:write"
+      ],
+      "user": [
+        "channels:history",
+        "channels:read",
+        "search:read"
       ]
     }
   },
