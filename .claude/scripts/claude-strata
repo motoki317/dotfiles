@@ -16,7 +16,10 @@ script_dir=$(dirname "$script")
 
 # Nested launches must use the subscription login instead of inherited local credentials.
 unset ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_SMALL_FAST_MODEL
-unset ANTHROPIC_DEFAULT_HAIKU_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL
+unset ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL
+# Unset, Claude Code would send background calls such as WebFetch's summary to the engine.
+# The value is sent as is, and upstream answers the "haiku" alias with 404.
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-5-5
 export ANTHROPIC_BASE_URL="http://127.0.0.1:$router_port"
 export ANTHROPIC_MODEL="$model"
 export CLAUDE_CODE_SUBAGENT_MODEL=opus

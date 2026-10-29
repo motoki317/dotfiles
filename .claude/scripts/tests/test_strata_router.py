@@ -502,17 +502,19 @@ print(json.dumps({"env": dict(os.environ), "args": sys.argv[1:]}))
     def test_matching_router_reused_and_inherited_environment_cleared(self):
         process = self.start_router()
         cleared = ["ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY", "ANTHROPIC_SMALL_FAST_MODEL",
-                   "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
-                   "ANTHROPIC_DEFAULT_OPUS_MODEL"]
+                   "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL"]
         self.env.update({name: "inherited-secret" for name in cleared})
         self.env["PROBE_REQUEST"] = "1"
-        for _ in range(2):
+        for inherited_haiku in [None, "inherited-model"]:
+            if inherited_haiku is not None:
+                self.env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = inherited_haiku
             result = self.launch("-p", "probe")
             self.assertEqual(result.returncode, 0, result.stderr)
             output = json.loads(result.stdout)
             for name in cleared:
                 self.assertNotIn(name, output["env"])
             expected = {"ANTHROPIC_BASE_URL": "http://127.0.0.1:" + str(self.port),
+                        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-5-5",
                         "ANTHROPIC_MODEL": "strata-local", "CLAUDE_CODE_SUBAGENT_MODEL": "opus",
                         "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1", "CLAUDE_CODE_FORK_SUBAGENT": "0",
                         "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "0",
