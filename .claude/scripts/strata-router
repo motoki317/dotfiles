@@ -5,6 +5,7 @@ import http.client
 import json
 import os
 from pathlib import Path
+import select
 import socket
 import struct
 import subprocess
@@ -122,15 +123,36 @@ class RouterHandler(BaseHTTPRequestHandler):
         self.connection.settimeout(BODY_TIMEOUT)
         return bytes(body), None, None
 
+    def watch_client(self, target_socket, done, disconnected):
+        while not done.wait(0.5):
+            try:
+                readable, _, _ = select.select([self.connection], [], [], 0)
+                gone = bool(readable) and self.connection.recv(1, socket.MSG_PEEK) == b""
+            except ConnectionError:
+                gone = True
+            except OSError:
+                return
+            if gone and not done.is_set():
+                disconnected.set()
+                try:
+                    # SSLSocket.shutdown() clears TLS state, so a racing send from the request thread would go out as plaintext.
+                    socket.socket.shutdown(target_socket, socket.SHUT_RDWR)
+                except OSError:
+                    pass
+                return
+
     def proxy(self):
         started = time.monotonic()
         model = None
         route = "router"
-        status = 502
+        status = None
         outcome = "complete"
         target = None
         headers_sent = False
         response = None
+        watch_done = threading.Event()
+        client_disconnected = threading.Event()
+        watcher = None
         self.close_connection = True
         try:
             body, error_status, message = self.request_body()
@@ -159,6 +181,12 @@ class RouterHandler(BaseHTTPRequestHandler):
             url = (self.server.identity["engine_url"] if route == "engine"
                    else self.server.identity["upstream_url"])
             target, host = target_connection(url, timeout=600)
+            target.connect()
+            # Pass target.sock now: getresponse() detaches it from target for a Connection: close response.
+            watcher = threading.Thread(target=self.watch_client,
+                                       args=(target.sock, watch_done, client_disconnected),
+                                       daemon=True, name="strata-router-client-watch")
+            watcher.start()
             target.putrequest(self.command, self.path, skip_host=True, skip_accept_encoding=True)
             target.putheader("Host", host)
             for name, value in end_to_end_headers(self.headers):
@@ -182,7 +210,11 @@ class RouterHandler(BaseHTTPRequestHandler):
                         continue
                 self.send_header(name, value)
             self.send_header("Connection", "close")
-            self.end_headers()
+            try:
+                self.end_headers()
+            except OSError:
+                client_disconnected.set()
+                return
             headers_sent = True
             if not no_body:
                 while True:
@@ -195,18 +227,23 @@ class RouterHandler(BaseHTTPRequestHandler):
                         self.wfile.write(piece)
                         self.wfile.flush()
                     except OSError:
-                        outcome = "client-disconnected"
+                        client_disconnected.set()
                         return
         except (OSError, http.client.HTTPException, ValueError):
             outcome = ("truncated" if response is not None and (response.length or response.chunked)
                        else "transport-error")
-            if not headers_sent:
+            if not headers_sent and not client_disconnected.is_set():
                 status = 502
                 message = ("cannot reach engine at " + self.server.identity["engine_url"] + " (start it first)"
                            if route == "engine" else
                            "cannot reach " + urlsplit(self.server.identity["upstream_url"]).netloc)
                 self.error_response(status, message)
         finally:
+            watch_done.set()
+            if watcher is not None:
+                watcher.join()
+            if client_disconnected.is_set():
+                outcome = "client-disconnected"
             if headers_sent and outcome != "complete":
                 try:
                     self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
@@ -214,6 +251,8 @@ class RouterHandler(BaseHTTPRequestHandler):
                     pass
                 # socketserver's shutdown can send FIN before the abortive close.
                 self.connection.close()
+            if response is not None:
+                response.close()
             if target is not None:
                 target.close()
             self.server.record({"method": self.command, "path": self.path, "model": model,

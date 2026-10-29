@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import select
 import shlex
 import shutil
 import socket
@@ -103,6 +104,7 @@ class RouterTests(unittest.TestCase):
         self.addCleanup(self.stack.close)
         self.engine = fake_server(self.stack, "engine")
         self.upstream = fake_server(self.stack, "upstream")
+        self.routes = [("strata-test", self.engine, "engine"), ("opus", self.upstream, "upstream")]
         self.log = io.StringIO()
         server = router.RouterServer(("127.0.0.1", 0), "strata-test", self.engine.url,
                                      self.upstream.url, self.log)
@@ -135,6 +137,19 @@ class RouterTests(unittest.TestCase):
     def records(self):
         wait_for(lambda: bool(self.log.getvalue()))
         return [json.loads(line) for line in self.log.getvalue().splitlines()]
+
+    @contextlib.contextmanager
+    def raw_post(self, model, destination):
+        with socket.create_connection(("127.0.0.1", self.server.server_port), timeout=2) as sock:
+            body = json.dumps({"model": model}).encode()
+            sock.sendall(b"POST /v1/messages HTTP/1.1\r\nContent-Length: "
+                         + str(len(body)).encode() + b"\r\n\r\n" + body)
+            destination.requests.get(timeout=1)
+            yield sock
+
+    def next_record(self, count):
+        wait_for(lambda: len(self.log.getvalue().splitlines()) > count, timeout=2)
+        return self.records()[count]
 
     def test_model_and_method_routing_preserves_bytes_and_path(self):
         cases = [("POST", b' {"model": "strata-test", "extra": [1,2]}\n', self.engine),
@@ -407,6 +422,106 @@ class RouterTests(unittest.TestCase):
             sock.close()
             release.set()
         self.assertTrue(closed.wait(3), "router did not close the target after client disconnect")
+        self.assertEqual(self.next_record(0)["outcome"], "client-disconnected")
+
+    def test_disconnect_interrupts_waiting_headers_and_body_on_both_routes(self):
+        for model, destination, route in self.routes:
+            for stage, reset in [("headers", False), ("headers", True),
+                                 ("idle-body", False), ("keepalive-body", False)]:
+                with self.subTest(route=route, stage=stage, reset=reset):
+                    eof = queue.Queue()
+                    finished = threading.Event()
+
+                    def reply(handler, body):
+                        try:
+                            if stage != "headers":
+                                handler.send_response_only(200)
+                                handler.send_header("Content-Type", "text/event-stream")
+                                handler.send_header("Connection", "close")
+                                handler.end_headers()
+                                handler.wfile.write(b": first\n\n")
+                                handler.wfile.flush()
+                            handler.connection.settimeout(3)
+                            deadline = time.monotonic() + 3
+                            while time.monotonic() < deadline:
+                                readable, _, _ = select.select([handler.connection], [], [], 0.2)
+                                if readable:
+                                    eof.put((handler.connection.recv(1), time.monotonic()))
+                                    return
+                                if stage == "keepalive-body":
+                                    handler.wfile.write(b": keepalive\n\n")
+                                    handler.wfile.flush()
+                        finally:
+                            handler.close_connection = True
+                            finished.set()
+
+                    destination.reply = reply
+                    count = len(self.log.getvalue().splitlines())
+                    with self.raw_post(model, destination) as sock:
+                        if stage != "headers":
+                            received = b""
+                            marker = b": keepalive\n\n" if stage == "keepalive-body" else b": first\n\n"
+                            while marker not in received:
+                                piece = sock.recv(65536)
+                                self.assertTrue(piece, "stream ended before the first event")
+                                received += piece
+                        if reset:
+                            sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+                        disconnected_at = time.monotonic()
+                    try:
+                        data, closed_at = eof.get(timeout=2)
+                        self.assertEqual(data, b"")
+                        self.assertLess(closed_at - disconnected_at, 1)
+                        record = self.next_record(count)
+                        self.assertEqual((record["route"], record["outcome"]),
+                                         (route, "client-disconnected"))
+                        self.assertEqual(record["status"], None if stage == "headers" else 200)
+                        self.assertFalse(any(thread.name == "strata-router-client-watch"
+                                             for thread in threading.enumerate()))
+                    finally:
+                        self.assertTrue(finished.wait(3), "fake target did not finish")
+
+    def test_readable_client_data_is_not_a_disconnect(self):
+        for model, destination, route in self.routes:
+            with self.subTest(route=route):
+                readable = queue.Queue()
+
+                def reply(handler, body):
+                    ready, _, _ = select.select([handler.connection], [], [], 0.8)
+                    readable.put(bool(ready))
+                    respond(handler)
+
+                destination.reply = reply
+                count = len(self.log.getvalue().splitlines())
+                with self.raw_post(model, destination) as sock:
+                    sock.sendall(b"x")
+                    self.assertFalse(readable.get(timeout=2), "router cancelled a connected client")
+                    with http.client.HTTPResponse(sock) as response:
+                        response.begin()
+                        self.assertEqual(response.read(), b"OK")
+                self.assertEqual(self.next_record(count)["outcome"], "complete")
+                self.assertFalse(any(thread.name == "strata-router-client-watch"
+                                     for thread in threading.enumerate()))
+
+    def test_client_reset_before_response_headers_is_logged_as_disconnect(self):
+        for model, destination, route in self.routes:
+            with self.subTest(route=route):
+                release = threading.Event()
+
+                def reply(handler, body):
+                    release.wait(3)
+                    respond(handler)
+
+                destination.reply = reply
+                count = len(self.log.getvalue().splitlines())
+                try:
+                    with self.raw_post(model, destination) as sock:
+                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+                finally:
+                    release.set()
+                record = self.next_record(count)
+                self.assertEqual((record["route"], record["status"], record["outcome"]),
+                                 (route, 200, "client-disconnected"))
 
     def test_identity_and_log_schema(self):
         status, _, body = self.request(method="GET", path=router.IDENTITY_PATH, body=b"")
