@@ -13,6 +13,7 @@ import select
 import shlex
 import shutil
 import socket
+import ssl
 import struct
 import subprocess
 import tempfile
@@ -96,6 +97,29 @@ def fake_server(stack, label):
     server.reply = lambda handler, body: respond(handler, label.encode())
     server.url = "http://127.0.0.1:" + str(server.server_port)
     return stack.enter_context(running_server(server))
+
+
+class TLSContextTests(unittest.TestCase):
+    def test_https_target_uses_system_cas_without_interpreter_defaults(self):
+        with patch.object(ThreadingHTTPServer, "__init__", return_value=None), \
+                patch.object(ssl, "create_default_context", wraps=ssl.create_default_context) as create_context, \
+                patch.object(http.client.HTTPSConnection, "connect", autospec=True,
+                             side_effect=OSError("network disabled")) as connect:
+            server = router.RouterServer(("127.0.0.1", 0), "strata-test",
+                                         "http://engine.invalid", "https://upstream.invalid", io.StringIO())
+            create_context.assert_called_once_with(cafile="/etc/ssl/cert.pem")
+            handler = object.__new__(router.RouterHandler)
+            handler.server = server
+            handler.command = "POST"
+            handler.path = "/v1/messages"
+            with patch.object(handler, "error_response"), \
+                    patch.object(handler, "request_body", return_value=(b'{"model":"opus"}', None, None)):
+                handler.proxy()
+            context = connect.call_args.args[0]._context
+            self.assertIs(context, server.tls_context)
+            self.assertTrue(context.get_ca_certs())
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(context.check_hostname)
 
 
 class RouterTests(unittest.TestCase):

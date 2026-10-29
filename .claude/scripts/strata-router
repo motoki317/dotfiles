@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import select
 import socket
+import ssl
 import struct
 import subprocess
 import sys
@@ -20,6 +21,7 @@ MAX_BODY_BYTES = 32 * 1024 * 1024
 BODY_TIMEOUT = 15
 IDENTITY_PATH = "/_strata-router"
 UPSTREAM_URL = "https://api.anthropic.com"
+SYSTEM_CA_FILE = "/etc/ssl/cert.pem"
 HOP_HEADERS = {
     "connection", "keep-alive", "te", "trailer", "transfer-encoding",
     "upgrade", "expect",
@@ -43,15 +45,21 @@ def end_to_end_headers(headers):
             if name.lower() not in excluded and not name.lower().startswith("proxy-")]
 
 
-def target_connection(url, timeout):
+def target_connection(url, timeout, tls_context):
     target = urlsplit(url)
-    connection_type = (http.client.HTTPSConnection if target.scheme == "https"
-                       else http.client.HTTPConnection)
-    return connection_type(target.hostname, target.port, timeout=timeout), target.netloc
+    if target.scheme == "https":
+        connection = http.client.HTTPSConnection(target.hostname, target.port, timeout=timeout,
+                                                 context=tls_context)
+    else:
+        connection = http.client.HTTPConnection(target.hostname, target.port, timeout=timeout)
+    return connection, target.netloc
 
 
 class RouterServer(ThreadingHTTPServer):
     def __init__(self, address, model, engine_url, upstream_url, log):
+        # Not the interpreter's default store: under a Nix DEVELOPER_DIR, /usr/bin/python3 runs PATH's python3,
+        # which can be python.org's and hold no CAs. Apple's Python trusts this same file by default.
+        self.tls_context = ssl.create_default_context(cafile=SYSTEM_CA_FILE)
         self.identity = identity(model, engine_url, upstream_url)
         self.log = log
         self.log_lock = threading.Lock()
@@ -180,7 +188,7 @@ class RouterHandler(BaseHTTPRequestHandler):
             route = "engine" if model == self.server.identity["model"] else "upstream"
             url = (self.server.identity["engine_url"] if route == "engine"
                    else self.server.identity["upstream_url"])
-            target, host = target_connection(url, timeout=600)
+            target, host = target_connection(url, timeout=600, tls_context=self.server.tls_context)
             target.connect()
             # Pass target.sock now: getresponse() detaches it from target for a Connection: close response.
             watcher = threading.Thread(target=self.watch_client,
@@ -372,7 +380,8 @@ def main():
                           args.test_upstream_url or UPSTREAM_URL, sys.stderr) as server:
             server.serve_forever()
     except OSError:
-        print("strata-router: startup failed (cannot detach, open log, or bind listener)",
+        print("strata-router: startup failed (cannot detach, open log, bind listener, "
+              "or load CA file " + SYSTEM_CA_FILE + ")",
               file=sys.stderr, flush=True)
         return 1
     return 0
