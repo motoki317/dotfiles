@@ -131,6 +131,7 @@ with pkgs; [
   htop
   hunk
   jq
+  jujutsu
   just
   k6
   k9s
