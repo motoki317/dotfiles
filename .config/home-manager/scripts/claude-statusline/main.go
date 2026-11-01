@@ -33,8 +33,7 @@ type Payload struct {
 		Used     *float64 `json:"used_percentage"`
 		ResetsAt *int64   `json:"resets_at"`
 	} `json:"rate_limits"`
-	TranscriptPath string `json:"transcript_path"`
-	SessionID      string `json:"session_id"`
+	SessionID string `json:"session_id"`
 }
 
 func main() {
@@ -60,7 +59,7 @@ func main() {
 		claude = p.claudeWindows()
 	}
 	codex := codexSource.current(now)
-	cost := sessionCost(sessionID(p))
+	cost := sessionCost(p.SessionID)
 	fmt.Println(render(p, claude, codex, cost, now, termWidth()))
 }
 

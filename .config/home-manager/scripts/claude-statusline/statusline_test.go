@@ -364,12 +364,11 @@ func TestModelName(t *testing.T) {
 }
 
 func TestRenderContextElidesPercent(t *testing.T) {
-	var p Payload
-	p.ContextWindow = &ContextWindow{
-		TotalInputTokens:  pi(178200),
-		ContextWindowSize: pi(1_000_000),
+	c := &ContextWindow{
+		TotalInputTokens:  178200,
+		ContextWindowSize: 1_000_000,
 	}
-	got := renderContext(p)
+	got := renderContext(c)
 	if strings.Contains(got, "%") {
 		t.Errorf("context should elide the percentage, got %q", got)
 	}
@@ -378,11 +377,33 @@ func TestRenderContextElidesPercent(t *testing.T) {
 	}
 }
 
-func TestRenderContextLegacyNoLimit(t *testing.T) {
-	var p Payload // no ContextWindow, no transcript
-	got := renderContext(p)
-	if !strings.Contains(got, "tkns") {
-		t.Errorf("legacy context = %q, want a 'tkns' suffix", got)
+func TestRenderContextPayload(t *testing.T) {
+	cases := []struct {
+		name, data, context string
+	}{
+		{"absent context", `{}`, ""},
+		{"null context", `{"context_window":null}`, ""},
+		{"before first response", `{"context_window":{"total_input_tokens":0,"context_window_size":200000}}`, cGreen + "0" + cReset + "/200K"},
+		{"ignores current usage", `{"context_window":{"context_window_size":200000,"current_usage":{"input_tokens":1000,"cache_creation_input_tokens":2000,"cache_read_input_tokens":3000}}}`, cGreen + "0" + cReset + "/200K"},
+		{"missing limit", `{"context_window":{"total_input_tokens":1000}}`, ""},
+		{"zero limit", `{"context_window":{"total_input_tokens":1000,"context_window_size":0}}`, ""},
+		{"negative limit", `{"context_window":{"total_input_tokens":1000,"context_window_size":-1}}`, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var p Payload
+			if err := json.Unmarshal([]byte(c.data), &p); err != nil {
+				t.Fatal(err)
+			}
+			p.Model.DisplayName = "Opus 4.8"
+			want := glyphModel + " Opus 4.8"
+			if c.context != "" {
+				want += " | " + glyphToken + " " + c.context
+			}
+			if got := render(p, nil, nil, nil, 1_000_000, 0); got != want {
+				t.Errorf("render = %q, want %q", got, want)
+			}
+		})
 	}
 }
 
@@ -400,8 +421,8 @@ func TestRenderContextColor(t *testing.T) {
 		{600000, 1000000, cRed},
 	}
 	for _, c := range cases {
-		p := Payload{ContextWindow: &ContextWindow{TotalInputTokens: pi(c.used), ContextWindowSize: pi(c.limit)}}
-		if got := renderContext(p); !strings.HasPrefix(got, c.color) {
+		context := &ContextWindow{TotalInputTokens: c.used, ContextWindowSize: c.limit}
+		if got := renderContext(context); !strings.HasPrefix(got, c.color) {
 			t.Errorf("context %d/%d = %q, want color %q", c.used, c.limit, got, c.color)
 		}
 	}
@@ -412,8 +433,8 @@ func TestRenderFull(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
 	p.ContextWindow = &ContextWindow{
-		TotalInputTokens:  pi(178200),
-		ContextWindowSize: pi(1_000_000),
+		TotalInputTokens:  178200,
+		ContextWindowSize: 1_000_000,
 	}
 
 	codex := []Window{
@@ -437,18 +458,6 @@ func TestRenderCodexAbsent(t *testing.T) {
 	got := render(p, nil, nil, nil, 1_000_000, 0)
 	if strings.Contains(got, "Codex") {
 		t.Errorf("no Codex data should render no Codex group, got %q", got)
-	}
-}
-
-func TestSessionID(t *testing.T) {
-	// Explicit field wins.
-	if got := sessionID(Payload{SessionID: "abc"}); got != "abc" {
-		t.Errorf("explicit = %q, want abc", got)
-	}
-	// Falls back to the transcript filename stem.
-	p := Payload{TranscriptPath: "/home/u/.claude/projects/x/b21a0283-29b2.jsonl"}
-	if got := sessionID(p); got != "b21a0283-29b2" {
-		t.Errorf("fallback = %q, want b21a0283-29b2", got)
 	}
 }
 
@@ -488,6 +497,9 @@ printf '%s\n' '{"session":{"tokens":{},"cost":{"usd":1.25,"complete":true}}}'
 	}
 	t.Setenv("AGTLOG_TEST_ARGS", argsPath)
 	t.Setenv("PATH", dir)
+	if ci := sessionCost(""); ci != nil {
+		t.Fatalf("cost without session ID = %+v, want nil", ci)
+	}
 	ci := sessionCost("00000000-0000-4000-8000-000000000001")
 	if ci == nil || ci.USD != 1.25 || !ci.Complete {
 		t.Fatalf("agtlogCost = %+v", ci)
@@ -599,8 +611,8 @@ func TestRenderWraps(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
 	p.ContextWindow = &ContextWindow{
-		TotalInputTokens:  pi(178200),
-		ContextWindowSize: pi(1_000_000),
+		TotalInputTokens:  178200,
+		ContextWindowSize: 1_000_000,
 	}
 	claude := []Window{
 		{Minutes: 300, Used: 28, ResetsAt: pi(now + 5000)},

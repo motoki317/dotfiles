@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -41,16 +39,6 @@ type agtlogShow struct {
 			Complete bool    `json:"complete"`
 		} `json:"cost"`
 	} `json:"session"`
-}
-
-// sessionID resolves the session's UUID: the payload field when present, else the
-// transcript filename stem (<uuid>.jsonl), which equals it. The fallback keeps
-// cost working on any client whose payload omits session_id.
-func sessionID(p Payload) string {
-	if p.SessionID != "" {
-		return p.SessionID
-	}
-	return strings.TrimSuffix(filepath.Base(p.TranscriptPath), ".jsonl")
 }
 
 // sessionCost returns this session's cost via agtlog, or nil when agtlog is not
