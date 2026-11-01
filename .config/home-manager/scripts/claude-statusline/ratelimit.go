@@ -21,8 +21,6 @@ type ClaudeWindow struct {
 	ResetsAt       *int64   `json:"resets_at"`
 }
 
-// CodexRL and CodexWindow mirror the rate_limits object Codex writes into its
-// session rollout files. window_minutes is explicit, unlike Anthropic's payload.
 type CodexRL struct {
 	Primary   *CodexWindow `json:"primary"`
 	Secondary *CodexWindow `json:"secondary"`

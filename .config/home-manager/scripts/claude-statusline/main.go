@@ -57,12 +57,11 @@ func main() {
 	if data, err := readAll(os.Stdin); err == nil {
 		_ = json.Unmarshal(data, &p) // best effort: a decode error leaves p zero
 	}
-	home, _ := os.UserHomeDir()
 	now := time.Now().Unix()
 	if live := claudeUsageRateLimits(now); live != nil {
 		p.RateLimits = live
 	}
-	codex := codexRateLimits(home, now)
+	codex := codexRateLimits(now)
 	cost := sessionCost(sessionID(p))
 	fmt.Println(render(p, codex, cost, now, termWidth()))
 }

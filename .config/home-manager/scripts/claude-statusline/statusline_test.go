@@ -619,58 +619,6 @@ func TestRenderWraps(t *testing.T) {
 	}
 }
 
-// writeLines writes JSONL to a temp rollout file and returns its path.
-func writeLines(t *testing.T, lines ...string) string {
-	t.Helper()
-	dir := t.TempDir()
-	p := filepath.Join(dir, "rollout-test.jsonl")
-	if err := os.WriteFile(p, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return p
-}
-
-func TestLastRateLimitEventStructural(t *testing.T) {
-	// A prose line mentioning "rate_limits" both before AND after the real event,
-	// plus a malformed line — none should be selected, and the scan must not abort.
-	path := writeLines(t,
-		`{"type":"event_msg","timestamp":"2026-07-10T07:00:00Z","payload":{"type":"agent_message","text":"tell me about rate_limits"}}`,
-		`{"type":"event_msg","timestamp":"2026-07-10T07:40:00Z","payload":{"type":"token_count","rate_limits":{"primary":{"used_percent":93.0,"window_minutes":300,"resets_at":1783677171},"secondary":{"used_percent":15.0,"window_minutes":10080,"resets_at":1784242529}}}}`,
-		`{"type":"event_msg","timestamp":"2026-07-10T07:41:00Z"`, // truncated / malformed
-		`{"type":"response_item","payload":{"content":"more discussion of rate_limits here"}}`,
-	)
-	rl, ts, ok := lastRateLimitEvent(path)
-	if !ok {
-		t.Fatal("expected a rate_limits event to be found")
-	}
-	if rl.Primary == nil || rl.Primary.UsedPercent == nil || *rl.Primary.UsedPercent != 93.0 {
-		t.Errorf("selected the wrong object: %+v", rl.Primary)
-	}
-	if ts.IsZero() {
-		t.Error("timestamp should have parsed")
-	}
-}
-
-func TestLastRateLimitEventPicksLast(t *testing.T) {
-	path := writeLines(t,
-		`{"type":"event_msg","timestamp":"2026-07-10T07:00:00Z","payload":{"type":"token_count","rate_limits":{"primary":{"used_percent":10.0,"window_minutes":300,"resets_at":1}}}}`,
-		`{"type":"event_msg","timestamp":"2026-07-10T08:00:00Z","payload":{"type":"token_count","rate_limits":{"primary":{"used_percent":42.0,"window_minutes":300,"resets_at":2}}}}`,
-	)
-	rl, _, ok := lastRateLimitEvent(path)
-	if !ok || rl.Primary == nil || *rl.Primary.UsedPercent != 42.0 {
-		t.Errorf("expected the last event (42%%), got %+v", rl)
-	}
-}
-
-func TestLastRateLimitEventNone(t *testing.T) {
-	path := writeLines(t,
-		`{"type":"event_msg","payload":{"type":"agent_message","text":"no limits here"}}`,
-	)
-	if _, _, ok := lastRateLimitEvent(path); ok {
-		t.Error("expected no event")
-	}
-}
-
 func TestCodexSegmentsMissingWindow(t *testing.T) {
 	// Only the 5h window present; 7d absent -> one segment.
 	rl := &CodexRL{Primary: &CodexWindow{UsedPercent: pf(42), WindowMinutes: pn(300), ResetsAt: pi(9_999_999_999)}}
@@ -683,33 +631,40 @@ func TestCodexSegmentsMissingWindow(t *testing.T) {
 	}
 }
 
-func TestCodexRateLimitsNewestByEventTimestamp(t *testing.T) {
-	// Two rollout files. The one written LAST (newer mtime) carries an OLDER event
-	// timestamp; selection must prefer the newer event, not the newer file.
-	home := t.TempDir()
-	dir := filepath.Join(home, ".codex", "sessions", "2026", "07", "10")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
+func TestCodexRateLimitsCache(t *testing.T) {
+	const now int64 = 1_000_000
+	snapshot := &CodexRL{Primary: &CodexWindow{
+		UsedPercent: pf(42), WindowMinutes: pn(300), ResetsAt: pi(now + 9000),
+	}}
+	cases := []struct {
+		name string
+		age  *int64
+	}{
+		{"missing", nil},
+		{"fresh", pi(0)},
+		{"stale", pi(codexSource.interval + 1)},
 	}
-	older := `{"type":"event_msg","timestamp":"2026-07-10T06:00:00Z","payload":{"type":"token_count","rate_limits":{"primary":{"used_percent":10.0,"window_minutes":300,"resets_at":9999999999}}}}`
-	newer := `{"type":"event_msg","timestamp":"2026-07-10T09:00:00Z","payload":{"type":"token_count","rate_limits":{"primary":{"used_percent":80.0,"window_minutes":300,"resets_at":9999999999}}}}`
-	// File A holds the newer EVENT; write it first.
-	if err := os.WriteFile(filepath.Join(dir, "rollout-a.jsonl"), []byte(newer+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	// File B holds the older event; write it second so it has the newer mtime.
-	if err := os.WriteFile(filepath.Join(dir, "rollout-b.jsonl"), []byte(older+"\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	rl := codexRateLimitsFromLogs(home)
-	if rl == nil || rl.Primary == nil || *rl.Primary.UsedPercent != 80.0 {
-		t.Errorf("expected the newer event (80%%), got %+v", rl)
-	}
-}
-
-func TestCodexRateLimitsAbsent(t *testing.T) {
-	if rl := codexRateLimitsFromLogs(t.TempDir()); rl != nil {
-		t.Errorf("no ~/.codex should yield nil, got %+v", rl)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("HOME", t.TempDir())
+			t.Setenv("XDG_CACHE_HOME", t.TempDir())
+			t.Setenv("PATH", t.TempDir())
+			var want *CodexRL
+			if c.age != nil {
+				want = snapshot
+				if err := codexSource.write(&cacheFile[CodexRL]{FetchedAt: now - *c.age, RateLimits: snapshot}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			rl := codexRateLimits(now)
+			if want == nil && rl != nil {
+				t.Fatalf("missing cache returned %+v, want nil", rl)
+			}
+			got := render(Payload{}, rl, nil, now, 0)
+			if expected := render(Payload{}, want, nil, now, 0); got != expected {
+				t.Errorf("render = %q, want %q", got, expected)
+			}
+		})
 	}
 }
 
