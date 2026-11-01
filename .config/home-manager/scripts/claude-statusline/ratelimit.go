@@ -1,98 +1,59 @@
 package main
 
-import "fmt"
-
-// Anthropic's payload omits window lengths, so they are fixed here. Codex's
-// payload carries window_minutes, so its lengths and labels are derived instead.
-const (
-	fiveHourSecs = 5 * 60 * 60
-	sevenDaySecs = 7 * 24 * 60 * 60
+import (
+	"fmt"
+	"strings"
 )
 
-// RateLimits holds Anthropic's two rate-limit windows, injected live each render.
-type RateLimits struct {
-	FiveHour *ClaudeWindow `json:"five_hour"`
-	SevenDay *ClaudeWindow `json:"seven_day"`
+type Window struct {
+	Minutes  int     `json:"minutes"`
+	Used     float64 `json:"used"`
+	ResetsAt *int64  `json:"resets_at"`
 }
 
-// ClaudeWindow is one Anthropic rate-limit window, injected live each render.
-type ClaudeWindow struct {
-	UsedPercentage *float64 `json:"used_percentage"`
-	ResetsAt       *int64   `json:"resets_at"`
+// Claude omits window lengths. Table order keeps the shorter window first.
+var claudeWindowLengths = []struct {
+	key     string
+	minutes int
+}{
+	{"five_hour", 300},
+	{"seven_day", 10080},
 }
 
-type CodexRL struct {
-	Primary   *CodexWindow `json:"primary"`
-	Secondary *CodexWindow `json:"secondary"`
-}
-
-type CodexWindow struct {
-	UsedPercent   *float64 `json:"used_percent"`
-	WindowMinutes *int     `json:"window_minutes"`
-	ResetsAt      *int64   `json:"resets_at"`
-}
-
-// claudeSegments renders Anthropic's 5h and 7d windows, skipping any that is
-// absent (non-subscribers, or before the first API response of a session).
-func claudeSegments(p Payload, now int64) []string {
-	var out []string
-	if p.RateLimits == nil {
-		return out
-	}
-	if w := p.RateLimits.FiveHour; w != nil {
-		if s := rlSegment("5h", fiveHourSecs, w.UsedPercentage, w.ResetsAt, now); s != "" {
-			out = append(out, s)
+func (p Payload) claudeWindows() []Window {
+	var windows []Window
+	for _, length := range claudeWindowLengths {
+		if w := p.RateLimits[length.key]; w.Used != nil {
+			windows = append(windows, Window{Minutes: length.minutes, Used: *w.Used, ResetsAt: w.ResetsAt})
 		}
 	}
-	if w := p.RateLimits.SevenDay; w != nil {
-		if s := rlSegment("7d", sevenDaySecs, w.UsedPercentage, w.ResetsAt, now); s != "" {
-			out = append(out, s)
-		}
-	}
-	return out
+	return windows
 }
 
-// codexSegments renders Codex's primary (5h) and secondary (7d) windows.
-func codexSegments(rl *CodexRL, now int64) []string {
-	var out []string
-	if rl == nil {
-		return out
-	}
-	for _, w := range []*CodexWindow{rl.Primary, rl.Secondary} {
-		if w == nil || w.UsedPercent == nil || w.WindowMinutes == nil {
-			continue
-		}
-		if s := rlSegment(winLabel(*w.WindowMinutes), int64(*w.WindowMinutes)*60, w.UsedPercent, w.ResetsAt, now); s != "" {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-// rlSegment renders one rate-limit window as "<pct>% <elapsed>/<label>", e.g.
-// "28% 3h28m/5h". Percent is colored by usage and elapsed by time-through-window,
-// so the two colors side by side reveal burn pace: usage redder than time means
-// burning fast. Returns "" when pct is absent.
-//
-// resetsAt drives elapsed = window - (resetsAt - now). Once it has passed
-// (now >= resetsAt) the window has rolled over and any carried percent describes
-// an expired window — a stale snapshot (Codex records them only at each API
-// call), shown dimmed as "~<label>" rather than as a wrong number. Live sources
-// (Anthropic, injected fresh each render) keep resetsAt in the future, so that
-// branch never fires for them. When resetsAt is absent, only "<pct>% <label>".
-func rlSegment(label string, windowSecs int64, pct *float64, resetsAt *int64, now int64) string {
-	if pct == nil {
+func rateLimitSegment(windows []Window, prefix string, now int64) string {
+	if len(windows) == 0 {
 		return ""
 	}
-	if resetsAt != nil && now >= *resetsAt {
+	parts := make([]string, 0, len(windows))
+	for _, w := range windows {
+		parts = append(parts, rlSegment(w, now))
+	}
+	return glyphTimer + " " + prefix + strings.Join(parts, ", ")
+}
+
+// Matching usage and elapsed-time colors reveal how fast the allowance burns.
+// An expired snapshot cannot describe current usage, so only its label remains.
+func rlSegment(w Window, now int64) string {
+	label, windowSecs := winLabel(w.Minutes), int64(w.Minutes)*60
+	if w.ResetsAt != nil && now >= *w.ResetsAt {
 		return cGray + "~" + label + cReset
 	}
-	pctInt := int64(*pct)
+	pctInt := int64(w.Used)
 	pc := tcolor(pctInt, 50, 80)
-	if resetsAt == nil {
+	if w.ResetsAt == nil {
 		return fmt.Sprintf("%s%d%%%s %s%s%s", pc, pctInt, cReset, cGray, label, cReset)
 	}
-	elapsed := windowSecs - (*resetsAt - now)
+	elapsed := windowSecs - (*w.ResetsAt - now)
 	if elapsed < 0 {
 		elapsed = 0
 	}

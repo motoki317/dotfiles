@@ -21,44 +21,14 @@ const (
 	claudeUsageResponseLimit = 1 << 20
 )
 
-var claudeSource = usageSource[RateLimits]{
+var claudeSource = usageSource{
 	file: "claude-usage.json", bin: "claude", arg: "--refresh-claude", interval: 45, fetch: fetchClaudeUsage,
-}
-
-// claudeUsageRateLimits returns the live Anthropic snapshot cached by the detached
-// refresher. Unlike Codex, Claude has no account-global log fallback; nil deliberately
-// leaves the harness payload untouched in main until a live fetch succeeds.
-func claudeUsageRateLimits(now int64) *RateLimits {
-	cache := claudeSource.read()
-	var live *RateLimits
-	if cache != nil {
-		live = usableClaudeRateLimits(cache.RateLimits)
-	}
-	if cache == nil || live == nil || now-cache.FetchedAt > claudeSource.interval {
-		claudeSource.spawn(now)
-	}
-	return live
-}
-
-// usableClaudeRateLimits protects the payload precedence seam from a syntactically
-// valid but partial cache left by an interrupted upgrade or manual edit. Successful
-// endpoint parsing already guarantees this invariant before any cache write.
-func usableClaudeRateLimits(rl *RateLimits) *RateLimits {
-	if rl == nil {
-		return nil
-	}
-	fiveHour := rl.FiveHour != nil && rl.FiveHour.UsedPercentage != nil
-	sevenDay := rl.SevenDay != nil && rl.SevenDay.UsedPercentage != nil
-	if !fiveHour && !sevenDay {
-		return nil
-	}
-	return rl
 }
 
 // fetchClaudeUsage reads Anthropic's unmetered account-global usage status with the
 // access token already owned by Claude Code. It neither refreshes nor persists auth;
 // every credential, request, status, and body failure leaves the payload fallback intact.
-func fetchClaudeUsage() *RateLimits {
+func fetchClaudeUsage() []Window {
 	ctx, cancel := context.WithTimeout(context.Background(), claudeUsageFetchTimeout)
 	defer cancel()
 	token := claudeAccessToken(ctx)
@@ -115,40 +85,33 @@ func claudeAccessToken(ctx context.Context) string {
 	return strings.TrimSpace(credentials.ClaudeAIOAuth.AccessToken)
 }
 
-// parseClaudeUsage converts Anthropic's usage response into the harness-shaped model
-// the render path already consumes. The endpoint may omit either window, so an absent
-// or unusable window is dropped independently and an entirely empty response is nil.
-func parseClaudeUsage(data []byte) *RateLimits {
-	var usage struct {
-		FiveHour *claudeUsageWindow `json:"five_hour"`
-		SevenDay *claudeUsageWindow `json:"seven_day"`
-	}
+func parseClaudeUsage(data []byte) []Window {
+	var usage map[string]json.RawMessage
 	if json.Unmarshal(data, &usage) != nil {
 		return nil
 	}
-	fiveHour, sevenDay := usage.FiveHour.toClaude(), usage.SevenDay.toClaude()
-	if fiveHour == nil && sevenDay == nil {
-		return nil
+	var windows []Window
+	for _, length := range claudeWindowLengths {
+		data, ok := usage[length.key]
+		if !ok {
+			continue
+		}
+		var w struct {
+			Utilization *float64 `json:"utilization"`
+			ResetsAt    string   `json:"resets_at"`
+		}
+		if json.Unmarshal(data, &w) != nil {
+			return nil
+		}
+		if w.Utilization == nil {
+			continue
+		}
+		window := Window{Minutes: length.minutes, Used: *w.Utilization}
+		if reset, err := time.Parse(time.RFC3339, w.ResetsAt); err == nil {
+			unix := reset.Unix()
+			window.ResetsAt = &unix
+		}
+		windows = append(windows, window)
 	}
-	return &RateLimits{FiveHour: fiveHour, SevenDay: sevenDay}
-}
-
-type claudeUsageWindow struct {
-	Utilization *float64 `json:"utilization"`
-	ResetsAt    string   `json:"resets_at"`
-}
-
-// toClaude leaves an absent or malformed reset unset: utilization is still useful on
-// its own, and every source in the statusline degrades field-by-field rather than
-// discarding a whole segment because one optional value is invalid.
-func (w *claudeUsageWindow) toClaude() *ClaudeWindow {
-	if w == nil || w.Utilization == nil {
-		return nil
-	}
-	result := &ClaudeWindow{UsedPercentage: w.Utilization}
-	if reset, err := time.Parse(time.RFC3339, w.ResetsAt); err == nil {
-		unix := reset.Unix()
-		result.ResetsAt = &unix
-	}
-	return result
+	return windows
 }

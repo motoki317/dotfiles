@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 )
 
-func pf(f float64) *float64 { return &f }
-func pi(i int64) *int64     { return &i }
-func pn(i int) *int         { return &i }
+func pi(i int64) *int64 { return &i }
 
 // TestMain pins the 3-step palette so the many exact color-escape assertions below
 // are independent of the developer's terminal (which may set TERM_PROGRAM). Tests
@@ -323,29 +323,24 @@ func TestRlSegment(t *testing.T) {
 	const now int64 = 1_000_000
 
 	// Fresh: 28% used (green), 13000s/18000s = 72% elapsed (yellow), "3h36m/5h".
-	fresh := rlSegment("5h", 18000, pf(28), pi(now+5000), now)
+	fresh := rlSegment(Window{Minutes: 300, Used: 28, ResetsAt: pi(now + 5000)}, now)
 	want := cGreen + "28%" + cReset + " " + cYellow + "3h36m" + cReset + cGray + "/5h" + cReset
 	if fresh != want {
 		t.Errorf("fresh:\n got %q\nwant %q", fresh, want)
 	}
 
 	// Rolled-over snapshot (resets in the past) -> dimmed "~5h", no number.
-	if got := rlSegment("5h", 18000, pf(93), pi(now-1), now); got != cGray+"~5h"+cReset {
+	if got := rlSegment(Window{Minutes: 300, Used: 93, ResetsAt: pi(now - 1)}, now); got != cGray+"~5h"+cReset {
 		t.Errorf("stale = %q, want %q", got, cGray+"~5h"+cReset)
 	}
 
 	// No resetsAt -> "<pct>% <label>" fallback.
-	if got := rlSegment("5h", 18000, pf(28), nil, now); got != cGreen+"28%"+cReset+" "+cGray+"5h"+cReset {
+	if got := rlSegment(Window{Minutes: 300, Used: 28}, now); got != cGreen+"28%"+cReset+" "+cGray+"5h"+cReset {
 		t.Errorf("no-resets = %q", got)
 	}
 
-	// Absent percent -> empty (skipped by caller).
-	if got := rlSegment("5h", 18000, nil, pi(now+5000), now); got != "" {
-		t.Errorf("nil pct = %q, want empty", got)
-	}
-
 	// Fractional percent truncates like the old ${pct%%.*}.
-	if got := rlSegment("7d", 604800, pf(15.9), nil, now); !strings.Contains(got, "15%") {
+	if got := rlSegment(Window{Minutes: 10080, Used: 15.9}, now); !strings.Contains(got, "15%") {
 		t.Errorf("fractional pct: got %q, want it to contain 15%%", got)
 	}
 }
@@ -373,7 +368,6 @@ func TestRenderContextElidesPercent(t *testing.T) {
 	p.ContextWindow = &ContextWindow{
 		TotalInputTokens:  pi(178200),
 		ContextWindowSize: pi(1_000_000),
-		UsedPercentage:    pf(17.8),
 	}
 	got := renderContext(p)
 	if strings.Contains(got, "%") {
@@ -392,6 +386,27 @@ func TestRenderContextLegacyNoLimit(t *testing.T) {
 	}
 }
 
+func TestRenderContextColor(t *testing.T) {
+	cases := []struct {
+		used, limit int64
+		color       string
+	}{
+		{59999, 200000, cGreen},
+		{60000, 200000, cYellow},
+		{119999, 200000, cYellow},
+		{120000, 200000, cRed},
+		{299999, 1000000, cGreen},
+		{300000, 1000000, cYellow},
+		{600000, 1000000, cRed},
+	}
+	for _, c := range cases {
+		p := Payload{ContextWindow: &ContextWindow{TotalInputTokens: pi(c.used), ContextWindowSize: pi(c.limit)}}
+		if got := renderContext(p); !strings.HasPrefix(got, c.color) {
+			t.Errorf("context %d/%d = %q, want color %q", c.used, c.limit, got, c.color)
+		}
+	}
+}
+
 func TestRenderFull(t *testing.T) {
 	const now int64 = 1_000_000
 	var p Payload
@@ -399,15 +414,14 @@ func TestRenderFull(t *testing.T) {
 	p.ContextWindow = &ContextWindow{
 		TotalInputTokens:  pi(178200),
 		ContextWindowSize: pi(1_000_000),
-		UsedPercentage:    pf(17.8),
 	}
 
-	codex := &CodexRL{
-		Primary:   &CodexWindow{UsedPercent: pf(94), WindowMinutes: pn(300), ResetsAt: pi(now + 3000)},
-		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
+	codex := []Window{
+		{Minutes: 300, Used: 94, ResetsAt: pi(now + 3000)},
+		{Minutes: 10080, Used: 16, ResetsAt: pi(now + 500000)},
 	}
 
-	got := render(p, codex, nil, now, 0)
+	got := render(p, nil, codex, nil, now, 0)
 	// A color reset sits between "178.2K" and "/1M", so check the parts separately.
 	// The token glyph must prefix the context (regression: it was dropped once).
 	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
@@ -420,7 +434,7 @@ func TestRenderFull(t *testing.T) {
 func TestRenderCodexAbsent(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, nil, 1_000_000, 0)
+	got := render(p, nil, nil, nil, 1_000_000, 0)
 	if strings.Contains(got, "Codex") {
 		t.Errorf("no Codex data should render no Codex group, got %q", got)
 	}
@@ -574,7 +588,7 @@ func TestRenderCostPartial(t *testing.T) {
 func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
-	got := render(p, nil, &costInfo{USD: 1.17, Complete: true, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
+	got := render(p, nil, nil, &costInfo{USD: 1.17, Complete: true, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
 	if !strings.Contains(got, "$1.17") { // cost at 3 sig figs keeps the cents
 		t.Errorf("render should include the cost segment, got %q", got)
 	}
@@ -587,19 +601,18 @@ func TestRenderWraps(t *testing.T) {
 	p.ContextWindow = &ContextWindow{
 		TotalInputTokens:  pi(178200),
 		ContextWindowSize: pi(1_000_000),
-		UsedPercentage:    pf(17.8),
 	}
-	p.RateLimits = &RateLimits{
-		FiveHour: &ClaudeWindow{UsedPercentage: pf(28), ResetsAt: pi(now + 5000)},
-		SevenDay: &ClaudeWindow{UsedPercentage: pf(15), ResetsAt: pi(now + 500000)},
+	claude := []Window{
+		{Minutes: 300, Used: 28, ResetsAt: pi(now + 5000)},
+		{Minutes: 10080, Used: 15, ResetsAt: pi(now + 500000)},
 	}
-	codex := &CodexRL{
-		Primary:   &CodexWindow{UsedPercent: pf(94), WindowMinutes: pn(300), ResetsAt: pi(now + 3000)},
-		Secondary: &CodexWindow{UsedPercent: pf(16), WindowMinutes: pn(10080), ResetsAt: pi(now + 500000)},
+	codex := []Window{
+		{Minutes: 300, Used: 94, ResetsAt: pi(now + 3000)},
+		{Minutes: 10080, Used: 16, ResetsAt: pi(now + 500000)},
 	}
 	cost := &costInfo{USD: 1.17, Complete: true, Input: 1000, Output: 500}
 
-	narrow := render(p, codex, cost, now, 40)
+	narrow := render(p, claude, codex, cost, now, 40)
 	if !strings.Contains(narrow, "\n") {
 		t.Fatalf("width 40 should wrap, got %q", narrow)
 	}
@@ -609,8 +622,8 @@ func TestRenderWraps(t *testing.T) {
 		}
 	}
 
-	unwrapped := render(p, codex, cost, now, 0)
-	wide := render(p, codex, cost, now, 200)
+	unwrapped := render(p, claude, codex, cost, now, 0)
+	wide := render(p, claude, codex, cost, now, 200)
 	if strings.Contains(unwrapped, "\n") || strings.Contains(wide, "\n") {
 		t.Errorf("non-wrapping widths produced a newline: width 0=%q, width 200=%q", unwrapped, wide)
 	}
@@ -619,162 +632,166 @@ func TestRenderWraps(t *testing.T) {
 	}
 }
 
-func TestCodexSegmentsMissingWindow(t *testing.T) {
-	// Only the 5h window present; 7d absent -> one segment.
-	rl := &CodexRL{Primary: &CodexWindow{UsedPercent: pf(42), WindowMinutes: pn(300), ResetsAt: pi(9_999_999_999)}}
-	segs := codexSegments(rl, 1_000_000)
-	if len(segs) != 1 {
-		t.Fatalf("want 1 segment, got %d: %v", len(segs), segs)
-	}
-	if !strings.Contains(segs[0], "42%") || !strings.Contains(segs[0], "/5h") {
-		t.Errorf("segment = %q", segs[0])
-	}
-}
-
-func TestCodexRateLimitsCache(t *testing.T) {
+func TestUsageSourceCurrent(t *testing.T) {
 	const now int64 = 1_000_000
-	snapshot := &CodexRL{Primary: &CodexWindow{
-		UsedPercent: pf(42), WindowMinutes: pn(300), ResetsAt: pi(now + 9000),
-	}}
-	cases := []struct {
-		name string
-		age  *int64
-	}{
-		{"missing", nil},
-		{"fresh", pi(0)},
-		{"stale", pi(codexSource.interval + 1)},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			t.Setenv("HOME", t.TempDir())
-			t.Setenv("XDG_CACHE_HOME", t.TempDir())
-			t.Setenv("PATH", t.TempDir())
-			var want *CodexRL
-			if c.age != nil {
-				want = snapshot
-				if err := codexSource.write(&cacheFile[CodexRL]{FetchedAt: now - *c.age, RateLimits: snapshot}); err != nil {
-					t.Fatal(err)
-				}
+	snapshot := []Window{{Minutes: 300, Used: 42, ResetsAt: pi(now + 9000)}}
+	for _, source := range []usageSource{claudeSource, codexSource} {
+		t.Run(source.file, func(t *testing.T) {
+			cases := []struct {
+				name    string
+				age     *int64
+				data    string
+				want    []Window
+				refresh bool
+			}{
+				{"missing", nil, "", nil, true},
+				{"fresh", pi(0), "", snapshot, false},
+				{"at interval", pi(source.interval), "", snapshot, false},
+				{"stale", pi(source.interval + 1), "", snapshot, true},
+				{"fresh old Claude cache", nil, `{"fetched_at":1000000,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, false},
+				{"fresh old Codex cache", nil, `{"fetched_at":1000000,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, false},
+				{"stale old Claude cache", nil, `{"fetched_at":0,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, true},
+				{"stale old Codex cache", nil, `{"fetched_at":0,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, true},
+				{"malformed", nil, `{`, nil, true},
+				{"invalid cached type", nil, `{"fetched_at":1000000,"windows":"invalid"}`, nil, true},
+				{"empty windows", nil, `{"fetched_at":1000000,"windows":[]}`, []Window{}, false},
 			}
-			rl := codexRateLimits(now)
-			if want == nil && rl != nil {
-				t.Fatalf("missing cache returned %+v, want nil", rl)
-			}
-			got := render(Payload{}, rl, nil, now, 0)
-			if expected := render(Payload{}, want, nil, now, 0); got != expected {
-				t.Errorf("render = %q, want %q", got, expected)
+			for _, c := range cases {
+				t.Run(c.name, func(t *testing.T) {
+					t.Setenv("HOME", t.TempDir())
+					t.Setenv("XDG_CACHE_HOME", t.TempDir())
+					t.Setenv("PATH", t.TempDir())
+					source := source
+					source.arg = "-test.run=^$"
+					if err := os.WriteFile(filepath.Join(os.Getenv("PATH"), source.bin), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+						t.Fatal(err)
+					}
+					if c.age != nil {
+						if err := source.write(&cacheFile{FetchedAt: now - *c.age, Windows: snapshot}); err != nil {
+							t.Fatal(err)
+						}
+					} else if c.data != "" {
+						if err := os.MkdirAll(filepath.Dir(source.cachePath()), 0o755); err != nil {
+							t.Fatal(err)
+						}
+						if err := os.WriteFile(source.cachePath(), []byte(c.data), 0o644); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if got := source.current(now); !reflect.DeepEqual(got, c.want) {
+						t.Errorf("current = %+v, want %+v", got, c.want)
+					}
+					_, err := os.Stat(source.lockPath())
+					if refreshed := err == nil; refreshed != c.refresh {
+						t.Errorf("refresh attempted = %v, want %v (lock error: %v)", refreshed, c.refresh, err)
+					}
+				})
 			}
 		})
 	}
 }
 
-func TestParseClaudeUsage(t *testing.T) {
+func TestParseClaudeWindows(t *testing.T) {
 	cases := []struct {
-		name                  string
-		data                  string
-		fiveUsed, sevenUsed   *float64
-		fiveReset, sevenReset *int64
+		name, api, harness string
+		want               []Window
 	}{
 		{
 			"both windows",
-			`{"five_hour":{"utilization":15,"resets_at":"2026-07-22T03:10:00.272933+00:00"},"seven_day":{"utilization":54,"resets_at":"2026-07-23T06:00:00.272960+00:00"}}`,
-			pf(15), pf(54), pi(1784689800), pi(1784786400),
+			`{"seven_day":{"utilization":54,"resets_at":"2026-07-23T06:00:00.272960+00:00"},"five_hour":{"utilization":15,"resets_at":"2026-07-22T03:10:00.272933+00:00"}}`,
+			`{"seven_day":{"used_percentage":54,"resets_at":1784786400},"five_hour":{"used_percentage":15,"resets_at":1784689800}}`,
+			[]Window{{Minutes: 300, Used: 15, ResetsAt: pi(1784689800)}, {Minutes: 10080, Used: 54, ResetsAt: pi(1784786400)}},
 		},
 		{
 			"five hour only",
 			`{"five_hour":{"utilization":23.5,"resets_at":"2026-07-22T03:10:00.272933+00:00"}}`,
-			pf(23.5), nil, pi(1784689800), nil,
+			`{"five_hour":{"used_percentage":23.5,"resets_at":1784689800}}`,
+			[]Window{{Minutes: 300, Used: 23.5, ResetsAt: pi(1784689800)}},
 		},
 		{
-			"invalid resets remain optional",
-			`{"five_hour":{"utilization":15,"resets_at":""},"seven_day":{"utilization":54,"resets_at":"garbage"}}`,
-			pf(15), pf(54), nil, nil,
+			"seven day only",
+			`{"five_hour":null,"seven_day":{"utilization":70,"resets_at":"2026-07-23T06:00:00Z"},"limits":[]}`,
+			`{"five_hour":null,"seven_day":{"used_percentage":70,"resets_at":1784786400}}`,
+			[]Window{{Minutes: 10080, Used: 70, ResetsAt: pi(1784786400)}},
 		},
-		{"empty body", "", nil, nil, nil, nil},
+		{"missing percent", `{"five_hour":{"resets_at":"2026-07-22T03:10:00Z"},"seven_day":{"utilization":0}}`, `{"five_hour":{"resets_at":1784689800},"seven_day":{"used_percentage":0}}`, []Window{{Minutes: 10080, Used: 0}}},
+		{"null percent", `{"five_hour":{"utilization":null}}`, `{"five_hour":{"used_percentage":null}}`, nil},
+		{"optional resets", `{"five_hour":{"utilization":15,"resets_at":""},"seven_day":{"utilization":54,"resets_at":"garbage"}}`, `{"five_hour":{"used_percentage":15},"seven_day":{"used_percentage":54,"resets_at":null}}`, []Window{{Minutes: 300, Used: 15}, {Minutes: 10080, Used: 54}}},
+		{"absent windows", `{}`, `{}`, nil},
+		{"null windows", `{"five_hour":null,"seven_day":null}`, `{"five_hour":null,"seven_day":null}`, nil},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rl := parseClaudeUsage([]byte(c.data))
-			if c.fiveUsed == nil && c.sevenUsed == nil {
-				if rl != nil {
-					t.Fatalf("parseClaudeUsage(%q) = %+v, want nil", c.data, rl)
-				}
-				return
+			if got := parseClaudeUsage([]byte(c.api)); !reflect.DeepEqual(got, c.want) {
+				t.Errorf("API windows = %+v, want %+v", got, c.want)
 			}
-			if rl == nil {
-				t.Fatal("parseClaudeUsage returned nil")
+			var p Payload
+			if err := json.Unmarshal([]byte(`{"rate_limits":`+c.harness+`}`), &p); err != nil {
+				t.Fatal(err)
 			}
-			assertClaudeWindow(t, "five-hour", rl.FiveHour, c.fiveUsed, c.fiveReset)
-			assertClaudeWindow(t, "seven-day", rl.SevenDay, c.sevenUsed, c.sevenReset)
-		})
-	}
-}
-
-func TestClaudeUsageRequiresUsableWindow(t *testing.T) {
-	cases := []struct {
-		name string
-		rl   *RateLimits
-		want bool
-	}{
-		{"nil", nil, false},
-		{"empty", &RateLimits{}, false},
-		{"reset only", &RateLimits{FiveHour: &ClaudeWindow{ResetsAt: pi(123)}}, false},
-		{"five hour", &RateLimits{FiveHour: &ClaudeWindow{UsedPercentage: pf(12)}}, true},
-		{"seven day", &RateLimits{SevenDay: &ClaudeWindow{UsedPercentage: pf(34)}}, true},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			got := usableClaudeRateLimits(c.rl)
-			if c.want && got != c.rl {
-				t.Fatalf("usable rate limits = %+v, want original snapshot %+v", got, c.rl)
-			}
-			if !c.want && got != nil {
-				t.Fatalf("unusable rate limits = %+v, want nil payload fallback", got)
+			if got := p.claudeWindows(); !reflect.DeepEqual(got, c.want) {
+				t.Errorf("harness windows = %+v, want %+v", got, c.want)
 			}
 		})
 	}
-}
-
-func assertClaudeWindow(t *testing.T, name string, got *ClaudeWindow, wantUsed *float64, wantReset *int64) {
-	t.Helper()
-	if wantUsed == nil {
-		if got != nil {
-			t.Errorf("%s = %+v, want nil", name, got)
+	for _, data := range []string{"", "not json", `[]`, `{"five_hour":{"utilization":"invalid"}}`} {
+		if got := parseClaudeUsage([]byte(data)); got != nil {
+			t.Errorf("parseClaudeUsage(%q) = %+v, want nil", data, got)
 		}
-		return
-	}
-	if got == nil || got.UsedPercentage == nil || *got.UsedPercentage != *wantUsed {
-		t.Fatalf("%s utilization mismatch: %+v", name, got)
-	}
-	if (got.ResetsAt == nil) != (wantReset == nil) ||
-		got.ResetsAt != nil && *got.ResetsAt != *wantReset {
-		t.Errorf("%s reset mismatch: %+v", name, got)
 	}
 }
 
 func TestParseAppServerRateLimits(t *testing.T) {
-	// Both windows present: camelCase field names map to CodexWindow.
-	both := `{"rateLimits":{"primary":{"usedPercent":42,"windowDurationMins":300,"resetsAt":9999999999},
-		"secondary":{"usedPercent":8,"windowDurationMins":10080,"resetsAt":9999999999}}}`
-	rl := parseAppServerRateLimits([]byte(both))
-	if rl == nil || rl.Primary == nil || *rl.Primary.UsedPercent != 42 || *rl.Primary.WindowMinutes != 300 {
-		t.Fatalf("primary mismatch: %+v", rl)
+	cases := []struct {
+		name, data string
+		want       []Window
+	}{
+		{"both windows", `{"rateLimits":{"primary":{"usedPercent":42,"windowDurationMins":300,"resetsAt":9999999999},"secondary":{"usedPercent":8,"windowDurationMins":10080,"resetsAt":9999999999}}}`, []Window{{Minutes: 300, Used: 42, ResetsAt: pi(9999999999)}, {Minutes: 10080, Used: 8, ResetsAt: pi(9999999999)}}},
+		{"seven day primary", `{"rateLimits":{"primary":{"usedPercent":21,"windowDurationMins":10080,"resetsAt":1784786400},"secondary":null}}`, []Window{{Minutes: 10080, Used: 21, ResetsAt: pi(1784786400)}}},
+		{"length determines label", `{"rateLimits":{"primary":{"usedPercent":21,"windowDurationMins":90}}}`, []Window{{Minutes: 90, Used: 21}}},
+		{"missing length", `{"rateLimits":{"primary":{"usedPercent":42},"secondary":{"usedPercent":0,"windowDurationMins":10080}}}`, []Window{{Minutes: 10080, Used: 0}}},
+		{"missing percent", `{"rateLimits":{"primary":{"windowDurationMins":300}}}`, nil},
+		{"null length", `{"rateLimits":{"primary":{"usedPercent":42,"windowDurationMins":null}}}`, nil},
+		{"null windows", `{"rateLimits":{"primary":null,"secondary":null}}`, nil},
+		{"empty", `{}`, nil},
+		{"malformed", `not json`, nil},
 	}
-	if rl.Secondary == nil || *rl.Secondary.WindowMinutes != 10080 {
-		t.Fatalf("secondary mismatch: %+v", rl)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := parseAppServerRateLimits([]byte(c.data)); !reflect.DeepEqual(got, c.want) {
+				t.Errorf("parseAppServerRateLimits = %+v, want %+v", got, c.want)
+			}
+		})
 	}
+}
 
-	// This account's shape: a single primary window, secondary null. Must not be dropped.
-	primaryOnly := `{"rateLimits":{"primary":{"usedPercent":8,"windowDurationMins":10080,"resetsAt":1784608504},"secondary":null}}`
-	rl = parseAppServerRateLimits([]byte(primaryOnly))
-	if rl == nil || rl.Primary == nil || rl.Secondary != nil {
-		t.Fatalf("primary-only mismatch: %+v", rl)
+func TestRenderSevenDayOnly(t *testing.T) {
+	const now int64 = 1784484000
+	var harness Payload
+	if err := json.Unmarshal([]byte(`{"rate_limits":{"five_hour":null,"seven_day":{"used_percentage":70,"resets_at":1784786400}}}`), &harness); err != nil {
+		t.Fatal(err)
 	}
-
-	// No usable window -> nil, so the segment is omitted rather than rendered empty.
-	for _, empty := range []string{`{"rateLimits":{"primary":null,"secondary":null}}`, `{}`, `not json`} {
-		if rl := parseAppServerRateLimits([]byte(empty)); rl != nil {
-			t.Errorf("parseAppServerRateLimits(%q) = %+v, want nil", empty, rl)
-		}
+	api := parseClaudeUsage([]byte(`{"five_hour":null,"seven_day":{"utilization":70,"resets_at":"2026-07-23T06:00:00Z"}}`))
+	codex := parseAppServerRateLimits([]byte(`{"rateLimits":{"primary":{"usedPercent":21,"windowDurationMins":10080,"resetsAt":1784786400},"secondary":null}}`))
+	claudeSegment := glyphTimer + " " + cYellow + "70%" + cReset + " " + cYellow + "3d12h" + cReset + cGray + "/7d" + cReset
+	codexSegment := glyphTimer + " Codex " + cGreen + "21%" + cReset + " " + cYellow + "3d12h" + cReset + cGray + "/7d" + cReset
+	cases := []struct {
+		name          string
+		claude, codex []Window
+		groups        string
+	}{
+		{"Claude API", api, nil, claudeSegment},
+		{"Claude harness", harness.claudeWindows(), nil, claudeSegment},
+		{"Codex", nil, codex, codexSegment},
+		{"both sources", harness.claudeWindows(), codex, claudeSegment + " | " + codexSegment},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := render(Payload{}, c.claude, c.codex, nil, now, 0)
+			want := render(Payload{}, nil, nil, nil, now, 0) + " | " + c.groups
+			if got != want {
+				t.Errorf("render = %q, want %q", got, want)
+			}
+		})
 	}
 }

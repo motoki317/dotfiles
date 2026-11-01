@@ -12,7 +12,6 @@ import (
 type ContextWindow struct {
 	TotalInputTokens  *int64       `json:"total_input_tokens"`
 	ContextWindowSize *int64       `json:"context_window_size"`
-	UsedPercentage    *float64     `json:"used_percentage"`
 	CurrentUsage      CurrentUsage `json:"current_usage"`
 }
 
@@ -26,7 +25,7 @@ type CurrentUsage struct {
 
 // render builds the whole status line. Pure given its inputs (now and width are
 // passed rather than read from process state) so every branch is testable.
-func render(p Payload, codex *CodexRL, cost *costInfo, now int64, width int) string {
+func render(p Payload, claude, codex []Window, cost *costInfo, now int64, width int) string {
 	segments := []string{
 		glyphModel + " " + modelName(p.Model.DisplayName),
 		glyphToken + " " + renderContext(p),
@@ -34,11 +33,11 @@ func render(p Payload, codex *CodexRL, cost *costInfo, now int64, width int) str
 	if s := renderCost(cost); s != "" {
 		segments = append(segments, s)
 	}
-	if segs := claudeSegments(p, now); len(segs) > 0 {
-		segments = append(segments, glyphTimer+" "+strings.Join(segs, ", "))
+	if s := rateLimitSegment(claude, "", now); s != "" {
+		segments = append(segments, s)
 	}
-	if segs := codexSegments(codex, now); len(segs) > 0 {
-		segments = append(segments, glyphTimer+" Codex "+strings.Join(segs, ", "))
+	if s := rateLimitSegment(codex, "Codex ", now); s != "" {
+		segments = append(segments, s)
 	}
 	return layout(segments, width)
 }
@@ -68,12 +67,7 @@ func renderContext(p Payload) string {
 	if limit <= 0 {
 		return cGreen + usedH + cReset + " tkns"
 	}
-	var pctInt int64
-	if p.ContextWindow != nil && p.ContextWindow.UsedPercentage != nil {
-		pctInt = int64(*p.ContextWindow.UsedPercentage)
-	} else {
-		pctInt = used * 100 / limit
-	}
+	pctInt := used * 100 / limit
 	// 30/60 keep the prior absolute marks (300K/600K on a 1M window) while scaling
 	// to whatever context_window_size reports, so 200k and 1M models both work.
 	return tcolor(pctInt, 30, 60) + usedH + cReset + "/" + humanize(limit)

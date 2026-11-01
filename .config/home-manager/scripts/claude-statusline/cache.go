@@ -11,13 +11,9 @@ import (
 	"time"
 )
 
-// cacheFile is the on-disk snapshot shared by every rate-limit source: the last
-// successful-fetch time (drives staleness) plus that source's rate-limit payload.
-// The `rate_limits` JSON key matches the pre-refactor per-source caches, so existing
-// cache files keep loading with no migration.
-type cacheFile[T any] struct {
-	FetchedAt  int64 `json:"fetched_at"`
-	RateLimits *T    `json:"rate_limits"`
+type cacheFile struct {
+	FetchedAt int64    `json:"fetched_at"`
+	Windows   []Window `json:"windows"`
 }
 
 // usageSource describes one background-refreshed, account-global rate-limit source
@@ -28,18 +24,26 @@ type cacheFile[T any] struct {
 // file's mtime, the between-attempts backoff, so a logged-out or failing fetch cannot
 // retry on every render. Reads of these account-status endpoints are unmetered, so a
 // ~per-minute refresh is safe; pair it with statusLine.refreshInterval in settings.
-type usageSource[T any] struct {
+type usageSource struct {
 	file     string
 	bin      string
 	arg      string
 	interval int64
-	fetch    func() *T
+	fetch    func() []Window
+}
+
+func (s usageSource) current(now int64) []Window {
+	cache := s.read()
+	if now-cache.FetchedAt > s.interval {
+		s.spawn(now)
+	}
+	return cache.Windows
 }
 
 // cachePath/lockPath locate the cache and its refresh-backoff lock under the user
 // cache dir (~/Library/Caches on macOS, $XDG_CACHE_HOME on Linux). Empty means the
 // cache dir is unavailable, which disables the cached path for that source.
-func (s usageSource[T]) cachePath() string {
+func (s usageSource) cachePath() string {
 	dir, err := os.UserCacheDir()
 	if err != nil {
 		return ""
@@ -47,34 +51,33 @@ func (s usageSource[T]) cachePath() string {
 	return filepath.Join(dir, "claude-statusline", s.file)
 }
 
-func (s usageSource[T]) lockPath() string {
+func (s usageSource) lockPath() string {
 	if p := s.cachePath(); p != "" {
 		return p + ".lock"
 	}
 	return ""
 }
 
-// read returns the cached snapshot, or nil when it is absent or unreadable. Every
-// cache problem is treated as absence so rendering stays best-effort.
-func (s usageSource[T]) read() *cacheFile[T] {
+// Cache problems act as absence so rendering stays best-effort.
+func (s usageSource) read() cacheFile {
 	p := s.cachePath()
 	if p == "" {
-		return nil
+		return cacheFile{}
 	}
 	data, err := os.ReadFile(p)
 	if err != nil {
-		return nil
+		return cacheFile{}
 	}
-	var c cacheFile[T]
+	var c cacheFile
 	if json.Unmarshal(data, &c) != nil {
-		return nil
+		return cacheFile{}
 	}
-	return &c
+	return c
 }
 
 // write atomically replaces the cache (temp file + rename) so a concurrent render
 // reads either the prior complete snapshot or the new one, never a half-written file.
-func (s usageSource[T]) write(c *cacheFile[T]) error {
+func (s usageSource) write(c *cacheFile) error {
 	p := s.cachePath()
 	if p == "" {
 		return fmt.Errorf("no user cache dir")
@@ -98,7 +101,7 @@ func (s usageSource[T]) write(c *cacheFile[T]) error {
 // (success or failure alike), so a failing fetch backs off instead of retrying on
 // every render; the loose stat/write race spawns at most one harmless extra fetch.
 // Setsid detaches the child so it outlives this short-lived render.
-func (s usageSource[T]) spawn(now int64) {
+func (s usageSource) spawn(now int64) {
 	lock := s.lockPath()
 	if lock == "" {
 		return
@@ -128,8 +131,8 @@ func (s usageSource[T]) spawn(now int64) {
 
 // refresh runs in the detached child: it fetches the live snapshot and, on success,
 // writes it to the cache. A failed fetch leaves the previous cache untouched.
-func (s usageSource[T]) refresh() {
-	if rl := s.fetch(); rl != nil {
-		_ = s.write(&cacheFile[T]{FetchedAt: time.Now().Unix(), RateLimits: rl})
+func (s usageSource) refresh() {
+	if windows := s.fetch(); len(windows) > 0 {
+		_ = s.write(&cacheFile{FetchedAt: time.Now().Unix(), Windows: windows})
 	}
 }

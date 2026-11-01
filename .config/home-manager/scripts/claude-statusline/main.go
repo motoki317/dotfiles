@@ -28,20 +28,17 @@ type Payload struct {
 	Model struct {
 		DisplayName string `json:"display_name"`
 	} `json:"model"`
-	ContextWindow  *ContextWindow `json:"context_window"`
-	RateLimits     *RateLimits    `json:"rate_limits"`
-	TranscriptPath string         `json:"transcript_path"`
-	SessionID      string         `json:"session_id"`
+	ContextWindow *ContextWindow `json:"context_window"`
+	RateLimits    map[string]struct {
+		Used     *float64 `json:"used_percentage"`
+		ResetsAt *int64   `json:"resets_at"`
+	} `json:"rate_limits"`
+	TranscriptPath string `json:"transcript_path"`
+	SessionID      string `json:"session_id"`
 }
 
 func main() {
-	// --refresh-claude is the detached self-invocation spawned by
-	// claudeUsageRateLimits. Like the Codex refresh below, it never shares the
-	// render's stdin/stdout and only publishes a complete cache snapshot.
-	//
-	// --refresh-codex is the detached self-invocation spawned by codexRateLimits: it
-	// fetches the live snapshot from the backend and writes the cache, then exits
-	// without touching stdin/stdout, so it never interferes with a render.
+	// Detached refreshes leave stdin and stdout free for the render process.
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "--refresh-claude":
@@ -58,12 +55,13 @@ func main() {
 		_ = json.Unmarshal(data, &p) // best effort: a decode error leaves p zero
 	}
 	now := time.Now().Unix()
-	if live := claudeUsageRateLimits(now); live != nil {
-		p.RateLimits = live
+	claude := claudeSource.current(now)
+	if len(claude) == 0 {
+		claude = p.claudeWindows()
 	}
-	codex := codexRateLimits(now)
+	codex := codexSource.current(now)
 	cost := sessionCost(sessionID(p))
-	fmt.Println(render(p, codex, cost, now, termWidth()))
+	fmt.Println(render(p, claude, codex, cost, now, termWidth()))
 }
 
 func readAll(f *os.File) ([]byte, error) {

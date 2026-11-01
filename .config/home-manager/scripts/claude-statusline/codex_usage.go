@@ -8,26 +8,15 @@ import (
 	"time"
 )
 
-var codexSource = usageSource[CodexRL]{
+var codexSource = usageSource{
 	file: "codex-rate-limits.json", bin: "codex", arg: "--refresh-codex", interval: 45, fetch: fetchCodexRateLimits,
-}
-
-func codexRateLimits(now int64) *CodexRL {
-	cache := codexSource.read()
-	if cache == nil || now-cache.FetchedAt > codexSource.interval {
-		codexSource.spawn(now)
-	}
-	if cache != nil {
-		return cache.RateLimits
-	}
-	return nil
 }
 
 // fetchCodexRateLimits drives `codex app-server` over stdio to call account/rateLimits/read
 // — a live GET to the backend's accounts/check, which is authoritative and account-global.
 // The app-server owns auth and token refresh, so this stays a thin JSON-RPC client. Returns
 // nil on any failure (codex missing, logged out, timeout, malformed reply).
-func fetchCodexRateLimits() *CodexRL {
+func fetchCodexRateLimits() []Window {
 	bin, err := exec.LookPath("codex")
 	if err != nil {
 		return nil
@@ -100,8 +89,7 @@ func awaitRPCResult(sc *bufio.Scanner, id int) json.RawMessage {
 	return nil
 }
 
-// The app-server uses camelCase fields, while the cache uses snake_case.
-func parseAppServerRateLimits(result json.RawMessage) *CodexRL {
+func parseAppServerRateLimits(result json.RawMessage) []Window {
 	var r struct {
 		RateLimits struct {
 			Primary   *appWindow `json:"primary"`
@@ -111,24 +99,17 @@ func parseAppServerRateLimits(result json.RawMessage) *CodexRL {
 	if json.Unmarshal(result, &r) != nil {
 		return nil
 	}
-	primary, secondary := r.RateLimits.Primary.toCodex(), r.RateLimits.Secondary.toCodex()
-	if primary == nil && secondary == nil {
-		return nil
+	var windows []Window
+	for _, w := range []*appWindow{r.RateLimits.Primary, r.RateLimits.Secondary} {
+		if w != nil && w.UsedPercent != nil && w.WindowDurationMins != nil {
+			windows = append(windows, Window{Minutes: *w.WindowDurationMins, Used: *w.UsedPercent, ResetsAt: w.ResetsAt})
+		}
 	}
-	return &CodexRL{Primary: primary, Secondary: secondary}
+	return windows
 }
 
-// appWindow is one window as account/rateLimits/read reports it. toCodex maps it to the
-// render-side CodexWindow, dropping a window whose used percent is absent.
 type appWindow struct {
 	UsedPercent        *float64 `json:"usedPercent"`
 	WindowDurationMins *int     `json:"windowDurationMins"`
 	ResetsAt           *int64   `json:"resetsAt"`
-}
-
-func (w *appWindow) toCodex() *CodexWindow {
-	if w == nil || w.UsedPercent == nil {
-		return nil
-	}
-	return &CodexWindow{UsedPercent: w.UsedPercent, WindowMinutes: w.WindowDurationMins, ResetsAt: w.ResetsAt}
 }
