@@ -7,14 +7,10 @@ import (
 	"time"
 )
 
-// agtlog resolves a session ref directly, so lookup needs no date window and
-// cannot undercount a long-running session. costTimeout keeps a hung subprocess
-// from stalling the statusline. A price-table change can force a three-second
-// full parse, so one render can omit cost. Claude Code retries 60 seconds later.
+// After its price table changes, agtlog reparses for about 3 seconds. The timeout
+// drops cost from that one render instead of delaying the status line.
 const costTimeout = 2 * time.Second
 
-// Input is uncached input. CacheCreation and CacheRead are cache writes and reads.
-// Output is generated tokens.
 type costInfo struct {
 	USD           float64
 	Complete      bool
@@ -24,8 +20,8 @@ type costInfo struct {
 	Output        int64
 }
 
-// Session totals already include subagents.
-// The omitted estimated field is Codex-only. claude: refs never use ChatGPT-plan estimates.
+// agtlog includes subagents in session totals, so no separate aggregation is needed.
+// The cost's estimated flag applies only to Codex sessions, so it is not decoded.
 type agtlogShow struct {
 	Session *struct {
 		Tokens struct {
@@ -41,9 +37,6 @@ type agtlogShow struct {
 	} `json:"session"`
 }
 
-// sessionCost returns this session's cost via agtlog, or nil when agtlog is not
-// installed, times out, errors, or has no entry for the session — every one
-// degrades to no cost segment, never a fatal error.
 func sessionCost(sid string) *costInfo {
 	if sid == "" {
 		return nil
@@ -52,17 +45,12 @@ func sessionCost(sid string) *costInfo {
 	if err != nil {
 		return nil
 	}
-	return agtlogCost(bin, sid)
-}
-
-// agtlogCost runs one offline summary query and returns nil on any failure.
-func agtlogCost(bin, sid string) *costInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), costTimeout)
 	defer cancel()
-	return agtlogCostContext(ctx, bin, sid)
+	return agtlogCost(ctx, bin, sid)
 }
 
-func agtlogCostContext(ctx context.Context, bin, sid string) *costInfo {
+func agtlogCost(ctx context.Context, bin, sid string) *costInfo {
 	out, err := exec.CommandContext(ctx, bin, "show", "claude:"+sid, "--no-events", "--offline").Output()
 	if err != nil {
 		return nil
@@ -70,7 +58,6 @@ func agtlogCostContext(ctx context.Context, bin, sid string) *costInfo {
 	return parseCost(out)
 }
 
-// parseCost returns nil unless the payload contains a decodable session summary.
 func parseCost(data []byte) *costInfo {
 	var result agtlogShow
 	if json.Unmarshal(data, &result) != nil || result.Session == nil {
@@ -87,11 +74,7 @@ func parseCost(data []byte) *costInfo {
 	}
 }
 
-// renderCost renders "<glyph> $<cost> ↑<cache-read>/<cache-write>/<input> ↓<output>".
-// The ↑ group is tokens sent, ordered largest-first: the cached prefix re-read,
-// the delta written to cache, then fresh uncached input; ↓ is generated output.
-// Cost and every token are colored by magnitude (per-field bands ≈ recent-session
-// p50/p90), the arrows and slashes dimmed. Empty when cost is absent.
+// Each field's two tcolor thresholds approximate its p50 and p90 over past sessions.
 func renderCost(ci *costInfo) string {
 	if ci == nil {
 		return ""

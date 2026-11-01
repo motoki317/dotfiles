@@ -11,7 +11,7 @@ type Window struct {
 	ResetsAt *int64  `json:"resets_at"`
 }
 
-// Claude omits window lengths. Table order keeps the shorter window first.
+// Neither Claude's usage API nor the statusline JSON states window lengths.
 var claudeWindowLengths = []struct {
 	key     string
 	minutes int
@@ -41,8 +41,8 @@ func rateLimitSegment(windows []Window, prefix string, now int64) string {
 	return glyphTimer + " " + prefix + strings.Join(parts, ", ")
 }
 
-// Matching usage and elapsed-time colors reveal how fast the allowance burns.
-// An expired snapshot cannot describe current usage, so only its label remains.
+// Usage and elapsed time share the 50/80 color bands, so usage redder than time
+// means the allowance is burning fast.
 func rlSegment(w Window, now int64) string {
 	label, windowSecs := winLabel(w.Minutes), int64(w.Minutes)*60
 	if w.ResetsAt != nil && now >= *w.ResetsAt {

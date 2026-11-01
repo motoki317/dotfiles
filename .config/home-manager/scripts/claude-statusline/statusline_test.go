@@ -13,9 +13,6 @@ import (
 
 func pi(i int64) *int64 { return &i }
 
-// TestMain pins the 3-step palette so the many exact color-escape assertions below
-// are independent of the developer's terminal (which may set TERM_PROGRAM). Tests
-// for the truecolor path toggle trueColor themselves or call gradient directly.
 func TestMain(m *testing.M) {
 	trueColor = false
 	os.Exit(m.Run())
@@ -30,15 +27,15 @@ func TestHumanize(t *testing.T) {
 		{999, "999"},
 		{1000, "1K"},
 		{1234, "1.2K"},
-		{12340, "12K"},   // 2 sig figs drops the trailing .3
-		{123400, "123K"}, // hundreds digit kept whole (the "3 as exception" case)
+		{12340, "12K"},
+		{123400, "123K"},
 		{178289, "178K"},
 		{1000000, "1M"},
 		{1230000, "1.2M"},
 		{1260000, "1.3M"},
 		{1500000, "1.5M"},
-		{999600, "1M"},          // mantissa rounds up into the next unit
-		{1_200_000_000, "1.2B"}, // billions covered
+		{999600, "1M"},
+		{1_200_000_000, "1.2B"},
 	}
 	for _, c := range cases {
 		if got := humanize(c.in); got != c.want {
@@ -53,14 +50,14 @@ func TestSigFig(t *testing.T) {
 		n    int
 		want string
 	}{
-		{2.73, 3, "2.73"},  // cost: 3 sig figs
-		{12.34, 3, "12.3"}, // one integer digit consumed, two decimals -> one
-		{127.4, 3, "127"},  // three integer digits -> whole
-		{0.05, 3, "0.05"},  // sub-dollar: trailing zero trimmed, not "0.050"
-		{2.7, 2, "2.7"},    // token mantissa: 2 sig figs
-		{12.34, 2, "12"},   //
-		{178.9, 2, "179"},  // hundreds keep the third digit (integer, rounded)
-		{1.0, 2, "1"},      // trailing zeros trimmed
+		{2.73, 3, "2.73"},
+		{12.34, 3, "12.3"},
+		{127.4, 3, "127"},
+		{0.05, 3, "0.05"},
+		{2.7, 2, "2.7"},
+		{12.34, 2, "12"},
+		{178.9, 2, "179"},
+		{1.0, 2, "1"},
 	}
 	for _, c := range cases {
 		if got := sigFig(c.v, c.n); got != c.want {
@@ -114,10 +111,10 @@ func TestSupportsTrueColor(t *testing.T) {
 	}{
 		{"truecolor", "", true},
 		{"24bit", "", true},
-		{"", "WarpTerminal", true}, // Warp on WSL sets no COLORTERM
+		{"", "WarpTerminal", true},
 		{"", "iTerm.app", true},
 		{"", "", false},
-		{"256color", "Apple_Terminal", false}, // 256-color terminal, not 24-bit
+		{"256color", "Apple_Terminal", false},
 	}
 	for _, c := range cases {
 		env := func(k string) string {
@@ -146,9 +143,9 @@ func TestVisWidth(t *testing.T) {
 		{"supplementary PUA icon is 2 cells", glyphModel, 2},
 		{"BMP PUA icon is 2 cells", glyphToken, 2},
 		{"ambiguous arrows are 2 cells each", "↑↓", 4},
-		{"glyph plus ASCII", glyphTimer + " 5h", 5}, // 2 + 1 + 1 + 1
+		{"glyph plus ASCII", glyphTimer + " 5h", 5},
 		{"truecolor escape", "\x1b[38;2;12;34;56mcolor" + cReset, 5},
-		{"unterminated escape", "\x1b[31", 4}, // no final byte: the bytes count as visible
+		{"unterminated escape", "\x1b[31", 4},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -159,11 +156,6 @@ func TestVisWidth(t *testing.T) {
 	}
 }
 
-// TestLayoutWrapsGlyphHeavyLine reproduces the reported overflow: a glyph-heavy
-// line whose real width (100 cells) exceeds a 97-column pane. Before runeCells
-// taught visWidth that the PUA icons and ↑/↓ are two cells, this line measured 93,
-// so layout left it on one row and Claude Code truncated it with an ellipsis. It
-// must now measure over the pane width and wrap, with every row inside the pane.
 func TestLayoutWrapsGlyphHeavyLine(t *testing.T) {
 	segments := []string{
 		glyphModel + " Opus 4.8",
@@ -250,7 +242,6 @@ func TestTermWidth(t *testing.T) {
 
 func TestGradient(t *testing.T) {
 	const lo, hi = int64(0), int64(100)
-	// Endpoints and midpoint land exactly on the palette stops.
 	if got := gradient(lo, lo, hi); got != gradLow.escape() {
 		t.Errorf("low end = %q, want green stop", got)
 	}
@@ -260,14 +251,12 @@ func TestGradient(t *testing.T) {
 	if got := gradient(hi, lo, hi); got != gradHigh.escape() {
 		t.Errorf("high end = %q, want red stop", got)
 	}
-	// Out-of-band values clamp to the endpoint colors.
 	if gradient(-10, lo, hi) != gradLow.escape() {
 		t.Error("below lo should clamp to the green stop")
 	}
 	if gradient(999, lo, hi) != gradHigh.escape() {
 		t.Error("above hi should clamp to the red stop")
 	}
-	// Every output is a 24-bit foreground escape.
 	if !strings.HasPrefix(gradient(25, lo, hi), "\x1b[38;2;") {
 		t.Errorf("expected a 24-bit escape, got %q", gradient(25, lo, hi))
 	}
@@ -290,9 +279,9 @@ func TestFmtDur(t *testing.T) {
 		{0, "0m"},
 		{47 * 60, "47m"},
 		{3*3600 + 28*60, "3h28m"},
-		{3*86400 + 23*3600 + 28*60, "3d23h"}, // minutes dropped at day scale
-		{1*86400 + 21*3600 + 24*60, "1d21h"}, // 1d21h24m -> 1d21h
-		{1*86400 + 0*3600 + 24*60, "1d0h"},   // hours kept even at zero
+		{3*86400 + 23*3600 + 28*60, "3d23h"},
+		{1*86400 + 21*3600 + 24*60, "1d21h"},
+		{1*86400 + 0*3600 + 24*60, "1d0h"},
 	}
 	for _, c := range cases {
 		if got := fmtDur(c.s); got != c.want {
@@ -322,24 +311,20 @@ func TestWinLabel(t *testing.T) {
 func TestRlSegment(t *testing.T) {
 	const now int64 = 1_000_000
 
-	// Fresh: 28% used (green), 13000s/18000s = 72% elapsed (yellow), "3h36m/5h".
 	fresh := rlSegment(Window{Minutes: 300, Used: 28, ResetsAt: pi(now + 5000)}, now)
 	want := cGreen + "28%" + cReset + " " + cYellow + "3h36m" + cReset + cGray + "/5h" + cReset
 	if fresh != want {
 		t.Errorf("fresh:\n got %q\nwant %q", fresh, want)
 	}
 
-	// Rolled-over snapshot (resets in the past) -> dimmed "~5h", no number.
 	if got := rlSegment(Window{Minutes: 300, Used: 93, ResetsAt: pi(now - 1)}, now); got != cGray+"~5h"+cReset {
 		t.Errorf("stale = %q, want %q", got, cGray+"~5h"+cReset)
 	}
 
-	// No resetsAt -> "<pct>% <label>" fallback.
 	if got := rlSegment(Window{Minutes: 300, Used: 28}, now); got != cGreen+"28%"+cReset+" "+cGray+"5h"+cReset {
 		t.Errorf("no-resets = %q", got)
 	}
 
-	// Fractional percent truncates like the old ${pct%%.*}.
 	if got := rlSegment(Window{Minutes: 10080, Used: 15.9}, now); !strings.Contains(got, "15%") {
 		t.Errorf("fractional pct: got %q, want it to contain 15%%", got)
 	}
@@ -352,8 +337,8 @@ func TestModelName(t *testing.T) {
 	}{
 		{"Opus 4.8 (1M context)", "Opus 4.8"},
 		{"Sonnet 4.5 (200K context)", "Sonnet 4.5"},
-		{"Opus 4.8", "Opus 4.8"},                               // no annotation, untouched
-		{"Claude 3.5 Sonnet (New)", "Claude 3.5 Sonnet (New)"}, // non-context parenthetical preserved
+		{"Opus 4.8", "Opus 4.8"},
+		{"Claude 3.5 Sonnet (New)", "Claude 3.5 Sonnet (New)"},
 		{"", ""},
 	}
 	for _, c := range cases {
@@ -443,8 +428,6 @@ func TestRenderFull(t *testing.T) {
 	}
 
 	got := render(p, nil, codex, nil, now, 0)
-	// A color reset sits between "178.2K" and "/1M", so check the parts separately.
-	// The token glyph must prefix the context (regression: it was dropped once).
 	for _, want := range []string{glyphModel + " Opus 4.8", " | " + glyphToken + " ", "178K", "/1M", glyphTimer + " Codex", "94%", "16%"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("render missing %q in:\n%s", want, got)
@@ -474,7 +457,6 @@ func TestParseCost(t *testing.T) {
 		ci.CacheCreation != 78295 || ci.CacheRead != 1770917 || !ci.Complete {
 		t.Errorf("parsed = %+v", ci)
 	}
-	// A structured not-found payload must decode as absence, never zero cost.
 	if parseCost([]byte(`{"error":{"code":"not_found","message":"session not found"}}`)) != nil {
 		t.Error("not-found response should be nil")
 	}
@@ -524,7 +506,7 @@ exit 3
 	if err := os.WriteFile(bin, []byte(notFound), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if ci := agtlogCost(bin, "missing"); ci != nil {
+	if ci := agtlogCost(context.Background(), bin, "missing"); ci != nil {
 		t.Errorf("exit 3 should return nil, got %+v", ci)
 	}
 
@@ -534,11 +516,8 @@ exit 3
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
-	if ci := agtlogCostContext(ctx, bin, "slow"); ci != nil {
+	if ci := agtlogCost(ctx, bin, "slow"); ci != nil {
 		t.Errorf("timeout should return nil, got %+v", ci)
-	}
-	if costTimeout != 2*time.Second {
-		t.Errorf("costTimeout = %v, want 2s", costTimeout)
 	}
 }
 
@@ -547,26 +526,20 @@ func TestRenderCost(t *testing.T) {
 		t.Error("nil cost should render empty")
 	}
 	got := renderCost(&costInfo{USD: 2.73, Complete: true, Input: 7817, CacheCreation: 78245, CacheRead: 1700000, Output: 40734})
-	// Cost is 3-sig-fig ($2.73, precision matters); tokens are humanized at 2-sig-fig.
-	// Order is cache-read, cache-creation, input, then output. Color codes break up
-	// the ↑ group, so assert the pieces, not one contiguous substring.
 	for _, want := range []string{glyphCost, "$2.73", "1.7M", "78K", "7.8K", "41K"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("renderCost missing %q in %q", want, got)
 		}
 	}
-	// ↑ group is ordered largest-first: cache-read precedes input.
 	if strings.Index(got, "1.7M") > strings.Index(got, "7.8K") {
 		t.Errorf("cache-read should precede input, got %q", got)
 	}
-	// Numbers are colored, not a uniform gray block.
 	if !strings.Contains(got, cGreen) && !strings.Contains(got, cYellow) && !strings.Contains(got, cRed) {
 		t.Errorf("expected colored numbers, got %q", got)
 	}
 }
 
 func TestRenderCostUnpriced(t *testing.T) {
-	// An incomplete agtlog total with no priced tokens is unknown, not a real $0.
 	got := renderCost(&costInfo{USD: 0, Input: 7, CacheCreation: 39800, CacheRead: 148136, Output: 22715})
 	if !strings.Contains(got, "$?") {
 		t.Errorf("unpriced session should render $?, got %q", got)
@@ -601,7 +574,7 @@ func TestRenderWithCost(t *testing.T) {
 	var p Payload
 	p.Model.DisplayName = "Opus 4.8"
 	got := render(p, nil, nil, &costInfo{USD: 1.17, Complete: true, Input: 1000, CacheCreation: 2000, CacheRead: 3000, Output: 500}, 1_000_000, 0)
-	if !strings.Contains(got, "$1.17") { // cost at 3 sig figs keeps the cents
+	if !strings.Contains(got, "$1.17") {
 		t.Errorf("render should include the cost segment, got %q", got)
 	}
 }
@@ -640,7 +613,7 @@ func TestRenderWraps(t *testing.T) {
 		t.Errorf("non-wrapping widths produced a newline: width 0=%q, width 200=%q", unwrapped, wide)
 	}
 	if wide != unwrapped {
-		t.Errorf("wide render differs from legacy render:\nwide %q\nlegacy %q", wide, unwrapped)
+		t.Errorf("wide render differs from unwrapped render:\nwide %q\nunwrapped %q", wide, unwrapped)
 	}
 }
 
@@ -660,10 +633,10 @@ func TestUsageSourceCurrent(t *testing.T) {
 				{"fresh", pi(0), "", snapshot, false},
 				{"at interval", pi(source.interval), "", snapshot, false},
 				{"stale", pi(source.interval + 1), "", snapshot, true},
-				{"fresh old Claude cache", nil, `{"fetched_at":1000000,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, false},
-				{"fresh old Codex cache", nil, `{"fetched_at":1000000,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, false},
-				{"stale old Claude cache", nil, `{"fetched_at":0,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, true},
-				{"stale old Codex cache", nil, `{"fetched_at":0,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, true},
+				{"fresh Claude rate_limits cache", nil, `{"fetched_at":1000000,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, false},
+				{"fresh Codex rate_limits cache", nil, `{"fetched_at":1000000,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, false},
+				{"stale Claude rate_limits cache", nil, `{"fetched_at":0,"rate_limits":{"seven_day":{"used_percentage":70}}}`, nil, true},
+				{"stale Codex rate_limits cache", nil, `{"fetched_at":0,"rate_limits":{"primary":{"used_percent":21,"window_minutes":10080}}}`, nil, true},
 				{"malformed", nil, `{`, nil, true},
 				{"invalid cached type", nil, `{"fetched_at":1000000,"windows":"invalid"}`, nil, true},
 				{"empty windows", nil, `{"fetched_at":1000000,"windows":[]}`, []Window{}, false},

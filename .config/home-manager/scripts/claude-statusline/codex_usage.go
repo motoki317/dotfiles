@@ -12,10 +12,7 @@ var codexSource = usageSource{
 	file: "codex-rate-limits.json", bin: "codex", arg: "--refresh-codex", interval: 45, fetch: fetchCodexRateLimits,
 }
 
-// fetchCodexRateLimits drives `codex app-server` over stdio to call account/rateLimits/read
-// — a live GET to the backend's accounts/check, which is authoritative and account-global.
-// The app-server owns auth and token refresh, so this stays a thin JSON-RPC client. Returns
-// nil on any failure (codex missing, logged out, timeout, malformed reply).
+// Using the app-server delegates authentication and token refresh to Codex.
 func fetchCodexRateLimits() []Window {
 	bin, err := exec.LookPath("codex")
 	if err != nil {
@@ -41,7 +38,6 @@ func fetchCodexRateLimits() []Window {
 	sc := bufio.NewScanner(stdout)
 	sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
 
-	// Handshake: initialize (id 0), await its result, then initialized + the read (id 1).
 	_ = enc.Encode(rpcMsg{JSONRPC: "2.0", ID: pint(0), Method: "initialize",
 		Params: map[string]any{"clientInfo": map[string]any{"name": "claude-statusline", "version": "0"}}})
 	if awaitRPCResult(sc, 0) == nil {
@@ -56,11 +52,8 @@ func fetchCodexRateLimits() []Window {
 	return parseAppServerRateLimits(result)
 }
 
-// codexFetchTimeout caps the whole app-server round-trip; a hang degrades to no refresh
-// (the previous cache stands) rather than a lingering process.
 const codexFetchTimeout = 15 * time.Second
 
-// rpcMsg is one outbound JSON-RPC message. A nil ID omits the field, marking a notification.
 type rpcMsg struct {
 	JSONRPC string `json:"jsonrpc"`
 	ID      *int   `json:"id,omitempty"`
@@ -70,9 +63,6 @@ type rpcMsg struct {
 
 func pint(i int) *int { return &i }
 
-// awaitRPCResult scans line-delimited JSON-RPC messages until one carries id with a
-// result, returning that raw result. Nil on EOF/timeout or an error reply. Interleaved
-// notifications (no id) and other ids are skipped.
 func awaitRPCResult(sc *bufio.Scanner, id int) json.RawMessage {
 	for sc.Scan() {
 		var m struct {

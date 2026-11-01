@@ -16,18 +16,12 @@ type cacheFile struct {
 	Windows   []Window `json:"windows"`
 }
 
-// usageSource describes one background-refreshed, account-global rate-limit source
-// (Claude or Codex). Only these four fields differ between sources — every cache
-// mechanic below is shared. bin is the presence gate: a machine without that tool
-// never spawns a refresh. arg is the detached --refresh-* self-invocation. interval
-// is seconds and doubles as both the cache-staleness threshold and, via the lock
-// file's mtime, the between-attempts backoff, so a logged-out or failing fetch cannot
-// retry on every render. Reads of these account-status endpoints are unmetered, so a
-// ~per-minute refresh is safe; pair it with statusLine.refreshInterval in settings.
 type usageSource struct {
-	file     string
-	bin      string
-	arg      string
+	file string
+	bin  string
+	arg  string
+	// Keep interval below statusLine.refreshInterval (60 s in settings.json), so that
+	// each idle rerun finds the cache stale and refreshes it.
 	interval int64
 	fetch    func() []Window
 }
@@ -40,9 +34,6 @@ func (s usageSource) current(now int64) []Window {
 	return cache.Windows
 }
 
-// cachePath/lockPath locate the cache and its refresh-backoff lock under the user
-// cache dir (~/Library/Caches on macOS, $XDG_CACHE_HOME on Linux). Empty means the
-// cache dir is unavailable, which disables the cached path for that source.
 func (s usageSource) cachePath() string {
 	dir, err := os.UserCacheDir()
 	if err != nil {
@@ -58,7 +49,6 @@ func (s usageSource) lockPath() string {
 	return ""
 }
 
-// Cache problems act as absence so rendering stays best-effort.
 func (s usageSource) read() cacheFile {
 	p := s.cachePath()
 	if p == "" {
@@ -75,8 +65,6 @@ func (s usageSource) read() cacheFile {
 	return c
 }
 
-// write atomically replaces the cache (temp file + rename) so a concurrent render
-// reads either the prior complete snapshot or the new one, never a half-written file.
 func (s usageSource) write(c *cacheFile) error {
 	p := s.cachePath()
 	if p == "" {
@@ -96,11 +84,11 @@ func (s usageSource) write(c *cacheFile) error {
 	return os.Rename(tmp, p)
 }
 
-// spawn starts a detached `claude-statusline <arg>` refresher unless the source's
-// tool is absent or an attempt ran within interval. The lock mtime records attempts
-// (success or failure alike), so a failing fetch backs off instead of retrying on
-// every render; the loose stat/write race spawns at most one harmless extra fetch.
-// Setsid detaches the child so it outlives this short-lived render.
+// The lock file's mtime records every refresh attempt, so a failing fetch retries
+// once per interval instead of on every render. It does not exclude a concurrent
+// render, which at worst starts one extra fetch.
+// Setsid moves the refresh out of the render's session and process group, so a
+// signal that cancels the render does not reach it.
 func (s usageSource) spawn(now int64) {
 	lock := s.lockPath()
 	if lock == "" {
@@ -129,8 +117,6 @@ func (s usageSource) spawn(now int64) {
 	}
 }
 
-// refresh runs in the detached child: it fetches the live snapshot and, on success,
-// writes it to the cache. A failed fetch leaves the previous cache untouched.
 func (s usageSource) refresh() {
 	if windows := s.fetch(); len(windows) > 0 {
 		_ = s.write(&cacheFile{FetchedAt: time.Now().Unix(), Windows: windows})

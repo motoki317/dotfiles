@@ -13,9 +13,6 @@ import (
 	"time"
 )
 
-// The timeout prevents a detached child from lingering indefinitely when credentials
-// or the network stop responding. The body cap leaves ample room for ignored future
-// fields without trusting an external response with unbounded memory.
 const (
 	claudeUsageFetchTimeout  = 15 * time.Second
 	claudeUsageResponseLimit = 1 << 20
@@ -25,9 +22,9 @@ var claudeSource = usageSource{
 	file: "claude-usage.json", bin: "claude", arg: "--refresh-claude", interval: 45, fetch: fetchClaudeUsage,
 }
 
-// fetchClaudeUsage reads Anthropic's unmetered account-global usage status with the
-// access token already owned by Claude Code. It neither refreshes nor persists auth;
-// every credential, request, status, and body failure leaves the payload fallback intact.
+// Reading usage does not consume the plan's allowance, but the endpoint answers
+// frequent polling with HTTP 429.
+// Claude Code owns token refresh, so this function only reads the stored token.
 func fetchClaudeUsage() []Window {
 	ctx, cancel := context.WithTimeout(context.Background(), claudeUsageFetchTimeout)
 	defer cancel()
@@ -56,9 +53,6 @@ func fetchClaudeUsage() []Window {
 	return parseClaudeUsage(data)
 }
 
-// claudeAccessToken reads Claude Code's current OAuth credential without taking
-// ownership of its lifecycle. macOS stores the JSON blob in Keychain; other platforms
-// use the home-directory credential file. Any read or shape error disables live usage.
 func claudeAccessToken(ctx context.Context) string {
 	var data []byte
 	var err error

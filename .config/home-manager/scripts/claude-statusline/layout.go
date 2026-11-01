@@ -7,10 +7,8 @@ import (
 	"unicode/utf8"
 )
 
-// termWidth reads the per-pane width Claude Code injects as COLUMNS. Zero means
-// unknown and retains single-line output; terminal queries cannot be used because
-// statusline output is captured rather than attached to a TTY. This assumes
-// statusLine.padding is zero; subtract configured padding here if that changes.
+// Claude Code captures stdout, so terminal queries cannot provide the pane width.
+// Using the full COLUMNS width assumes statusLine.padding is zero.
 func termWidth() int {
 	width, err := strconv.Atoi(os.Getenv("COLUMNS"))
 	if err != nil || width <= 0 {
@@ -19,11 +17,6 @@ func termWidth() int {
 	return width
 }
 
-// visWidth returns the rendered cell width of s, skipping ANSI CSI escapes and
-// summing each remaining rune's runeCells. It has to match what the terminal
-// actually draws: when it undercounts, layout packs a row past the pane width and
-// Claude Code right-truncates the overflow with an ellipsis (the bug this fixes —
-// the earlier one-cell-per-rune count lost ~7 cells on a glyph-heavy line).
 func visWidth(s string) int {
 	width := 0
 	for i := 0; i < len(s); {
@@ -44,33 +37,23 @@ func visWidth(s string) int {
 	return width
 }
 
-// runeCells returns the terminal cell width of r. Every rune this program prints
-// is either ASCII or one of two double-width classes: nerd-font icons, which live
-// in the Private Use Area (glyphModel/glyphToken/glyphTimer/glyphCost), and
-// renderCost's ↑/↓, which are East-Asian Ambiguous and drawn wide here. That
-// closed alphabet is why the full width table (go-runewidth) an arbitrary string
-// would need — an external dep the stdlib-only build bars — is unnecessary: these
-// ranges catch every wide rune actually emitted. Erring wide is the safe
-// direction; a terminal that drew these narrow would only wrap a few cells early,
-// where the reverse overflows and truncates.
+// The Private Use Area icons and the arrows draw two cells wide. Undercounting them
+// overflows a row, which Claude Code truncates. These ranges cover every glyph this
+// program prints, so no Unicode width table is needed.
 func runeCells(r rune) int {
 	switch {
-	case r >= 0xE000 && r <= 0xF8FF: // BMP Private Use Area
+	case r >= 0xE000 && r <= 0xF8FF:
 		return 2
-	case r >= 0xF0000 && r <= 0xFFFFD: // Supplementary Private Use Area-A (md icons)
+	case r >= 0xF0000 && r <= 0xFFFFD:
 		return 2
-	case r == 0x2191 || r == 0x2193: // ↑ ↓
+	case r == 0x2191 || r == 0x2193:
 		return 2
 	}
 	return 1
 }
 
-// layout greedily packs segments into width-bounded rows while preserving their
-// order. A non-positive width retains the legacy single-line output. A segment
-// wider than width still gets its own row and overflows; per-segment splitting is
-// intentionally out of scope.
 func layout(segments []string, width int) string {
-	const sep = " | " // one source for the join, its width term, and the concat
+	const sep = " | "
 	if width <= 0 {
 		return strings.Join(segments, sep)
 	}
