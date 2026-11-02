@@ -37,7 +37,8 @@
       "user": [
         "channels:history",
         "channels:read",
-        "search:read"
+        "search:read",
+        "files:read"
       ]
     }
   },
