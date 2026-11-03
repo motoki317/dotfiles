@@ -42,7 +42,7 @@ Nix ignores untracked files, so `git add` each new file in this directory first.
 
 ### Upgrade OpenClaw
 
-`flake.nix` pins a commit of the fork [motoki317/nix-openclaw](https://github.com/motoki317/nix-openclaw). Each repo pins its OpenClaw version in `nix/sources/openclaw-source.nix`. Neither repo can run 2026.10.7 here yet, as [OpenClaw 2026.10.7 does not build here](#openclaw-2026107-does-not-build-here) explains. If upstream nix-openclaw pins the release you want and that section no longer applies, set `github:openclaw/nix-openclaw/<commit>` in `flake.nix` and go to the backup and switch below.
+`flake.nix` pins a commit of the fork [motoki317/nix-openclaw](https://github.com/motoki317/nix-openclaw). Each repo pins its OpenClaw version in `nix/sources/openclaw-source.nix`. As of 2026-11-03, the fork pins 2026.10.10 on its branch `mirror-2026.10.10`, which branches from upstream main. Upstream's pin job fails on 2026.10.10 in the npm dist patcher. If upstream nix-openclaw pins the release you want, set `github:openclaw/nix-openclaw/<commit>` in `flake.nix` and go to the backup and switch below.
 
 Otherwise, pin the newest stable release in the fork's clone:
 
@@ -55,9 +55,9 @@ GITHUB_ACTIONS=true scripts/update-pins.sh apply "$tag" "$sha" "" ""
 
 Without `GITHUB_ACTIONS=true`, the script refuses to run outside GitHub Actions. The two empty arguments keep the macOS app pin, which this host does not use.
 
-If the gateway build fails with `expected exactly one …` or `contract is unsupported or already patched`, the release changed code that `nix/scripts/patch-openclaw-npm-dist.mjs` matches exactly. Add the new form to the patcher and to its `.fixtures.mjs` and `.test.mjs`, as commit `7f57218` does for 2026.10. Commit that change on its own, then run the script again.
+If the gateway build fails with `expected exactly one …` or `contract is unsupported or already patched`, the release changed code that `nix/scripts/patch-openclaw-npm-dist.mjs` matches exactly. Add the new form to the patcher and to its `.fixtures.mjs` and `.test.mjs`, as commits `7f57218` (2026.10) and `fb3788e` (2026.10.10) do. Commit that change on its own, then run the script again.
 
-Commit the generated files and push them to the fork's `main`. Set that commit in `flake.nix`.
+Commit the generated files on a branch from upstream main and push that branch to the fork. The fork's `main` stays on 2026.10.3 so that older locks still resolve. Set that commit in `flake.nix`.
 
 On either path, `openclaw-migrate-state` migrates state one way, so copy `~/.openclaw` before you switch. The build runs before the stop, so a failed build leaves the gateway running:
 
@@ -135,21 +135,9 @@ After an OpenClaw upgrade, check that the gateway log has no `only available for
 
 Do not reinstall Slack from npm, as the message suggests. An npm install points at the exact gateway build that it was installed for. Any later gateway rebuild, even one from a nixpkgs update, then stops Slack until you reinstall it.
 
-### OpenClaw 2026.10.7 does not build here
-
-As of 2026-10-27, upstream nix-openclaw pins OpenClaw 2026.10.7, whose `package.json` requires `node >=24.22.1 <25 || >=26.12.1`. The `nixos-unstable` nixpkgs has Node 24.21.0, so upstream falls back to the official Node binary and patches it with `autoPatchelfHook`. The patchelf 0.19.2 in nixpkgs corrupts that binary ([NixOS/patchelf#674](https://github.com/NixOS/patchelf/issues/674)), and the build fails when the patched `node` segfaults in its install check. The fork has no such fallback: if it pins 2026.10.7, the gateway runs on a Node that the release does not support. This setup stays on the fork's 2026.10.3, which runs on the Node from nixpkgs.
-
-Move to upstream after one of these reaches `nixos-unstable`: Node 24.22.1, or a patchelf release with [NixOS/patchelf#672](https://github.com/NixOS/patchelf/pull/672). To check, set the upstream commit in `flake.nix` and run `home-manager build --flake ~/.config/home-manager#moto --impure`. The build does not touch the running gateway. If it fails, restore `flake.nix` and `flake.lock` from git.
-
 ### acpx warning at startup
 
 From 2026.10.3, the gateway logs `Bundled plugin acpx identity unavailable: plugin runtime artifact contains unsupported symlink entry`. The agents here run on claude-cli, not ACP, so they do not use that plugin.
-
-### Follow-ups abort, not steer
-
-A new message in the same thread or DM conversation stops the running turn, including the command it is running. The bot then starts on the new message. Even "thanks" does this. The exception is an unmentioned reply sent before the bot posts in the thread. Such a reply is a room event: it waits for the running turn to end instead of stopping it. OpenClaw 2026.10.3 and earlier cannot inject a message into a running claude-cli turn ([openclaw#124731](https://github.com/openclaw/openclaw/issues/124731)).
-
-Once a release includes the fix ([openclaw#159816](https://github.com/openclaw/openclaw/pull/159816)), upgrade OpenClaw. Then delete `queue.byChannel.slack` from `default.nix`. Also delete the sentence that begins "A new message in the thread stops your current run" from `slack-channel-prompt.md`. The acknowledgement sentence before it exists because room events do not interrupt. Keep it unless that release lets room events steer.
 
 ### Usage and access
 
