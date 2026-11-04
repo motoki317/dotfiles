@@ -5,4 +5,3 @@
 - In-place edits from the shell: `perl -i`, never `sed -i` or `awk`. Missing command: retry with `nix run nixpkgs#<command>`.
 - Long output: `<cmd> | tee <log file>`, then grep the file.
 - Batch independent tool calls into one message. Read and edit at symbol level, not whole files.
-- Output in English.
