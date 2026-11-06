@@ -12,15 +12,6 @@
       url = "github:kawarimidoll/ha";
       flake = false;
     };
-    # Declarative OpenClaw, from a fork until upstream's pin job builds 2026.10.10
-    # (openclaw/README.md, "Upgrade OpenClaw"). The URL names a commit, so
-    # `nix flake update` leaves OpenClaw alone: a new release can need the one-way
-    # state migration in that README.
-    nix-openclaw = {
-      url = "github:motoki317/nix-openclaw/80947aa85b4e85a04c14e0e5492629034e6e37e3";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
   };
 
   outputs =
@@ -32,7 +23,6 @@
         modules = [
           ./hosts/wsl.nix
           ./hosts/common.nix
-          ./openclaw
         ];
         extraSpecialArgs = {
           inherit inputs;
