@@ -8,14 +8,7 @@
   # tmux clipboard tool consumed by common/tmux.nix
   _module.args.clipboardCommand = "clip.exe";
 
-  home.packages = import ../common/packages.nix { inherit pkgs inputs; } ++ [
-    # Read-only Grafana client for the Slack agent. It names internal hosts, so
-    # it lives outside this public repo, and evaluating it needs --impure.
-    (import "${homeDirectory}/.secrets/grafana-api/grafana-api.nix" {
-      inherit pkgs;
-      privateDir = "${homeDirectory}/.secrets/grafana-api";
-    })
-  ];
+  home.packages = import ../common/packages.nix { inherit pkgs inputs; };
 
   home.file = {
     ".docker/cli-plugins/docker-buildx".source = "${pkgs.docker-buildx}/bin/docker-buildx";
