@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -614,6 +615,69 @@ func TestRenderWraps(t *testing.T) {
 	}
 	if wide != unwrapped {
 		t.Errorf("wide render differs from unwrapped render:\nwide %q\nunwrapped %q", wide, unwrapped)
+	}
+}
+
+func TestWriteCache(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	p := cachePath(filepath.Join("nested", "raw"))
+	for _, data := range [][]byte{[]byte("old"), {0, '\n', 0xff}} {
+		if err := writeCache(p, data); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := os.ReadFile(p); err != nil || string(got) != string(data) {
+			t.Fatalf("cache = %q, %v; want %q", got, err, data)
+		}
+		if _, err := os.Stat(p + ".tmp"); !os.IsNotExist(err) {
+			t.Fatalf("temporary file remains: %v", err)
+		}
+	}
+	if err := os.Mkdir(p+".tmp", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeCache(p, []byte("failed")); err == nil {
+		t.Fatal("write with a directory at the temporary path succeeded")
+	}
+	if got, err := os.ReadFile(p); err != nil || string(got) != string([]byte{0, '\n', 0xff}) {
+		t.Fatalf("failed write changed cache: %q, %v", got, err)
+	}
+}
+
+func TestSpawnDetached(t *testing.T) {
+	const resultEnv = "STATUSLINE_TEST_DETACHED_RESULT"
+	if result := os.Getenv(resultEnv); result != "" {
+		if group := syscall.Getpgrp(); group != os.Getpid() {
+			t.Errorf("process group = %d, want child PID %d", group, os.Getpid())
+		}
+		null, err := os.Stat(os.DevNull)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, stream := range []*os.File{os.Stdin, os.Stdout, os.Stderr} {
+			if info, err := stream.Stat(); err != nil || !os.SameFile(info, null) {
+				t.Errorf("%s is not /dev/null: %v", stream.Name(), err)
+			}
+		}
+		if err := os.WriteFile(result, []byte("finished"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("PATH", t.TempDir())
+	result := filepath.Join(t.TempDir(), "result")
+	t.Setenv(resultEnv, result)
+	cmd, err := spawnDetached("-test.run=^TestSpawnDetached$", "-test.count=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := os.ReadFile(result); err != nil || string(got) != "finished" {
+		t.Fatalf("child result = %q, %v", got, err)
 	}
 }
 

@@ -34,12 +34,16 @@ func (s usageSource) current(now int64) []Window {
 	return cache.Windows
 }
 
-func (s usageSource) cachePath() string {
+func cachePath(file string) string {
 	dir, err := os.UserCacheDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(dir, "claude-statusline", s.file)
+	return filepath.Join(dir, "claude-statusline", file)
+}
+
+func (s usageSource) cachePath() string {
+	return cachePath(s.file)
 }
 
 func (s usageSource) lockPath() string {
@@ -66,15 +70,18 @@ func (s usageSource) read() cacheFile {
 }
 
 func (s usageSource) write(c *cacheFile) error {
-	p := s.cachePath()
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return writeCache(s.cachePath(), data)
+}
+
+func writeCache(p string, data []byte) error {
 	if p == "" {
 		return fmt.Errorf("no user cache dir")
 	}
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
-		return err
-	}
-	data, err := json.Marshal(c)
-	if err != nil {
 		return err
 	}
 	tmp := p + ".tmp"
@@ -87,8 +94,6 @@ func (s usageSource) write(c *cacheFile) error {
 // The lock file's mtime records every refresh attempt, so a failing fetch retries
 // once per interval instead of on every render. It does not exclude a concurrent
 // render, which at worst starts one extra fetch.
-// Setsid moves the refresh out of the render's session and process group, so a
-// signal that cancels the render does not reach it.
 func (s usageSource) spawn(now int64) {
 	lock := s.lockPath()
 	if lock == "" {
@@ -100,21 +105,30 @@ func (s usageSource) spawn(now int64) {
 	if _, err := exec.LookPath(s.bin); err != nil {
 		return
 	}
-	self, err := os.Executable()
-	if err != nil {
-		return
-	}
 	if os.MkdirAll(filepath.Dir(lock), 0o755) != nil {
 		return
 	}
 	if os.WriteFile(lock, []byte(strconv.FormatInt(now, 10)), 0o644) != nil {
 		return
 	}
-	cmd := exec.Command(self, s.arg)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	if cmd.Start() == nil {
+	if cmd, err := spawnDetached(s.arg); err == nil {
 		_ = cmd.Process.Release()
 	}
+}
+
+// Setsid moves the refresh out of the render's session and process group, so a
+// signal that cancels the render does not reach it.
+func spawnDetached(args ...string) (*exec.Cmd, error) {
+	self, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(self, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	return cmd, nil
 }
 
 func (s usageSource) refresh() {
