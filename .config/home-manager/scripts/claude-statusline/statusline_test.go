@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -470,6 +471,17 @@ func TestParseCost(t *testing.T) {
 	}
 }
 
+// sleepPath resolves sleep before fakeAgtlog narrows PATH. The Nix build sandbox has no
+// /bin/sleep, and a fake that cannot sleep exits at once.
+func sleepPath(t *testing.T) string {
+	t.Helper()
+	p, err := exec.LookPath("sleep")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
 func fakeAgtlog(t *testing.T, script string) string {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
@@ -521,7 +533,7 @@ printf '%s\n' '{"session":{"tokens":{},"cost":{"usd":1.25,"complete":true}}}'
 func TestSessionCostSlowRefresh(t *testing.T) {
 	fake := `#!/bin/sh
 printf 'call\n' >> "$AGTLOG_TEST_ARGS"
-/bin/sleep 3
+` + sleepPath(t) + ` 3
 printf '%s\n' '{"session":{"cost":{"usd":2.5,"complete":true}}}'
 `
 	bin := fakeAgtlog(t, fake)
@@ -653,7 +665,7 @@ func TestSessionCostUnsafeID(t *testing.T) {
 }
 
 func TestAgtlogCostTimeout(t *testing.T) {
-	bin := fakeAgtlog(t, "#!/bin/sh\nexec /bin/sleep 10\n")
+	bin := fakeAgtlog(t, "#!/bin/sh\nexec "+sleepPath(t)+" 10\n")
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
 	if data := agtlogCost(ctx, bin, "slow"); data != nil {
