@@ -15,6 +15,10 @@ import (
 func pi(i int64) *int64 { return &i }
 
 func TestMain(m *testing.M) {
+	if len(os.Args) > 1 && os.Args[1] == "--refresh-cost" {
+		main()
+		os.Exit(0)
+	}
 	trueColor = false
 	os.Exit(m.Run())
 }
@@ -466,26 +470,39 @@ func TestParseCost(t *testing.T) {
 	}
 }
 
-func TestAgtlogCostCommand(t *testing.T) {
+func fakeAgtlog(t *testing.T, script string) string {
+	t.Helper()
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	dir := t.TempDir()
+	t.Setenv("PATH", dir)
 	bin := filepath.Join(dir, "agtlog")
-	argsPath := filepath.Join(dir, "args")
+	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return bin
+}
+
+func TestAgtlogCostCommand(t *testing.T) {
 	fake := `#!/bin/sh
 printf 'call\n' >> "$AGTLOG_TEST_ARGS"
 printf '%s\n' "$@" >> "$AGTLOG_TEST_ARGS"
 printf '%s\n' '{"session":{"tokens":{},"cost":{"usd":1.25,"complete":true}}}'
 `
-	if err := os.WriteFile(bin, []byte(fake), 0o755); err != nil {
+	bin := fakeAgtlog(t, fake)
+	argsPath := filepath.Join(filepath.Dir(bin), "args")
+	t.Setenv("AGTLOG_TEST_ARGS", argsPath)
+	const sid = "00000000-0000-4000-8000-000000000001"
+	p := costCacheBase(sid) + ".json"
+	if err := writeCache(p, []byte(`{"session":{"cost":{"usd":0.5}}}`)); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("AGTLOG_TEST_ARGS", argsPath)
-	t.Setenv("PATH", dir)
 	if ci := sessionCost(""); ci != nil {
 		t.Fatalf("cost without session ID = %+v, want nil", ci)
 	}
-	ci := sessionCost("00000000-0000-4000-8000-000000000001")
+	ci := sessionCost(sid)
 	if ci == nil || ci.USD != 1.25 || !ci.Complete {
-		t.Fatalf("agtlogCost = %+v", ci)
+		t.Fatalf("session cost = %+v", ci)
 	}
 	args, err := os.ReadFile(argsPath)
 	if err != nil {
@@ -495,30 +512,152 @@ printf '%s\n' '{"session":{"tokens":{},"cost":{"usd":1.25,"complete":true}}}'
 	if string(args) != want {
 		t.Errorf("agtlog arguments = %q, want %q", args, want)
 	}
+	wantData := "{\"session\":{\"tokens\":{},\"cost\":{\"usd\":1.25,\"complete\":true}}}\n"
+	if data, err := os.ReadFile(p); err != nil || string(data) != wantData {
+		t.Errorf("stored raw output = %q, %v; want %q", data, err, wantData)
+	}
 }
 
-func TestAgtlogCostFailures(t *testing.T) {
-	dir := t.TempDir()
-	bin := filepath.Join(dir, "agtlog")
-	notFound := `#!/bin/sh
-printf '%s\n' '{"error":{"code":"not_found"}}' >&2
-exit 3
+func TestSessionCostSlowRefresh(t *testing.T) {
+	fake := `#!/bin/sh
+printf 'call\n' >> "$AGTLOG_TEST_ARGS"
+/bin/sleep 3
+printf '%s\n' '{"session":{"cost":{"usd":2.5,"complete":true}}}'
 `
-	if err := os.WriteFile(bin, []byte(notFound), 0o755); err != nil {
+	bin := fakeAgtlog(t, fake)
+	argsPath := filepath.Join(filepath.Dir(bin), "args")
+	t.Setenv("AGTLOG_TEST_ARGS", argsPath)
+	p := costCacheBase("slow") + ".json"
+	if err := writeCache(p, []byte(`{"session":{"cost":{"usd":0.5,"complete":true}}}`)); err != nil {
 		t.Fatal(err)
 	}
-	if ci := agtlogCost(context.Background(), bin, "missing"); ci != nil {
-		t.Errorf("exit 3 should return nil, got %+v", ci)
+	started := time.Now()
+	ci := sessionCost("slow")
+	if elapsed := time.Since(started); elapsed < costTimeout || elapsed > costTimeout+500*time.Millisecond {
+		t.Errorf("slow render took %s, want about %s", elapsed, costTimeout)
 	}
+	if ci == nil || ci.USD != 0.5 {
+		t.Fatalf("slow refresh returned %+v, want stored cost 0.5", ci)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		data, _ := os.ReadFile(p)
+		if cost := parseCost(data); cost != nil && cost.USD == 2.5 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("background refresh did not replace stored cost: %q", data)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if args, err := os.ReadFile(argsPath); err != nil || string(args) != "call\n" {
+		t.Errorf("agtlog calls = %q, %v; want one call", args, err)
+	}
+}
 
-	blocking := "#!/bin/sh\nexec /bin/sleep 10\n"
-	if err := os.WriteFile(bin, []byte(blocking), 0o755); err != nil {
-		t.Fatal(err)
+func TestSessionCostLocked(t *testing.T) {
+	for _, stored := range []string{"", "{", "{}", `{"session":{"cost":{"usd":0.5}}}`} {
+		t.Run(stored, func(t *testing.T) {
+			bin := fakeAgtlog(t, "#!/bin/sh\nprintf call > \"$AGTLOG_TEST_ARGS\"\nprintf '%s' '{\"session\":{\"cost\":{\"usd\":1.25}}}'\n")
+			argsPath := filepath.Join(filepath.Dir(bin), "args")
+			t.Setenv("AGTLOG_TEST_ARGS", argsPath)
+			base := costCacheBase("locked")
+			if err := os.MkdirAll(filepath.Dir(base), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if stored != "" {
+				if err := writeCache(base+".json", []byte(stored)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			lock, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0o644)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer lock.Close()
+			if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+				t.Fatal(err)
+			}
+			refreshCost("locked")
+			for i := 0; i < 5; i++ {
+				started := time.Now()
+				got := sessionCost("locked")
+				if elapsed := time.Since(started); elapsed >= costTimeout/2 {
+					t.Errorf("locked render took %s, want less than %s", elapsed, costTimeout/2)
+				}
+				if want := parseCost([]byte(stored)); !reflect.DeepEqual(got, want) {
+					t.Errorf("locked cost = %+v, want %+v", got, want)
+				}
+			}
+			if _, err := os.Stat(argsPath); !os.IsNotExist(err) {
+				t.Fatalf("agtlog ran while lock held: %v", err)
+			}
+			if err := lock.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if ci := sessionCost("locked"); ci == nil || ci.USD != 1.25 {
+				t.Errorf("cost after releasing lock = %+v, want 1.25", ci)
+			}
+		})
 	}
+}
+
+func TestSessionCostRefreshFailures(t *testing.T) {
+	for _, output := range []string{
+		`printf '%s' '{"session":{"cost":{"usd":9}}}'; exit 3`,
+		`printf '%s' '{'`,
+		`printf '%s' '{}'`,
+	} {
+		t.Run(output, func(t *testing.T) {
+			fakeAgtlog(t, "#!/bin/sh\n"+output+"\n")
+			const stored = `{"session":{"cost":{"usd":0.5,"complete":true}}}`
+			p := costCacheBase("failed") + ".json"
+			if err := writeCache(p, []byte(stored)); err != nil {
+				t.Fatal(err)
+			}
+			if ci := sessionCost("failed"); ci == nil || ci.USD != 0.5 {
+				t.Errorf("failed refresh returned %+v, want stored cost 0.5", ci)
+			}
+			if data, err := os.ReadFile(p); err != nil || string(data) != stored {
+				t.Errorf("failed refresh changed stored cost: %q, %v", data, err)
+			}
+		})
+	}
+}
+
+func TestSessionCostUnsafeID(t *testing.T) {
+	for _, sid := range []string{"", "../x", "a/b", ".", "a_b", "a.b", "a b", "é", "a\n", `a\b`} {
+		t.Run(sid, func(t *testing.T) {
+			bin := fakeAgtlog(t, "#!/bin/sh\nprintf call > \"$AGTLOG_TEST_ARGS\"\n")
+			argsPath := filepath.Join(filepath.Dir(bin), "args")
+			t.Setenv("AGTLOG_TEST_ARGS", argsPath)
+			if ci := sessionCost(sid); ci != nil {
+				t.Errorf("unsafe ID returned %+v", ci)
+			}
+			refreshCost(sid)
+			cmd, err := spawnDetached("--refresh-cost", sid)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := cmd.Wait(); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(argsPath); !os.IsNotExist(err) {
+				t.Errorf("unsafe ID ran agtlog: %v", err)
+			}
+			if _, err := os.Stat(cachePath("")); !os.IsNotExist(err) {
+				t.Errorf("unsafe ID created a cache file or directory: %v", err)
+			}
+		})
+	}
+}
+
+func TestAgtlogCostTimeout(t *testing.T) {
+	bin := fakeAgtlog(t, "#!/bin/sh\nexec /bin/sleep 10\n")
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
-	if ci := agtlogCost(ctx, bin, "slow"); ci != nil {
-		t.Errorf("timeout should return nil, got %+v", ci)
+	if data := agtlogCost(ctx, bin, "slow"); data != nil {
+		t.Errorf("timeout returned %q, want nil", data)
 	}
 }
 

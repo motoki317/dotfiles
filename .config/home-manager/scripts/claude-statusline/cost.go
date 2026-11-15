@@ -3,13 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"syscall"
 	"time"
 )
 
-// After its price table changes, agtlog reparses for about 3 seconds. The timeout
-// drops cost from that one render instead of delaying the status line.
+// The render waits this long for a fresh cost. A slower refresh finishes in the
+// background so later renders can use its result.
 const costTimeout = 2 * time.Second
+
+const costRefreshTimeout = 60 * time.Second
 
 type costInfo struct {
 	USD           float64
@@ -38,24 +43,72 @@ type agtlogShow struct {
 }
 
 func sessionCost(sid string) *costInfo {
-	if sid == "" {
+	base := costCacheBase(sid)
+	if base == "" {
 		return nil
+	}
+	if cmd, err := spawnDetached("--refresh-cost", sid); err == nil {
+		done := make(chan struct{})
+		go func() {
+			_ = cmd.Wait()
+			close(done)
+		}()
+		timer := time.NewTimer(costTimeout)
+		defer timer.Stop()
+		select {
+		case <-done:
+		case <-timer.C:
+		}
+	}
+	data, _ := os.ReadFile(base + ".json")
+	return parseCost(data)
+}
+
+func costCacheBase(sid string) string {
+	if sid == "" {
+		return ""
+	}
+	for _, c := range sid {
+		if !(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '-') {
+			return ""
+		}
+	}
+	return cachePath(filepath.Join("cost", sid))
+}
+
+func refreshCost(sid string) {
+	base := costCacheBase(sid)
+	if base == "" {
+		return
 	}
 	bin, err := exec.LookPath("agtlog")
 	if err != nil {
-		return nil
+		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), costTimeout)
+	if os.MkdirAll(filepath.Dir(base), 0o755) != nil {
+		return
+	}
+	lock, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return
+	}
+	defer lock.Close()
+	if syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) != nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), costRefreshTimeout)
 	defer cancel()
-	return agtlogCost(ctx, bin, sid)
+	if data := agtlogCost(ctx, bin, sid); data != nil {
+		_ = writeCache(base+".json", data)
+	}
 }
 
-func agtlogCost(ctx context.Context, bin, sid string) *costInfo {
+func agtlogCost(ctx context.Context, bin, sid string) []byte {
 	out, err := exec.CommandContext(ctx, bin, "show", "claude:"+sid, "--no-events", "--offline").Output()
-	if err != nil {
+	if err != nil || parseCost(out) == nil {
 		return nil
 	}
-	return parseCost(out)
+	return out
 }
 
 func parseCost(data []byte) *costInfo {

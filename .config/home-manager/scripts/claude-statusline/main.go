@@ -28,6 +28,11 @@ func main() {
 		case "--refresh-codex":
 			codexSource.refresh()
 			return
+		case "--refresh-cost":
+			if len(os.Args) == 3 {
+				refreshCost(os.Args[2])
+			}
+			return
 		}
 	}
 
