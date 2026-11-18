@@ -14,7 +14,7 @@ argument-hint: "[message]"
 - Cut the work into tasks for the Implementer. Each task must make one change: a behavior, a refactor, or a migration. It must end with a check that proves the change and leave the repo's checks passing.
 
 # Output
-Write the plan in this format to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md`. Reply with the path and the decisions that the user must approve, not the document. Then end your turn for plan approval.
+Write the plan in this format to `<git root>/docs/plans/<YYYY-MM-DD>-<slug>.md`. Reply with the path and the decisions that the user must approve, not the document. In the same reply, ask whether the approval also authorizes Ship. Then end your turn for plan approval.
 
 ```
 ## Requirements Document

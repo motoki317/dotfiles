@@ -17,7 +17,7 @@ Two seats run every change request. For questions, reviews, and diagnosis, inspe
    - After the last task, if the change is high-risk or its behavior lacks test coverage, run `/quality-review` yourself.
 5. **Ship** — `/pr`: it tidies, opens the PR, and runs `/address`. A push to a branch with an open PR is a follow-up, not a new Ship.
 
-Auto-advance every step except two stops: plan approval and Ship. Ask for plan approval again when a requirement or the scope changes.
+Auto-advance every step except two stops: plan approval and Ship. If the user authorized Ship at plan approval, do not stop at Ship. Ask for plan approval again when a requirement or the scope changes.
 
 ## Advisors
 Two advisors sit outside the loop: Codex (`/codex-advise`) and Claude. Consult one before you commit to a hard-to-reverse or uncertain approach, assumption, or "done", and at any design choice the code cannot settle. Consult both when the question spans build and design, or before you skip a finding one of them raised. Skip them for mechanical work. Report findings to the user at their severity, with your counter-evidence.

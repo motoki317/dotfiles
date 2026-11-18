@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Push the current branch, open a pull request, and run /address. Use when the user asks for a PR — the Ship step, always user-triggered.
+description: Push the current branch, open a pull request, and run /address. Use at the Ship step, when the user asks for a PR or authorized Ship at plan approval.
 argument-hint: "[base-branch]"
 allowed-tools: [Bash, Read, Grep, Agent]
 ---
