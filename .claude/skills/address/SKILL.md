@@ -7,7 +7,7 @@ Target: the PR in the argument, else `gh pr view --json number`. Repeat steps 1â
 
 ## 1. Wait
 
-Read the head SHA, the draft state, and the base: `gh pr view <pr> --json headRefOid,isDraft,baseRefName`. If the head was pushed after the PR opened, comment `@codex review`.
+Read the head SHA, the draft state, the base, and the merge state: `gh pr view <pr> --json headRefOid,isDraft,baseRefName,mergeable`. If `mergeable` is `CONFLICTING`, run `/rebase-clean` first. Then list your other open PRs: `gh pr list --author @me --json number,headRefName,mergeable`. For each one that is `CONFLICTING`, run `/rebase-clean` on its branch if this work opened it. If you cannot tell, report it. If the head was pushed after the PR opened, comment `@codex review`.
 
 Run in the background:
 
