@@ -2,6 +2,7 @@
 
 Judge against the intent, not the code's apparent purpose. Look for:
 - a case the intent states that the change omits, and a requirement that no test checks
+- a test that cannot fail: it still passes when the line that it guards is removed
 - wrong results at boundaries: empty, max, off-by-one, units
 - failure paths: error, timeout, partial write, retry, crash mid-operation, a swallowed error
 - untrusted input that reaches a sink (SQL, shell, path, HTML), missing authz, secrets in logs
