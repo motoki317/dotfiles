@@ -10,10 +10,11 @@ Read the reference for the text's language. Hold the three principles below whil
 - Japanese: `$HOME/.claude/skills/tech-writing/references/japanese.md`
 - English: `$HOME/.claude/skills/tech-writing/references/english.md`
 - Japanese book chapters and published articles (a blog, Zenn): also `$HOME/.claude/skills/tech-writing/references/manuscript.md`
+- Steps that a person follows (a runbook, a release or migration procedure, deploy steps in a PR body): also `$HOME/.claude/skills/tech-writing/references/runbook.md`
 
 ## 1. Choose what to say, then say it in full
 
-List what the reader must do or believe after reading. Cut every other point whole, such as the story of how you found the result. Do not force the kept points short. Write each one as you explain it aloud to a colleague: who or what does what, when, and under which condition.
+Name the reader and the time that this reader gives the text: about one minute for a PR body, an ADR, or a chat reply, and a few minutes for a design document. List what the reader must do or believe after that time. Cut every other point whole, such as the story of how you found the result. Do not force the kept points short. Write each one as you explain it aloud to a colleague: who or what does what, when, and under which condition.
 
 | Shortened to a label | Written in full |
 |---|---|
