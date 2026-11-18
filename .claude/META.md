@@ -67,6 +67,20 @@ Delete this recurring fat on sight:
 - Claude Code strips block-level HTML comments in `CLAUDE.md` before injection — documented, intended for maintainer notes. Claude Code preserves comments inside code blocks. `Read` shows comments as-is.
 - Whether Claude Code also strips comments in `rules/*.md` is undocumented — do not rely on it. Put notes here instead.
 - Reference: https://code.claude.com/docs/en/memory.md
+- A compaction keeps Tier 0 and the body of each loaded skill (the first 5,000 tokens). It summarizes away an instruction that the user gave only in conversation, and it rereads at most five of the files that the agent read (verified 2026-11-18, https://code.claude.com/docs/en/context-window.md). A rule that must hold through a long session therefore belongs in Tier 0 or in a `SKILL.md`, not in a reference.
+
+## Log review (2026-11-18)
+
+The review read 829 typed prompts in 111 Claude Code sessions and 176 Codex briefs in 59 sessions since 2026-10-01, through `agtlog`.
+
+- Thirteen sessions held 577 of the prompts and 302 of 340 compactions. In the 8 longest, the agent made no edit to a `CLAUDE.md` or `AGENTS.md`. The Memory rule in `rules/process.md` now names asides, and the `persist` probe guards it.
+- No-rules ablation: `claude -p --safe-mode`, Fable 5.2 and Opus 5.5, three runs each. Without any rule, `dismissal` and `dup-alike` passed in 6 of 6 runs, `yagni` kept one knob configurable in 6 of 6, and `dup-flag`, `dup-branch`, and `dup-list` passed in 0 of 6. The single-source-of-truth rule and the ladder stay.
+- `dup-list` is unstable: it passed in 4 of 6 runs on the rules before the review and in 6 of 8 after.
+- Cut from Tier 0: the `tee` rule, the batching and symbol-level-read rule, "Boring over clever", "Skip them for mechanical work", the sentence that repeated "Dismissal is a claim too" in Accept, and the Implementer's "Ask only when" list, which the `codex-run` work preamble states. Every probe held afterward.
+- Reading budget in `skills/tech-writing` principle 1: two tasks rebuilt from a session where the user called the output too long (a PR body and a design document), three `claude -p --safe-mode` writers per arm, each with about 16,000 characters of session transcript, and one blind judge per task. Mean rank: 3.0 with the budget sentence, 4.0 without. PR bodies were 17% shorter (median) and design documents 2%. Meaning slips did not differ.
+- Not adopted, untested: both judges ranked by order, not length. The top outputs put the reader's decisions and blockers, or a summary, first.
+- `references/runbook.md` collects the demands that the user repeated for runbooks in four repositories.
+- Codex reads a dollar sign followed by a skill name as a call to that skill. On 2026-11-11 a work brief that held such a shell variable loaded `pr`, and the Implementer pushed and opened a PR. `codex-run` now disables `pr`, `address`, and `upstream` with a `skills.config` override. A brief must still avoid that token for every other skill.
 
 ## Credits
 
