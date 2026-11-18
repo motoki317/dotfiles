@@ -38,4 +38,4 @@ Ask only when one of these blocks you:
 - a destructive or irreversible action
 
 ## Memory
-Auto-memory is off. Keep durable knowledge in a git-tracked file of its repo: agent guidance in `CLAUDE.md`/`AGENTS.md`, the rest in the repo's docs.
+Auto-memory is off. When the user gives an instruction that outlives the current step, even as an aside, write it down in the same turn: in the repo's `CLAUDE.md`/`AGENTS.md` if it holds for the repo, else in the work's plan file. If the work has no plan file, create one under `docs/plans/`. After a compaction, reread the plan file before you act. Keep other durable knowledge in the repo's docs.

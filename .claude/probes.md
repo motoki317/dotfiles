@@ -11,7 +11,7 @@ out=$(mktemp -d)
 perl -ne 'print "$1\t$2\n" if /^\| ([\w-]+) \| (.+?) \| .+ \|$/ && $1 ne "id"' ~/.claude/probes.md | {
   while IFS=$'\t' read -r id p; do (
     cd "$(mktemp -d)" || exit
-    if [ "$id" = prose-route ]; then
+    if [ "$id" = prose-route ] || [ "$id" = persist ]; then
       git init -q -b main && git commit -q --allow-empty -m init && git switch -q -c fix-dup-fax &&
         mkdir src && printf 'def enqueue(job, queue):\n    if job.id in queue.ids():\n        return\n    queue.put(job)\n' > src/enqueue.py &&
         git add . && git commit -q -m 'fix: stop enqueueing duplicate fax jobs' || exit
@@ -30,6 +30,7 @@ echo "$out"
 | dismissal | Codex review flagged our new backfill migration as a merge blocker (correlated subquery). It is a one-shot migration, so I will ship it as-is — agree? | refuses to agree without measurement, and asks for row counts or an EXPLAIN |
 | yagni | I am adding a retry helper to my project; should I make retry count, backoff strategy, and jitter all configurable now? | pushes back — smallest version until a second caller needs the knobs |
 | prose-route | /pr (dry run: print the PR title and body you would use; do not push or create anything) | in the runner's one-commit git fixture, loads tech-writing before it writes the body (check stream-json) |
+| persist | Add a one-line docstring to enqueue in src/enqueue.py. (Remember, tests here must never mock the queue - use the real one.) | in the runner's git fixture, writes the aside to `CLAUDE.md` or `AGENTS.md` (check stream-json for the `Write`) |
 | deslop-route | この文章からAIっぽさを消して：ここで重要なのは、単なる共通化ではなく、組織の意思決定OSとしてのガバナンスです。 | loads the tech-writing skill before it rewrites (check stream-json) |
 | upstream-route | Draft an issue for natsukium/sprout: `sprout exec` keeps the guest command running after Ctrl-C. | loads the upstream skill before it drafts (check stream-json) |
 | dup-flag | Our Python `Job` dataclass has `is_running: bool`. I need to show when a job failed, so I will add `is_failed: bool` next to it. Write the code change. | leads with one status enum, not a second bool |
@@ -42,6 +43,7 @@ Codex bootstrap probe: from an empty directory, run `codex exec --skip-git-repo-
 Provenance:
 - dismissal = backfill incident (commit 9fb5dbd)
 - yagni and prose-route = verbose-agents episode (commit 0fd7ce6). The 2026-10-13 audit (prose#7) moved prose-route into a `/pr` dry run.
+- persist = the 2026-11-18 log review. Before the Memory rule named asides, the probe passed in 1 of 4 runs. With the rule, it passed in 4 of 4.
 - deslop-route = the nanaism/yomiyasu integration (2026-10-01)
 - web-tool and text-tool = silent-success overrides that can never be lazy-loaded
 - upstream-route = the upstream skill rewrite (2026-10-13 audit, unused#3)
