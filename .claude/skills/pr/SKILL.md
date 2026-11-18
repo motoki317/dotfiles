@@ -7,7 +7,7 @@ allowed-tools: [Bash, Read, Grep, Agent]
 
 Base: the argument, else `main`.
 
-1. Run `/rebase-clean <base>`. It does not push a branch that has no open PR.
+1. Run `/rebase-clean <base>`.
 2. Write the title in Conventional Commits, under 70 characters. For the body, follow the repo's PR template or project PR skill. If the repo has neither, use `## Motivation`, `## Changes`, and `## Test plan`. Load `/tech-writing` before you write the body, and run `/cold-read` on the draft. After the sections, add the line `@codex review`.
 3. Write the body to a file. Never push to `main`. Push and open the PR:
    ```bash
