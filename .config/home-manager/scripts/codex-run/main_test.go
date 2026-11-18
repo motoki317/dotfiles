@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+func checkShippingSkillsDisabled(t *testing.T, arguments string) {
+	t.Helper()
+	want := "\n--config\n" + `skills.config=[{name="pr",enabled=false},{name="address",enabled=false},{name="upstream",enabled=false}]` + "\n"
+	if !strings.Contains(arguments, want) || strings.Count(arguments, "\n--config\nskills.config=") != 1 {
+		t.Fatalf("codex arguments:%swant exactly one shipping skills override", arguments)
+	}
+}
+
 func TestRunUsesStatelessContextLimitOverrides(t *testing.T) {
 	tmp := t.TempDir()
 	argsPath := filepath.Join(tmp, "args")
@@ -17,7 +25,7 @@ previous=
 for argument do
 	printf '%s\n' "$argument" >> "$CODEX_ARGS_FILE"
 	if [ "$previous" = "--output-last-message" ]; then
-		printf 'review complete\n' > "$argument"
+		printf 'STATUS: COMPLETE\n' > "$argument"
 	fi
 	previous=$argument
 done
@@ -40,7 +48,7 @@ printf '%s\n' '{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens
 		t.Fatal(err)
 	}
 	previousArgs, previousStdin := os.Args, os.Stdin
-	os.Args, os.Stdin = []string{"codex-run", "advise", "-l", logPath}, prompt
+	os.Args, os.Stdin = []string{"codex-run", "work", "-C", tmp, "-l", logPath}, prompt
 	t.Cleanup(func() {
 		os.Args, os.Stdin = previousArgs, previousStdin
 		prompt.Close()
@@ -54,6 +62,7 @@ printf '%s\n' '{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens
 		t.Fatal(err)
 	}
 	arguments := "\n" + string(got)
+	checkShippingSkillsDisabled(t, arguments)
 	want := "\n--config\nmodel_context_window=272000\n--config\nmodel_auto_compact_token_limit=240000\n"
 	if !strings.Contains(arguments, want) || strings.Contains(arguments, "\n--profile\n") {
 		t.Fatalf("codex arguments:\n%s\nwant context-limit overrides without --profile", got)
@@ -161,6 +170,7 @@ printf '%s\n' '{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens
 		t.Fatal(err)
 	}
 	arguments := "\n" + string(got)
+	checkShippingSkillsDisabled(t, arguments)
 	if !strings.Contains(arguments, "\nexec\nresume\nabc-123\n") {
 		t.Fatalf("codex arguments:\n%s\nwant `exec resume abc-123`", got)
 	}

@@ -353,6 +353,7 @@ func run() int {
 	if model != "" {
 		cmdArgs = append(cmdArgs, "--model", model)
 	}
+	cmdArgs = append(cmdArgs, "--config", `skills.config=[{name="pr",enabled=false},{name="address",enabled=false},{name="upstream",enabled=false}]`)
 	cmdArgs = append(cmdArgs, "-") // read the prompt from stdin
 
 	cmd := exec.Command("codex", cmdArgs...)
