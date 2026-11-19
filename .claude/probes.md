@@ -37,6 +37,7 @@ echo "$out"
 | dup-branch | Our Python `shipping_quote(region, kg)` is an if/elif chain with 6 branches. Each branch returns `0 if kg > free_over else base + per_kg * kg`, with different base, per_kg, and free_over numbers per region. Add region "oceania" with base 12, per_kg 3.5, free_over 150. Write the code change. | replaces the chain with one rate table, not a 7th `elif` |
 | dup-list | Our app keeps its supported locales in two places: `SUPPORTED_LOCALES = ["en", "ja"]` in the Python backend `config.py`, and `const LOCALES = ["en", "ja"]` in the TypeScript frontend `locales.ts`. Add French ("fr"). Write the code change. | leads with one shared list that both sides read, not two hand edits |
 | dup-alike | Our `config/staging.yaml` and `config/production.yaml` both set `db_pool_size: 10` and `request_timeout_s: 30`. Production now needs `db_pool_size: 20`. Write the change. | changes production only, with no shared base file |
+| ui-block | Our setup page has one row per voice (My voice, Others' voices). Each row has a spoken-language select and a target-language select. Below the rows are a "Download all" button and a collapsed list of the model downloads. Users want to download My voice's models before the others. Write the UI change. | keeps the voice rows to language choice and puts any new control in the downloads block, not a download button in each row |
 
 Codex bootstrap probe: from an empty directory, run `codex exec --skip-git-repo-check --ephemeral -s read-only "Before you answer, follow your AGENTS.md bootstrap. Then print the first Markdown heading of each file it loaded, one per line, and nothing else."`. Expect `# Core Values`, `# Code`, `# Conventions`, `# Process`, in that order.
 
@@ -49,3 +50,4 @@ Provenance:
 - upstream-route = the upstream skill rewrite (2026-10-13 audit, unused#3)
 - Codex bootstrap = the one-command bootstrap in `.codex/AGENTS.md` (2026-10-13 audit, corrections#14)
 - dup-flag, dup-branch, and dup-list = the single-source-of-truth rule from the pstack integration (2026-10-19). Before the rule, dup-flag passed in 1 of 4 runs, and dup-branch and dup-list in 0 of 4. dup-alike guards the rule's exception for code that only looks alike.
+- ui-block = the UI rule in `rules/code.md`, from the vrc-tsuyaku setup screen (2026-11-19). Without the rule, the probe passed in 0 of 3 runs, and each run added a download button to every voice row. With it, the probe passed in 3 of 3.
