@@ -5,3 +5,4 @@
 見張り（監視）	(?<!目を)見張り(?!に立)
 偽（モック・フェイク）	(?<![一-龥々])偽の?\s?(?:[A-Za-z]|サーバ|API)
 描画（render）	(?:[Hh]elm|チャート|chart|テンプレート|template|マニフェスト|manifest|kustomize|values)[^。\n]{0,30}描画|描画[^。\n]{0,15}(?:[Hh]elm|チャート|chart|マニフェスト|manifest|kustomize)
+日本語に接したホスト名（Slackでリンクが壊れる。`で囲む）	(?<=[A-Za-z0-9])\.(?:jp|com|dev|link|org)(?=[ぁ-ヶ一-龥])
