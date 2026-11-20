@@ -8,7 +8,7 @@ allowed-tools: [Bash, Read, Grep, Agent]
 Base: the argument, else `main`.
 
 1. Run `/rebase-clean <base>`.
-2. Write the title in Conventional Commits, under 70 characters. For the body, follow the repo's PR template or project PR skill. If the repo has neither, use `## Motivation`, `## Changes`, and `## Test plan`. The body tells the reviewer why the change exists, what changed, how you verified it, and which findings you skipped. Keep any other fact out of the body. If a later reader of the code needs that fact and the change does not hold it yet, add it to the code, a comment, or the docs, and run step 1 again. Load `/tech-writing` before you write the body, and run `/cold-read` on the draft.
+2. Write the title in Conventional Commits, under 70 characters. For the body, follow the repo's PR template or project PR skill. If the repo has neither, use `## Motivation`, `## Changes`, and `## Test plan`. The reviewer gives the body about one minute. In that time, it tells them why the change exists, what changed, how you verified it, and which findings you skipped. Keep any other fact out of the body. If a later reader of the code needs that fact and the change does not hold it yet, add it to the code, a comment, or the docs, and run step 1 again. Load `/tech-writing` before you write the body, and run `/cold-read` on the draft.
 3. If the change alters a UI, show each changed screen or state before and after the change, in a section of the body. Take the before screens from a build of `origin/<base>`, for example in a `git worktree`. Push the PNGs to a secret gist in one Bash call, and embed their raw URLs:
    ```bash
    export GH_TOKEN=$(gh auth token --user <account that opens the PR>)
