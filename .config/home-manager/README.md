@@ -8,8 +8,8 @@ Standalone [home-manager](https://github.com/nix-community/home-manager) flake f
 
 ## Ownership
 
-- home-manager owns `~/.zshenv`, `~/.zprofile`, `~/.zshrc` as read-only nix-store symlinks — hand-editing fails or gets wiped; change `macos.nix`/`common.nix` instead.
-- Non-declarative escape hatches: `~/.profile.common` (a real hand-maintained file, sourced from zsh `initContent`) and optional `~/.zshenv.local`.
+- home-manager owns `~/.bashrc`, `~/.bash_profile`, `~/.profile` on both hosts, and `~/.zshenv`, `~/.zprofile`, `~/.zshrc` on macOS, as read-only nix-store symlinks; change the host's file or `common.nix` instead.
+- Non-declarative escape hatches: `~/.profile.common` (sourced from bash `bashrcExtra` on both hosts and from zsh `initContent` on macOS), plus optional `~/.bashrc.local` (both hosts) and `~/.zshenv.local` (macOS).
 
 ## PATH mechanics (macOS)
 

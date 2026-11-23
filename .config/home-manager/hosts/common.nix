@@ -62,12 +62,37 @@ in
 
   home.packages = [ ghAccountSwitch ];
 
+  programs.bash = {
+    enable = true;
+    # Load for both non-interactive and login shells
+    bashrcExtra = ''
+      # Load common
+      if [ -f ~/.profile.common ]; then
+        . ~/.profile.common
+      fi
+
+      # Load local
+      if [ -f ~/.bashrc.local ]; then
+        . ~/.bashrc.local
+      fi
+    '';
+    # Load default color profiles and so for login shells
+    initExtra = builtins.readFile ./.bashrc + ''
+
+      # ha - git worktree manager (sourced as shell functions)
+      source ${inputs.ha}/ha.sh
+    '';
+  };
+
+  # Without this, Claude Code runs its commands in $SHELL (zsh on macOS, a
+  # system or store bash on WSL); this gives every host the same nix bash.
+  # Session variables load once per login and live on in tmux, so point at the
+  # profile, not a store path that an update and GC would remove.
+  home.sessionVariables.CLAUDE_CODE_SHELL = "${config.home.profileDirectory}/bin/bash";
+
   # ha - git worktree manager (sourced as shell functions)
   programs.zsh.initContent = ''
     source ${inputs.ha}/ha.sh
     compdef _ha ha
-  '';
-  programs.bash.initExtra = ''
-    source ${inputs.ha}/ha.sh
   '';
 }
