@@ -35,4 +35,5 @@
     # Load default color profiles and so for login shells
     initExtra = builtins.readFile ./.bashrc;
   };
+  programs.tmux.shell = "${config.home.profileDirectory}/bin/bash";
 }

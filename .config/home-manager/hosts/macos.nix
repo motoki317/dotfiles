@@ -41,4 +41,5 @@
       fi
     '';
   };
+  programs.tmux.shell = "${config.home.profileDirectory}/bin/zsh";
 }

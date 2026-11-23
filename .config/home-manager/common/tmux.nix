@@ -9,7 +9,12 @@
     keyMode = "vi";
     prefix = "C-q";
     secureSocket = true;
-    shell = "${pkgs.zsh}/bin/zsh";
+
+    # `shell` is set per host (hosts/*.nix) because tmux exports it to every
+    # pane as $SHELL, so it must name that host's interactive shell. It points
+    # into the profile: a running tmux server keeps the old value across
+    # switches, and a store path there disappears at the next GC.
+
     newSession = true;
     customPaneNavigationAndResize = true;
     resizeAmount = 5;
